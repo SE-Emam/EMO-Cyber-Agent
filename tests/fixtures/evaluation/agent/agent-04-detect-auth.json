@@ -1,0 +1,43 @@
+{
+  "case_id": "agent-04-detect-auth",
+  "title": "Agent auth gap surfaced",
+  "track": "detection",
+  "taxonomy": "authorization",
+  "stage": "detection",
+  "section": "agent",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "def handler(request): return 200",
+      "auth_check": false
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_present",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "auth_check_missing"
+      }
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "injection_sink"
+      }
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "agent-04-detect-auth"
+  },
+  "notes": "",
+  "tags": [
+    "auth"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "case_id": "ver-06-evidence",
+  "title": "Verification evidence complete",
+  "track": "reasoning",
+  "taxonomy": "configuration",
+  "stage": "evidence",
+  "section": "verification",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "evidence",
+    "payload": {
+      "facts": [
+        {
+          "source_tool": "semgrep",
+          "location": "app/verify.py",
+          "content_hash": "3434343434343434",
+          "provenance": {
+            "labels": [
+              "static"
+            ],
+            "collected_by": "scanner"
+          }
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "evidence",
+      "subject": "evidence_count",
+      "match": "exact",
+      "value": 1
+    },
+    {
+      "kind": "evidence",
+      "subject": "provenance_complete",
+      "match": "true",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "ver-06-evidence"
+  },
+  "notes": "",
+  "tags": [
+    "evidence"
+  ]
+}

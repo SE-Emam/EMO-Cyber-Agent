@@ -1,0 +1,48 @@
+playbook:
+  id: business-logic-security
+  title: Business Logic Security
+  version: 1.0.0
+  type: security
+  objective: Review business workflows, authorization interplay, and race-prone flows for logic flaws using read-only analysis.
+  description: Business-logic review with authorization correlation and threat-model framing. Threats never become findings automatically.
+tasks:
+  required: [business-logic-review, authorization-review]
+  optional: [threat-model]
+skills:
+  required: [business-logic, authorization]
+  optional: [threat-modeling, race-conditions]
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+capabilities:
+  requested: [repository.read, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [business-logic-review, authorization-review]
+  conditions:
+    - when_field: evidence.category
+      operator: ==
+      value: business-logic
+      select_tasks: [threat-model]
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: business-logic-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Critical workflows mapped with trust boundaries noted.
+  - Logic-flaw hypotheses recorded as hypotheses, not findings.
+  - Limitations recorded in the report.
+provenance: {source: official}

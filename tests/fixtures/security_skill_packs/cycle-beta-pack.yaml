@@ -1,0 +1,40 @@
+pack:
+  id: cycle-beta-pack
+  name: Cycle Beta
+  version: 1.0.0
+  dependencies: [cycle-alpha-pack]
+  purpose: Audit fixture for cycle detection.
+skills: [injection]
+code_intelligence:
+  required: [symbols]
+evidence:
+  required: [file-evidence]
+verification:
+  methods: [static_confirmation]
+applicable_assets: [repo]
+security_domains: [injection]
+methodology:
+  - list sinks
+checks:
+  - id: cycle-check-two
+    title: Cycle check two
+    methodology:
+      - record
+    evidence_required: [file-evidence]
+    evidence_sufficient: []
+    evidence_missing: []
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: false
+    entry_level: OBSERVED
+    codeintel_needs: [symbols]
+    source_kinds: []
+    sink_kinds: []
+    hypothesis_template: Item needs review.
+stop_conditions: [scope-exhausted]
+limitations: []
+security:
+  requested: [repository.read]
+  denied: [destructive]
+allowed_tools: [repository.read]
+provenance: {source: external}

@@ -1,0 +1,15 @@
+threat_template:
+  id: web-app-starter
+  name: Web Application Starter
+  version: 1.0.0
+  methods: [stride, attack-tree, data-centric]
+  scope_assets:
+    - user-accounts
+    - session-store
+  declared_boundaries:
+    - kind: TRUST
+      basis: DECLARED
+      provenance: {declared_by: team, source: architecture-notes}
+      protects: [user-accounts]
+
+provenance: {source: official}

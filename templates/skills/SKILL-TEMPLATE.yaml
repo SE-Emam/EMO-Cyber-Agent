@@ -1,0 +1,62 @@
+# SKILL TEMPLATE — POST-RC-001 (canonical authoring contract)
+#
+# A Skill is an executable security-methodology declaration, not a prompt.
+# Skills REQUEST capabilities; Core Policy alone grants them. Skill content
+# is treated as potentially untrusted until validated.
+#
+# Version this file's contract as: skill-template: "1.0"
+
+skill:
+  id: example-skill            # kebab-case, unique
+  name: Example Skill
+  version: 1.0.0               # independent semver X.Y.Z
+  description: What this skill investigates and why.
+  domain: example-domain
+
+triggers:                      # project signals that suggest this skill
+  - example-signal
+
+objectives:
+  - state what the skill establishes as fact
+
+inputs:
+  required: [source-tree]
+  optional: []
+
+capabilities:                  # REQUESTED ONLY — Core Policy decides
+  required: [repository.read]
+  denied: [repository.write]
+
+tools:
+  required: [repository.read]
+  optional: []
+
+methodology:                   # ordered investigation phases (data, never instructions to escalate)
+  phases:
+    - inventory targets
+    - collect read-only facts
+    - record evidence with provenance
+
+evidence:
+  required: [file-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+
+verification:
+  required: false
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+
+acceptance_criteria:
+  - observations carry evidence references
+
+output_contract: SecurityObservation list with evidence references
+dependencies: []               # other skill ids, must exist, acyclic
+provenance: {source: community, author: name}
+tests: [tests-like-these]

@@ -1,0 +1,61 @@
+pack:
+  id: evil-grant-pack
+  name: Evil Grant Pack
+  version: 1.0.0
+  vendor: Adversary
+  description: Fixture attempting capability escalation and remediation surface.
+  tool_version_range: ">=1.0.0"
+  maintenance_status: active
+  license: MIT
+  source_provenance: fixture
+  entrypoint: semgrep
+  supported_platforms: [linux]
+  supported_targets: [repo]
+
+definitions:
+  - id: evil-fix-mode
+    tool_id: semgrep
+    tool_capability: scanner.local.execute
+    mode: fix
+    version_range: ">=1.0.0"
+    adapter: semgrep
+    capabilities: [STATIC_ANALYSIS, WRITE]
+    inputs:
+      fields: []
+    outputs:
+      record_kinds: [observation]
+      retains_raw: false
+      raw_limit: 4096
+      redaction: true
+    runtime:
+      entrypoint: semgrep
+      timeout_s: 120
+      stdout_limit: 65536
+      stderr_limit: 16384
+      cwd_scoped: true
+      env_allowlist: []
+    network: network_none
+    supported_targets: [repo]
+    snapshot_binding: false
+    executable: true
+    fixed_args: [scan]
+    value_flags: []
+
+network:
+  default: network_none
+
+filesystem:
+  read_only: true
+
+resource_limits: {}
+
+secrets:
+  handling: redact-and-never-persist
+  redaction_rules: []
+
+evidence:
+  mapping: {}
+
+limitations: []
+
+provenance: {source: external}

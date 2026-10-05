@@ -1,0 +1,4 @@
+[
+  {"entry_id": "mem-shared", "audit_id": "A", "project_id": "P", "snapshot_id": "s1", "digest": "deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"},
+  {"entry_id": "mem-shared", "audit_id": "B", "project_id": "P", "snapshot_id": "s1", "digest": "deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"}
+]

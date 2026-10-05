@@ -1,0 +1,50 @@
+task:
+  id: database-security-review
+  title: Database Security Review
+  version: 1.0.0
+  type: review
+  objective: Review database objects, privileges, and dangerous defaults, read-only.
+scope:
+  included: [repository, supabase-project]
+  excluded: [production]
+  target_types: [repo, supabase-project]
+inputs:
+  required: [source-tree]
+  optional: [supabase-project-ref]
+skills:
+  required: [database-security]
+  optional: [rls, configuration]
+capabilities:
+  required: [repository.read, supabase.table.read, supabase.grant.read]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: []
+  optional: [semgrep]
+methodology:
+  phases: [reconnaissance, data-access, verification]
+  procedures:
+    - inventory schemas, tables, and views
+    - record grants and default privileges
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [configuration_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - database objects inventoried with evidence
+deliverables: [observations]
+report:
+  template: supabase-security
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

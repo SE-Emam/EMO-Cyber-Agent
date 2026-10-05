@@ -1,0 +1,27 @@
+# audit-default — official knowledge template (POST-RC-011).
+#
+# Default memory profile for a scoped audit: snapshot-bound
+# records, audit-lifetime retention, and a conservative category
+# allowlist. Knowledge stays inert context; the audit pipeline
+# remains the only path to Findings.
+
+knowledge_template:
+  template_id: audit-default
+  name: Audit Default Knowledge Profile
+  version: 1.0.0
+  allowed_categories:
+    - OBSERVED_FACT
+    - EVIDENCE_SUMMARY
+    - VERIFICATION_OUTCOME
+    - CHANGE_REGRESSION_SIGNAL
+    - TOOL_OBSERVATION
+  default_retention_class: audit-lifetime
+  scope_rules:
+    - snapshot-bound-by-default
+    - no-cross-audit-read
+    - no-cross-project-read
+    - queries-allowlisted-only
+    - secrets-denied-by-redact-diff
+    - verdict-vocabulary-quarantined
+
+provenance: {source: official}

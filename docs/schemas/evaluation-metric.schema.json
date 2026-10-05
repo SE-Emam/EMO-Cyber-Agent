@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/evaluation-metric.schema.json",
+  "title": "Evaluation metric result interop contract",
+  "version": "1.0",
+  "description": "One versioned metric result; an uncomputed metric reports score null, never 0.",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "maxLength": 64,
+      "minLength": 3,
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "default": "eval-metric-v1",
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    },
+    "count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Count",
+      "type": "integer"
+    },
+    "denominator": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Denominator",
+      "type": "integer"
+    },
+    "score": {
+      "anyOf": [
+        {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Score"
+    },
+    "coverage": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Coverage",
+      "type": "number"
+    },
+    "unknown": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Unknown",
+      "type": "integer"
+    },
+    "inconclusive": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Inconclusive",
+      "type": "integer"
+    },
+    "blocked": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Blocked",
+      "type": "integer"
+    },
+    "confidence": {
+      "default": "",
+      "maxLength": 16,
+      "title": "Confidence",
+      "type": "string"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 12,
+      "title": "Notes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "type": "object"
+}

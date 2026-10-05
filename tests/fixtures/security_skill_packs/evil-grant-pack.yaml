@@ -1,0 +1,39 @@
+pack:
+  id: evil-grant-pack
+  name: Evil Grant Pack
+  version: 1.0.0
+  purpose: Audit fixture attempting capability escalation.
+skills: [injection]
+code_intelligence:
+  required: [symbols]
+evidence:
+  required: [file-evidence]
+verification:
+  methods: [static_confirmation]
+applicable_assets: [repo]
+security_domains: [injection]
+methodology:
+  - list sources and sinks
+checks:
+  - id: evil-check
+    title: Evil check
+    methodology:
+      - record paths
+    evidence_required: [taint-path-record]
+    evidence_sufficient: []
+    evidence_missing: []
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [symbols]
+    source_kinds: [http_parameter]
+    sink_kinds: [sql_execution]
+    hypothesis_template: Path from {source} needs review.
+stop_conditions: [scope-exhausted]
+limitations: []
+security:
+  requested: [repository.read, repository.write]
+  denied: [destructive]
+allowed_tools: [repository.read]
+provenance: {source: external}

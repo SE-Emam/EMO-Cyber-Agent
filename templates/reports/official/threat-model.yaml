@@ -1,0 +1,29 @@
+report_template:
+  id: threat-model
+  name: Threat Model Report
+  version: 1.0.0
+  type: security
+  description: Asset, boundary, and dataflow presentation. Never asserts confirmed vulnerabilities.
+
+sections:
+  - name: summary
+    fields: [report.summary]
+  - name: findings
+    fields: [finding.finding_id, finding.title, finding.severity, finding.confidence, finding.status, finding.evidence_ids, finding.verification_ids, finding.provenance]
+  - name: limitations
+    fields: []
+
+finding_fields: [finding.finding_id, finding.title, finding.severity, finding.confidence, finding.status, finding.evidence_ids, finding.verification_ids, finding.provenance]
+section_order: [summary, findings, limitations]
+show_non_reportable: false
+evidence_presentation: references
+verification_presentation: status
+limitations_sections: [limitations]
+appendices: []
+output_formats: [json, jsonl, markdown]
+security:
+  preserve_provenance: true
+  redact_secrets: true
+  deterministic: true
+visibility: []
+provenance: {source: official}

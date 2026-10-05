@@ -1,0 +1,32 @@
+{
+  "case_id": "mem-01-normalize-session",
+  "title": "Memory session text normalized",
+  "track": "detection",
+  "taxonomy": "session",
+  "stage": "normalized_facts",
+  "section": "memory",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "normalize",
+    "payload": {
+      "text": "  session   cache warm "
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "normalized_text",
+      "match": "exact",
+      "value": "session cache warm"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mem-01-normalize-session"
+  },
+  "notes": "",
+  "tags": [
+    "normalize"
+  ]
+}

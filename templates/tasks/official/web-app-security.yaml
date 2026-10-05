@@ -1,0 +1,52 @@
+task:
+  id: web-app-security
+  title: Web Application Security Review
+  version: 1.0.0
+  type: review
+  objective: Review a web application for frontend, backend, and API security issues, read-only.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: []
+skills:
+  required: [frontend-security, backend-security, api-security, authentication, authorization]
+  optional: [secrets, configuration]
+capabilities:
+  required: [repository.read, repository.list, repository.search]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: [semgrep]
+  optional: [trivy]
+methodology:
+  phases: [reconnaissance, attack-surface, authentication, authorization, input-handling, verification]
+  procedures:
+    - inventory routes and handlers
+    - check auth coverage per endpoint
+    - trace untrusted input to sinks
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - endpoints inventoried with auth coverage
+  - input sinks traced or marked not-found
+deliverables: [observations, candidates]
+report:
+  template: web-app-security
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

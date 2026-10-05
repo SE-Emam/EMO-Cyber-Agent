@@ -1,0 +1,48 @@
+playbook:
+  id: ai-application-security
+  title: AI Application Security
+  version: 1.0.0
+  type: security
+  objective: Audit AI application surfaces including prompt boundaries, untrusted input, tool boundaries, secrets, RAG, memory, and delegation using read-only methods.
+  description: AI application security only. EMO internal security is out of scope for this workflow.
+tasks:
+  required: [ai-security-review, agent-security-review]
+  optional: [threat-model]
+skills:
+  required: [ai-security, agent-security]
+  optional: [threat-modeling, secrets]
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+capabilities:
+  requested: [repository.read, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [ai-security-review, agent-security-review]
+  conditions:
+    - when_field: technology
+      operator: ==
+      value: agent
+      select_tasks: [threat-model]
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: ai-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Prompt and tool boundaries mapped.
+  - Excessive-agency hypotheses recorded with evidence references.
+  - Limitations recorded in the report.
+provenance: {source: official}

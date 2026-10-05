@@ -1,0 +1,36 @@
+{
+  "case_id": "agent-07-parity-audit-readme",
+  "title": "Agent parity on repository files",
+  "track": "parity",
+  "taxonomy": "api_security",
+  "stage": "parity",
+  "section": "agent",
+  "visibility": "internal",
+  "split": "development",
+  "scenario": {
+    "kind": "parity_audit",
+    "payload": {
+      "target": "README.md"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "mismatched_fields",
+      "match": "absent"
+    },
+    {
+      "kind": "state",
+      "subject": "failed_interfaces",
+      "match": "absent"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "agent-07-parity-audit-readme"
+  },
+  "notes": "",
+  "tags": [
+    "parity"
+  ]
+}

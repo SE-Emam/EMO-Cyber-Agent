@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/knowledge-reference.schema.json",
+  "title": "Knowledge reference interop contract (digest-carrying handle)",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["record_id", "audit_id", "project_id", "digest"],
+  "properties": {
+    "record_id": {"type": "string", "minLength": 3, "maxLength": 80},
+    "audit_id": {"type": "string", "minLength": 1, "maxLength": 120},
+    "project_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "snapshot_id": {"type": "string", "maxLength": 160},
+    "digest": {"type": "string", "minLength": 16, "maxLength": 128}
+  }
+}

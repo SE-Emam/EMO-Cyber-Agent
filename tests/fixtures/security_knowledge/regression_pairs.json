@@ -1,0 +1,20 @@
+{
+  "pairs": [
+    {"name": "identical", "before_digest": "aaa1", "after_digest": "aaa1", "before_present": true, "after_present": true, "comparable": true, "coverage": "complete", "prior_digests": [], "expected_state": "PERSISTING"},
+    {"name": "changed", "before_digest": "aaa1", "after_digest": "bbb2", "before_present": true, "after_present": true, "comparable": true, "coverage": "complete", "prior_digests": [], "expected_state": "CHANGED"},
+    {"name": "disappeared-complete", "before_digest": "aaa1", "after_digest": "", "before_present": true, "after_present": false, "comparable": true, "coverage": "complete", "prior_digests": [], "expected_state": "DISAPPEARED"},
+    {"name": "absent-incomplete-coverage", "before_digest": "aaa1", "after_digest": "", "before_present": true, "after_present": false, "comparable": true, "coverage": "incomplete", "prior_digests": [], "expected_state": "INDETERMINATE"},
+    {"name": "new", "before_digest": "", "after_digest": "ccc3", "before_present": false, "after_present": true, "comparable": true, "coverage": "complete", "prior_digests": [], "expected_state": "NEW"},
+    {"name": "reintroduced", "before_digest": "", "after_digest": "aaa1", "before_present": false, "after_present": true, "comparable": true, "coverage": "complete", "prior_digests": ["aaa1", "ddd4"], "expected_state": "REINTRODUCED"},
+    {"name": "not-comparable", "before_digest": "aaa1", "after_digest": "bbb2", "before_present": true, "after_present": true, "comparable": false, "coverage": "complete", "prior_digests": [], "expected_state": "NOT_COMPARABLE"}
+  ],
+  "comparisons": [
+    {"name": "both-absent", "before": null, "after": null, "comparable": true, "coverage": "complete", "expected": "INDETERMINATE"},
+    {"name": "before-absent", "before": null, "after": {"x": 1}, "comparable": true, "coverage": "complete", "expected": "NEW"},
+    {"name": "after-absent-complete", "before": {"x": 1}, "after": null, "comparable": true, "coverage": "complete", "expected": "MISSING"},
+    {"name": "after-absent-incomplete", "before": {"x": 1}, "after": null, "comparable": true, "coverage": "incomplete", "expected": "INDETERMINATE"},
+    {"name": "equal", "before": {"x": 1}, "after": {"x": 1}, "comparable": true, "coverage": "complete", "expected": "IDENTICAL"},
+    {"name": "differing", "before": {"x": 1}, "after": {"x": 2}, "comparable": true, "coverage": "complete", "expected": "CHANGED"},
+    {"name": "refused", "before": {"x": 1}, "after": {"x": 2}, "comparable": false, "coverage": "complete", "expected": "INCOMPATIBLE"}
+  ]
+}

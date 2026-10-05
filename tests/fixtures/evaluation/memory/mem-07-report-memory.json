@@ -1,0 +1,38 @@
+{
+  "case_id": "mem-07-report-memory",
+  "title": "Memory report carries no secrets",
+  "track": "reasoning",
+  "taxonomy": "data_exposure",
+  "stage": "report",
+  "section": "memory",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "report",
+    "payload": {
+      "findings": []
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "finding_count",
+      "match": "exact",
+      "value": 0
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "leaked_secret",
+      "match": "exact",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mem-07-report-memory"
+  },
+  "notes": "",
+  "tags": [
+    "report"
+  ]
+}

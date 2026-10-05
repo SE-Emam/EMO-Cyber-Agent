@@ -1,0 +1,34 @@
+{
+  "case_id": "agent-02-authority-preserved",
+  "title": "Agent authority snapshot preserved",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "authority",
+  "section": "agent",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "authority",
+    "payload": {
+      "authority_findings": {
+        "f-agent-1": "triaged"
+      }
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "authority_invariant",
+      "subject": "authority_diff.state",
+      "match": "exact",
+      "value": "PRESERVED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "agent-02-authority-preserved"
+  },
+  "notes": "",
+  "tags": [
+    "authority"
+  ]
+}

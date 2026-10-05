@@ -1,0 +1,188 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/verification-adapter.schema.json",
+  "title": "Verification adapter contract interop",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "capabilities",
+    "health",
+    "provenance"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "maxLength": 80
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "contract_version": {
+      "type": "string",
+      "default": "1.0",
+      "maxLength": 40
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capabilities",
+        "supported_target_kinds",
+        "supported_strategy_ids"
+      ],
+      "properties": {
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "HTTP_REQUEST",
+              "HTTP_ASSERTION",
+              "AUTHZ_MATRIX",
+              "CONFIG_ASSERTION",
+              "FILE_ASSERTION",
+              "DATABASE_ASSERTION",
+              "PROCESS_ASSERTION",
+              "GRAPH_ASSERTION",
+              "STRUCTURED_TOOL_ASSERTION",
+              "MCP_ASSERTION",
+              "AGENT_BOUNDARY_ASSERTION",
+              "SYNTHETIC_IDENTITY_TEST"
+            ]
+          }
+        },
+        "supported_target_kinds": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "FILE",
+              "SYMBOL",
+              "ROUTE",
+              "API_OPERATION",
+              "DATABASE_OBJECT",
+              "DEPENDENCY",
+              "MCP_TOOL",
+              "MCP_RESOURCE",
+              "AGENT_BOUNDARY",
+              "CONFIGURATION",
+              "SNAPSHOT",
+              "REPOSITORY",
+              "ENDPOINT"
+            ]
+          }
+        },
+        "supported_strategy_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 80
+          }
+        },
+        "contract_version": {
+          "type": "string",
+          "maxLength": 40
+        }
+      }
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "AVAILABLE",
+            "MISSING",
+            "UNSUPPORTED",
+            "VERSION_UNSUPPORTED",
+            "BROKEN",
+            "POLICY_BLOCKED",
+            "RESOURCE_LIMITED"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "provider_version": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "contract_version": {
+          "type": "string",
+          "maxLength": 40
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_identity",
+        "execution_contract_version"
+      ],
+      "properties": {
+        "adapter_id": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "adapter_version": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "provider_identity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "provider_version": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "execution_contract_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "policy_decision_id": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "tool_invocation_id": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "environment_fingerprint": {
+          "type": "string",
+          "maxLength": 128
+        }
+      }
+    }
+  },
+  "x-forbidden-request-fields": [
+    "raw_command",
+    "shell",
+    "shell_command",
+    "arbitrary_argv",
+    "arbitrary_sql",
+    "arbitrary_url",
+    "arbitrary_code",
+    "model_prompt",
+    "permission_grant",
+    "policy_override",
+    "finding_state",
+    "finding_severity"
+  ],
+  "x-response-notes": [
+    "responses carry data only; authority language raises data_flags",
+    "operational results map only to INCONCLUSIVE or BLOCKED",
+    "missing provenance means unverifiable, never downgraded"
+  ]
+}

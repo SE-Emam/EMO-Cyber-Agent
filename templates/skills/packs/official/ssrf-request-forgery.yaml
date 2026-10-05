@@ -1,0 +1,91 @@
+pack:
+  id: ssrf-request-forgery
+  name: SSRF and Request Forgery Pack
+  version: 1.0.0
+  purpose: Trace user-controlled URLs to outbound request sinks, record validation boundaries, and hand redirect and internal-resource paths to verification.
+
+skills: [api-security, backend-security]
+
+code_intelligence:
+  required: [dataflow, routes, symbols]
+
+evidence:
+  required: [file-evidence, tool-evidence, dataflow-path-record]
+
+verification:
+  methods: [static_confirmation, dataflow_confirmation]
+
+applicable_assets: [repo, api]
+security_domains: [api-security, injection]
+
+methodology:
+  - inventory outbound request sinks with call locations
+  - trace URL arguments to their origin symbols
+  - record allowlist and denylist checks found along each path
+  - treat unvalidated paths as hypotheses
+
+checks:
+  - id: outbound-url-review
+    title: Outbound URL review
+    methodology:
+      - list network request call sites
+      - resolve URL argument origins
+      - record validation checks present on each path
+    evidence_required: [dataflow-path-record, sink-record]
+    evidence_sufficient: [origin-record, sink-record, validation-record]
+    evidence_missing: [dynamic-url-construction]
+    verification_required: [dataflow_confirmation, static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [dataflow, symbols]
+    source_kinds: [http_parameter, request_body, external_input]
+    sink_kinds: [network_request]
+    hypothesis_template: URL at {source} may reach outbound request {sink} without recorded validation; requires verification.
+
+  - id: redirect-handling-review
+    title: Redirect handling review
+    methodology:
+      - list redirect response sites with target origins
+      - record open-redirect shapes as hypotheses
+    evidence_required: [sink-record, origin-record]
+    evidence_sufficient: [sink-record, origin-record]
+    evidence_missing: [framework-redirect-helper]
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: SUSPECTED
+    codeintel_needs: [symbols, routes]
+    source_kinds: [http_parameter, header]
+    sink_kinds: [network_request]
+    hypothesis_template: Redirect at {sink} may follow an untrusted target; requires verification.
+
+  - id: internal-resource-review
+    title: Internal resource access review
+    methodology:
+      - correlate outbound paths with internal address patterns
+      - record metadata-service and intranet shapes
+    evidence_required: [dataflow-path-record]
+    evidence_sufficient: [origin-record, address-pattern-record]
+    evidence_missing: [dns-resolution-gap]
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [dataflow]
+    source_kinds: [http_parameter, external_input]
+    sink_kinds: [network_request]
+    hypothesis_template: Path from {source} may reach internal resources via {sink}; requires verification.
+
+stop_conditions: [scope-exhausted, budget-exhausted, no-progress]
+limitations:
+  - URL validation detection is pattern-based; custom validators need manual review.
+  - DNS-time behavior is out of scope for static facts.
+
+security:
+  requested: [repository.read, repository.search, code.dataflow.read, code.routes.read]
+  denied: [repository.write, database.write, destructive]
+
+allowed_tools: [repository.read, repository.search, semgrep]
+
+provenance: {source: official}

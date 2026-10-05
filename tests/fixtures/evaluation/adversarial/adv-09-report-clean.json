@@ -1,0 +1,38 @@
+{
+  "case_id": "adv-09-report-clean",
+  "title": "Adversarial report stays clean",
+  "track": "safety",
+  "taxonomy": "secrets",
+  "stage": "report",
+  "section": "adversarial",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "report",
+    "payload": {
+      "findings": []
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_absent",
+      "subject": "leaked_secret",
+      "match": "exact",
+      "value": true
+    },
+    {
+      "kind": "state",
+      "subject": "rejected_findings",
+      "match": "exact",
+      "value": 0
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "adv-09-report-clean"
+  },
+  "notes": "",
+  "tags": [
+    "report"
+  ]
+}

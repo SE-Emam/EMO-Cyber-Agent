@@ -1,0 +1,32 @@
+{
+  "case_id": "ver-10-normalize",
+  "title": "Verification input normalized",
+  "track": "detection",
+  "taxonomy": "configuration",
+  "stage": "normalized_facts",
+  "section": "verification",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "normalize",
+    "payload": {
+      "text": "  locator   proj a "
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "normalized_text",
+      "match": "exact",
+      "value": "locator proj a"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "ver-10-normalize"
+  },
+  "notes": "",
+  "tags": [
+    "normalize"
+  ]
+}

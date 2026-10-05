@@ -1,0 +1,44 @@
+playbook:
+  id: cloud-security-audit
+  title: Cloud Security Audit
+  version: 1.0.0
+  type: security
+  objective: Audit cloud configuration, storage exposure, and container-adjacent surfaces using read-only inspection.
+  description: Cloud configuration review followed by container surface review.
+tasks:
+  required: [cloud-security-review, container-security-review]
+  optional: [secret-audit]
+skills:
+  required: [cloud-security, configuration]
+  optional: [container-security, secrets, data-exposure]
+tools:
+  required: [semgrep]
+  optional: [trivy, gitleaks]
+capabilities:
+  requested: [repository.read, repository.list, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [cloud-security-review, container-security-review]
+  conditions: []
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation, configuration_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: cloud-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Cloud configuration surfaces inventoried.
+  - Storage exposure hypotheses recorded with evidence references.
+  - Limitations recorded in the report.
+provenance: {source: official}

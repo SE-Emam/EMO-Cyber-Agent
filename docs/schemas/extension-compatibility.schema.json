@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/extension-compatibility.schema.json",
+  "title": "ExtensionCompatibility flat contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "emo_api_min",
+    "emo_api_max",
+    "schema_versions",
+    "required_features",
+    "optional_features",
+    "python_requires",
+    "platforms"
+  ],
+  "properties": {
+    "emo_api_min": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "maxLength": 16
+    },
+    "emo_api_max": {
+      "type": "string",
+      "maxLength": 16
+    },
+    "schema_versions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 16
+      }
+    },
+    "required_features": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/feature"
+      }
+    },
+    "optional_features": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/feature"
+      }
+    },
+    "python_requires": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 32
+      }
+    }
+  },
+  "definitions": {
+    "feature": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*(\\.[A-Z][A-Z0-9_]*)*$",
+      "maxLength": 120
+    }
+  }
+}

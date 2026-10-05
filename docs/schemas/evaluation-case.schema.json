@@ -1,0 +1,292 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/evaluation-case.schema.json",
+  "title": "Evaluation case fixture interop contract",
+  "version": "1.0",
+  "description": "Blind projection + evaluation-only ground truth.",
+  "definitions": {
+    "CaseSource": {
+      "additionalProperties": false,
+      "description": "Where the fixture came from. Production sources are refused by\nmutations and by the dataset loader.",
+      "properties": {
+        "system": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "System",
+          "type": "string"
+        },
+        "fixture": {
+          "default": "",
+          "maxLength": 128,
+          "title": "Fixture",
+          "type": "string"
+        },
+        "production": {
+          "default": false,
+          "title": "Production",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "system"
+      ],
+      "title": "CaseSource",
+      "type": "object"
+    },
+    "CaseSplit": {
+      "enum": [
+        "development",
+        "validation",
+        "holdout"
+      ],
+      "title": "CaseSplit",
+      "type": "string"
+    },
+    "CaseVisibility": {
+      "enum": [
+        "public",
+        "internal",
+        "blind",
+        "holdout",
+        "adversarial",
+        "regression"
+      ],
+      "title": "CaseVisibility",
+      "type": "string"
+    },
+    "ComparisonMatch": {
+      "enum": [
+        "exact",
+        "contains",
+        "not_contains",
+        "superset",
+        "subset",
+        "set_equals",
+        "absent",
+        "nonempty",
+        "true"
+      ],
+      "title": "ComparisonMatch",
+      "type": "string"
+    },
+    "EvaluationScenario": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "EvaluationScenario",
+      "type": "object"
+    },
+    "EvaluationStage": {
+      "description": "Where an observation/judgment sits in the EMO workflow.\n\nThe first block mirrors the mandatory workflow path (Core owns it);\nthe second block adds evaluation protocol stages (parity, regression,\nauthority, coverage) that are properties of an evaluation run rather\nthan of a single audit.",
+      "enum": [
+        "input_facts",
+        "normalized_facts",
+        "evidence",
+        "correlation",
+        "hypotheses",
+        "verification",
+        "finding_eligibility",
+        "report",
+        "authority",
+        "parity",
+        "regression",
+        "coverage",
+        "isolation",
+        "detection",
+        "surface"
+      ],
+      "title": "EvaluationStage",
+      "type": "string"
+    },
+    "EvaluationTaxonomy": {
+      "description": "16 evaluation taxonomy values (mirrors the Core finding taxonomy,\ndrops ``other`` and adds the change/review category ``advisory_regression``).",
+      "enum": [
+        "authentication",
+        "authorization",
+        "injection",
+        "cryptography",
+        "secrets",
+        "dependency",
+        "supply_chain",
+        "data_exposure",
+        "configuration",
+        "api_security",
+        "rls",
+        "business_logic",
+        "infrastructure",
+        "session",
+        "input_validation",
+        "advisory_regression"
+      ],
+      "title": "EvaluationTaxonomy",
+      "type": "string"
+    },
+    "EvaluationTrack": {
+      "description": "Eight evaluation tracks (a run reports per track).",
+      "enum": [
+        "detection",
+        "reasoning",
+        "authority",
+        "safety",
+        "parity",
+        "regression",
+        "determinism",
+        "portability"
+      ],
+      "title": "EvaluationTrack",
+      "type": "string"
+    },
+    "GroundTruthKind": {
+      "enum": [
+        "expected_present",
+        "expected_absent",
+        "unknown",
+        "inconclusive",
+        "state",
+        "evidence",
+        "relation",
+        "scope_behavior",
+        "expected_blocked",
+        "expected_isolated",
+        "expected_inert",
+        "expected_preserved",
+        "authority_invariant"
+      ],
+      "title": "GroundTruthKind",
+      "type": "string"
+    },
+    "GroundTruthRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "record_id": {
+          "default": "",
+          "maxLength": 96,
+          "title": "Record Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/GroundTruthKind"
+        },
+        "subject": {
+          "default": "",
+          "maxLength": 256,
+          "title": "Subject",
+          "type": "string"
+        },
+        "value": {
+          "default": null,
+          "title": "Value"
+        },
+        "match": {
+          "$ref": "#/definitions/ComparisonMatch",
+          "default": "exact"
+        },
+        "stage": {
+          "default": "",
+          "maxLength": 64,
+          "title": "Stage",
+          "type": "string"
+        },
+        "note": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "GroundTruthRecord",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {
+      "pattern": "^[a-z0-9][a-z0-9._-]{1,95}$",
+      "title": "Case Id",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "track": {
+      "$ref": "#/definitions/EvaluationTrack"
+    },
+    "taxonomy": {
+      "$ref": "#/definitions/EvaluationTaxonomy"
+    },
+    "stage": {
+      "$ref": "#/definitions/EvaluationStage"
+    },
+    "visibility": {
+      "$ref": "#/definitions/CaseVisibility",
+      "default": "public"
+    },
+    "split": {
+      "$ref": "#/definitions/CaseSplit",
+      "default": "development"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 24,
+      "title": "Tags",
+      "type": "array"
+    },
+    "scenario": {
+      "$ref": "#/definitions/EvaluationScenario"
+    },
+    "section": {
+      "default": "",
+      "maxLength": 64,
+      "title": "Section",
+      "type": "string"
+    },
+    "ground_truth": {
+      "items": {
+        "$ref": "#/definitions/GroundTruthRecord"
+      },
+      "maxItems": 64,
+      "title": "Ground Truth",
+      "type": "array"
+    },
+    "source": {
+      "$ref": "#/definitions/CaseSource"
+    },
+    "notes": {
+      "default": "",
+      "maxLength": 1000,
+      "title": "Notes",
+      "type": "string"
+    }
+  },
+  "required": [
+    "case_id",
+    "title",
+    "track",
+    "taxonomy",
+    "stage",
+    "scenario"
+  ],
+  "type": "object"
+}

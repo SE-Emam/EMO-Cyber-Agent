@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/extension-provenance.schema.json",
+  "title": "ExtensionProvenance flat contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "distribution_name",
+    "distribution_version",
+    "artifact_digest",
+    "source_url",
+    "source_revision",
+    "build_provenance",
+    "publisher_identity",
+    "released_at",
+    "license",
+    "dependency_provenance"
+  ],
+  "properties": {
+    "distribution_name": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "distribution_version": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "artifact_digest": {
+      "type": "string",
+      "maxLength": 128
+    },
+    "source_url": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "source_revision": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "build_provenance": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "publisher_identity": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "released_at": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "license": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "dependency_provenance": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 200
+      }
+    }
+  }
+}

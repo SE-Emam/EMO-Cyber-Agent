@@ -1,0 +1,36 @@
+{
+  "case_id": "agent-08-parity-audit-tests",
+  "title": "Agent parity on test tree",
+  "track": "parity",
+  "taxonomy": "api_security",
+  "stage": "parity",
+  "section": "agent",
+  "visibility": "internal",
+  "split": "development",
+  "scenario": {
+    "kind": "parity_audit",
+    "payload": {
+      "target": "tests"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "mismatched_fields",
+      "match": "absent"
+    },
+    {
+      "kind": "state",
+      "subject": "failed_interfaces",
+      "match": "absent"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "agent-08-parity-audit-tests"
+  },
+  "notes": "",
+  "tags": [
+    "parity"
+  ]
+}

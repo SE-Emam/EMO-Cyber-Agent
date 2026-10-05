@@ -1,0 +1,35 @@
+{
+  "case_id": "ver-05-coverage-limited",
+  "title": "Verification coverage limited",
+  "track": "reasoning",
+  "taxonomy": "configuration",
+  "stage": "coverage",
+  "section": "verification",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "coverage",
+    "payload": {
+      "controls": {
+        "positive": "PRESENT",
+        "negative": "ABSENT"
+      }
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "coverage",
+      "match": "exact",
+      "value": "LIMITED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "ver-05-coverage-limited"
+  },
+  "notes": "",
+  "tags": [
+    "coverage"
+  ]
+}

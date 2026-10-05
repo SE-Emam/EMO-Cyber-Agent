@@ -1,0 +1,13 @@
+# EMO-Cyber-Agent project ignores (scoped to this subtree; repo root is the parent monorepo)
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+*.log

@@ -1,0 +1,50 @@
+{
+  "case_id": "mcp-06-evidence-provenance",
+  "title": "MCP evidence keeps provenance",
+  "track": "reasoning",
+  "taxonomy": "data_exposure",
+  "stage": "evidence",
+  "section": "mcp",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "evidence",
+    "payload": {
+      "facts": [
+        {
+          "source_tool": "mcp-audit",
+          "location": "proj/a",
+          "content_hash": "abababababababab",
+          "provenance": {
+            "labels": [
+              "static"
+            ],
+            "collected_by": "adapter"
+          }
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "evidence",
+      "subject": "provenance_complete",
+      "match": "true",
+      "value": true
+    },
+    {
+      "kind": "evidence",
+      "subject": "evidence_count",
+      "match": "exact",
+      "value": 1
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mcp-06-evidence-provenance"
+  },
+  "notes": "",
+  "tags": [
+    "evidence"
+  ]
+}

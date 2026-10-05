@@ -1,0 +1,51 @@
+task:
+  id: pre-release-security-review
+  title: Pre-Release Security Review
+  version: 1.0.0
+  type: audit
+  objective: Final read-only gate before release covering auth, data, dependencies, secrets, and limits.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: []
+skills:
+  required: [authentication, authorization, secrets, dependency-security, business-logic]
+  optional: [supply-chain, configuration, data-exposure]
+capabilities:
+  required: [repository.read, repository.list, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: [semgrep, trivy]
+  optional: [osv-scanner, gitleaks]
+methodology:
+  phases: [reconnaissance, attack-surface, authentication, authorization, data-access, dependencies, secrets, verification]
+  procedures:
+    - run the release checklist of skills in scope order
+    - record limitations explicitly
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - all in-scope skills executed or marked not-applicable with reasons
+  - limitations section complete
+deliverables: [observations, candidates]
+report:
+  template: pre-release-security
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

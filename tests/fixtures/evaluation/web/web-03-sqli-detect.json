@@ -1,0 +1,43 @@
+{
+  "case_id": "web-03-sqli-detect",
+  "title": "Web sql string building detection",
+  "track": "detection",
+  "taxonomy": "injection",
+  "stage": "detection",
+  "section": "web",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "query = f\"SELECT * FROM users WHERE id = {user_id}\""
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_present",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "sql_injection"
+      }
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "secret_literal"
+      }
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "web-03-sqli-detect"
+  },
+  "notes": "",
+  "tags": [
+    "sql",
+    "static"
+  ]
+}

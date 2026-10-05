@@ -1,0 +1,42 @@
+{
+  "case_id": "ver-07-surface-detect",
+  "title": "Verification surface sink surfaced",
+  "track": "detection",
+  "taxonomy": "injection",
+  "stage": "surface",
+  "section": "verification",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "node.innerHTML = untrusted"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_present",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "injection_sink"
+      }
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "ssrf"
+      }
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "ver-07-surface-detect"
+  },
+  "notes": "",
+  "tags": [
+    "surface"
+  ]
+}

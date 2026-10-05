@@ -1,0 +1,15 @@
+method:
+  categories:
+  - data_exposure
+  description: Categorizes data exposure hypotheses only.
+  method_id: official-extension-method
+  name: Official Extension Method
+  provenance:
+    source: official
+  version: 1.0.0
+rules:
+- category: data_exposure
+  description: Flags components that handle sensitive fields.
+  method: official-extension-method
+  rule_id: official-extension-rule
+  subject_kind: component

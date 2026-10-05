@@ -1,0 +1,55 @@
+{
+  "case_id": "mem-04-correlate-memory",
+  "title": "Memory pair correlated",
+  "track": "reasoning",
+  "taxonomy": "data_exposure",
+  "stage": "correlation",
+  "section": "memory",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "correlate",
+    "payload": {
+      "evidence": [
+        {
+          "source_tool": "memory-store",
+          "location": "cache/entry-2",
+          "content_hash": "eeeeeeeeeeeeeeee",
+          "summary": "cached credential marker",
+          "provenance": {
+            "labels": [
+              "observed"
+            ]
+          }
+        },
+        {
+          "source_tool": "repository",
+          "location": "cache/entry-2",
+          "content_hash": "ffffffffffffffff",
+          "summary": "cache file tracked",
+          "provenance": {
+            "labels": [
+              "tracked-file"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "stored_evidence",
+      "match": "exact",
+      "value": 2
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mem-04-correlate-memory"
+  },
+  "notes": "",
+  "tags": [
+    "correlation"
+  ]
+}

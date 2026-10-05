@@ -1,0 +1,42 @@
+{
+  "case_id": "authz-11-scope-target-echo",
+  "title": "Authorization scope echoes target",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "scope",
+    "payload": {
+      "audit_id": "audit-a1",
+      "target": "proj/c",
+      "scope": [
+        "proj/c"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "target",
+      "match": "exact",
+      "value": "proj/c"
+    },
+    {
+      "kind": "scope_behavior",
+      "subject": "in_scope",
+      "match": "true",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-11-scope-target-echo"
+  },
+  "notes": "",
+  "tags": [
+    "scope"
+  ]
+}

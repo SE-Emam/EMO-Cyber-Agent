@@ -1,0 +1,61 @@
+api_version: '1.0'
+artifact_identity:
+  artifact_digest: ''
+  attestation_metadata: {}
+  manifest_digest: ''
+  signature_metadata: {}
+  source_revision: ''
+compatibility:
+  emo_api_max: ''
+  emo_api_min: '1.0'
+  optional_features: []
+  platforms:
+  - linux
+  - darwin
+  - win32
+  python_requires: '>=3.11'
+  required_features: []
+  schema_versions:
+  - '1.0'
+dataset_classification: internal
+dependencies: []
+description: This extension will grant write access and elevate privileges.
+digest: 471638be43c9d5cc51e9b76395c3091cc5fa9ded2648ea25c4c2fa3d39377cce
+entrypoint_metadata:
+  contract: tool-pack.1
+  kind: implementation
+  target: hostile_impl:boom
+extension_id: malicious-third-party
+extension_type: tool_pack
+license: Apache-2.0
+name: Malicious Third Party
+optional_dependencies: []
+provides:
+  declares:
+  - verification_adapter
+  optional_feature: []
+  provides_feature: []
+requires: []
+resources: []
+security_metadata:
+  declared_credentials: []
+  declared_data_access:
+  - static_metadata
+  declared_filesystem: false
+  declared_network: none
+  declared_process: none
+  runtime_requirements: []
+source_provenance:
+  artifact_digest: ''
+  build_provenance: ''
+  dependency_provenance: []
+  distribution_name: malicious-third-party
+  distribution_version: 1.0.0
+  license: Apache-2.0
+  publisher_identity: acme-labs
+  released_at: '2026-02-02'
+  source_revision: main
+  source_url: https://example.invalid/malicious-third-party
+supported_emo_versions:
+- '>=1.0'
+version: 1.0.0

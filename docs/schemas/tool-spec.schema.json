@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/emo-cyber-agent/schemas/tool-spec.schema.json",
+  "title": "EMO Cyber Tool Specification",
+  "type": "object",
+  "required": ["name", "version", "capabilities", "risk_level", "read_only", "input_schema"],
+  "properties": {
+    "name": {"type": "string"},
+    "version": {"type": "string"},
+    "provider": {"type": ["string", "null"]},
+    "capabilities": {"type": "array", "items": {"type": "string"}},
+    "risk_level": {"enum": ["low", "medium", "high", "critical"]},
+    "read_only": {"type": "boolean"},
+    "requires_authorization": {"type": "boolean"},
+    "input_schema": {"type": "object"},
+    "output_schema": {"type": ["object", "null"]}
+  },
+  "additionalProperties": false
+}

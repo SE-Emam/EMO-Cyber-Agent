@@ -1,0 +1,94 @@
+pack:
+  id: injection-security
+  name: Injection Security Pack
+  version: 1.0.0
+  purpose: Trace untrusted input from sources through propagation to sensitive sinks and record each path as evidence-backed hypothesis requiring verification.
+
+skills: [injection, backend-security]
+
+code_intelligence:
+  required: [dataflow, taint, symbols, db_relationships]
+
+evidence:
+  required: [file-evidence, tool-evidence, taint-path-record]
+
+verification:
+  methods: [static_confirmation, dataflow_confirmation]
+
+applicable_assets: [repo, api]
+security_domains: [injection]
+
+methodology:
+  - inventory untrusted sources from code intelligence output
+  - list sensitive sinks reachable from project code
+  - record each source-to-sink path with locations and digests
+  - treat every path as hypothesis input, never as verdict
+
+checks:
+  - id: sql-taint-review
+    title: SQL sink taint review
+    methodology:
+      - collect http_parameter, request_body, and external_input sources
+      - collect sql_execution sinks with call locations
+      - record propagation nodes between each source-sink pair
+    evidence_required: [taint-path-record]
+    evidence_sufficient: [source-record, sink-record, path-locations, call-edge-record]
+    evidence_missing: [unresolved-call-edges, missing-db-relation]
+    verification_required: [dataflow_confirmation, static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [dataflow, taint]
+    source_kinds: [http_parameter, request_body, external_input]
+    sink_kinds: [sql_execution]
+    hypothesis_template: A path from {source} to {sink} may allow untrusted input to reach query construction; requires verification.
+
+  - id: command-sink-review
+    title: Process-spawning sink review
+    methodology:
+      - list process-spawning call sites with argument locations
+      - trace each argument to its origin symbol
+      - record origins that derive from untrusted input
+    evidence_required: [sink-record, argument-origin-record]
+    evidence_sufficient: [sink-record, origin-symbol, location-record]
+    evidence_missing: [dynamic-dispatch-target]
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [symbols, call_graph]
+    source_kinds: [http_parameter, environment, file_input]
+    sink_kinds: [shell_process]
+    hypothesis_template: Call site {sink} may receive untrusted arguments; requires verification.
+
+  - id: template-deserialization-review
+    title: Template and deserialization boundary review
+    methodology:
+      - list template rendering and deserialization call sites
+      - record data kinds flowing into each site
+      - flag untrusted-data transitions for verification
+    evidence_required: [sink-record, data-kind-record]
+    evidence_sufficient: [sink-record, source-record]
+    evidence_missing: [framework-internal-flow]
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: SUSPECTED
+    codeintel_needs: [symbols, dataflow]
+    source_kinds: [http_parameter, request_body, file_input]
+    sink_kinds: [template_engine, deserialization, dynamic_code_execution]
+    hypothesis_template: Rendering or decoding at {sink} may consume untrusted data; requires verification.
+
+stop_conditions: [scope-exhausted, budget-exhausted, no-progress]
+limitations:
+  - Taint paths are facts, never verdicts.
+  - Dynamic dispatch targets may be unresolved; absence of a path is not absence of risk.
+  - Database relation coverage depends on provider capabilities.
+
+security:
+  requested: [repository.read, repository.search, code.dataflow.read, code.symbols.read]
+  denied: [repository.write, database.write, destructive]
+
+allowed_tools: [repository.read, repository.search, semgrep]
+
+provenance: {source: official}

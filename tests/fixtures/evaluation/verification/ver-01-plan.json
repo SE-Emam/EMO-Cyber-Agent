@@ -1,0 +1,47 @@
+{
+  "case_id": "ver-01-plan",
+  "title": "Verification static plan produced",
+  "track": "reasoning",
+  "taxonomy": "configuration",
+  "stage": "verification",
+  "section": "verification",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "verify",
+    "payload": {
+      "candidate": {
+        "hypothesis": "helper leaks material",
+        "evidence_ids": [
+          "ev-1"
+        ]
+      },
+      "method": "static_confirmation",
+      "kind": "repository",
+      "locator": "proj/a",
+      "audit_id": "audit-a1"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "status",
+      "match": "exact",
+      "value": "planned"
+    },
+    {
+      "kind": "state",
+      "subject": "safety_level",
+      "match": "exact",
+      "value": "passive"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "ver-01-plan"
+  },
+  "notes": "",
+  "tags": [
+    "verification"
+  ]
+}

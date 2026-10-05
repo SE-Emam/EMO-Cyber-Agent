@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/tool-pack.schema.json",
+  "title": "ToolPack flat contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["pack_id", "name", "version", "description", "entrypoint", "definitions"],
+  "properties": {
+    "pack_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9\\-]{1,78}[a-z0-9]$"},
+    "name": {"type": "string", "minLength": 1, "maxLength": 120},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "vendor": {"type": "string"},
+    "description": {"type": "string", "minLength": 1},
+    "tool_version_range": {"type": "string"},
+    "maintenance_status": {"type": "string", "enum": ["active", "security_only", "deprecated", "unknown"]},
+    "license": {"type": "string"},
+    "source_provenance": {"type": "string"},
+    "entrypoint": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._\\-]{0,63}$"},
+    "supported_platforms": {"type": "array", "items": {"type": "string"}},
+    "supported_targets": {"type": "array", "items": {"type": "string"}},
+    "definitions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["definition_id", "tool_id", "mode", "adapter", "capabilities", "runtime"],
+        "properties": {
+          "definition_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9\\-]{1,78}[a-z0-9]$"},
+          "tool_id": {"type": "string", "minLength": 1},
+          "tool_capability": {"type": "string"},
+          "mode": {"type": "string", "minLength": 1},
+          "version_range": {"type": "string"},
+          "adapter": {"type": "string", "minLength": 1},
+          "capabilities": {"type": "array", "items": {"type": "string"}},
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "type"],
+                  "properties": {
+                    "name": {"type": "string", "pattern": "^[a-z_]{1,40}$"},
+                    "type": {"type": "string", "enum": ["string", "integer", "boolean", "path", "ref", "enum", "snapshot_id"]},
+                    "required": {"type": "boolean"},
+                    "description": {"type": "string"},
+                    "allowed_values": {"type": "array", "items": {"type": "string"}},
+                    "max_length": {"type": "integer"},
+                    "min_value": {"type": ["integer", "null"]},
+                    "max_value": {"type": ["integer", "null"]}
+                  }
+                }
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "record_kinds": {"type": "array", "items": {"type": "string"}},
+              "retains_raw": {"type": "boolean"},
+              "raw_limit": {"type": "integer"},
+              "redaction": {"type": "boolean"}
+            }
+          },
+          "runtime": {
+            "type": "object",
+            "properties": {
+              "entrypoint": {"type": "string"},
+              "timeout_s": {"type": "integer"},
+              "stdout_limit": {"type": "integer"},
+              "stderr_limit": {"type": "integer"},
+              "cwd_scoped": {"type": "boolean"},
+              "env_allowlist": {"type": "array", "items": {"type": "string"}}
+            }
+          },
+          "network": {"type": "string", "enum": ["network_none", "network_required", "network_optional"]},
+          "supported_targets": {"type": "array", "items": {"type": "string"}},
+          "snapshot_binding": {"type": "boolean"},
+          "executable": {"type": "boolean"},
+          "fixed_args": {"type": "array", "items": {"type": "string"}},
+          "value_flags": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "network_default": {"type": "string"},
+    "filesystem_read_only": {"type": "boolean"},
+    "resource_limits": {"type": "object"},
+    "secret_handling": {"type": "string"},
+    "redaction_rules": {"type": "array", "items": {"type": "string"}},
+    "evidence_mapping": {"type": "object"},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "provenance": {"type": "object"}
+  }
+}

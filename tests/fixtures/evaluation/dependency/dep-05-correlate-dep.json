@@ -1,0 +1,61 @@
+{
+  "case_id": "dep-05-correlate-dep",
+  "title": "Dependency facts stored twice",
+  "track": "reasoning",
+  "taxonomy": "dependency",
+  "stage": "correlation",
+  "section": "dependency",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "correlate",
+    "payload": {
+      "evidence": [
+        {
+          "source_tool": "osv-scanner",
+          "location": "requirements.txt",
+          "content_hash": "aaaaaaaaaaaaaaaa",
+          "summary": "vulnerable dependency reported",
+          "provenance": {
+            "labels": [
+              "dependency-cve"
+            ]
+          }
+        },
+        {
+          "source_tool": "repository",
+          "location": "requirements.txt",
+          "content_hash": "bbbbbbbbbbbbbbbb",
+          "summary": "manifest tracked",
+          "provenance": {
+            "labels": [
+              "tracked-file"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "stored_evidence",
+      "match": "exact",
+      "value": 2
+    },
+    {
+      "kind": "state",
+      "subject": "conflict_count",
+      "match": "exact",
+      "value": 0
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "dep-05-correlate-dep"
+  },
+  "notes": "",
+  "tags": [
+    "correlation"
+  ]
+}

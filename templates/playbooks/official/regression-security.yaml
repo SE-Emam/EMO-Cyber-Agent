@@ -1,0 +1,48 @@
+playbook:
+  id: regression-security
+  title: Regression Security
+  version: 1.0.0
+  type: security
+  objective: Confirm previously recorded candidates and re-verify fixed surfaces without re-auditing the whole tree.
+  description: Focused regression workflow with conditional race-condition follow-up for timing-sensitive fixes.
+tasks:
+  required: [regression-security-review]
+  optional: [race-condition-review]
+skills:
+  required: [code-review-security]
+  optional: [race-conditions, business-logic]
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+capabilities:
+  requested: [repository.read, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [regression-security-review]
+  conditions:
+    - when_field: candidate.status
+      operator: ==
+      value: NEEDS_VERIFICATION
+      select_tasks: [race-condition-review]
+  max_tasks: 8
+  max_iterations: 2
+evidence:
+  required: [repository_identity, file-evidence, fingerprint-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: regression-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Prior candidates re-checked against current tree.
+  - Fix confirmations recorded with evidence references.
+  - Limitations recorded in the report.
+provenance: {source: official}

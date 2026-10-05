@@ -1,0 +1,50 @@
+task:
+  id: container-security-review
+  title: Container Security Review
+  version: 1.0.0
+  type: review
+  objective: Review container definitions for image, user, secret, and runtime risks, read-only.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: []
+skills:
+  required: [container-security, configuration]
+  optional: [secrets]
+capabilities:
+  required: [repository.read, repository.list]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: []
+  optional: [trivy]
+methodology:
+  phases: [reconnaissance, configuration, verification]
+  procedures:
+    - inventory container files and base images
+    - record user, secret, and runtime facts
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [configuration_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - container definitions inventoried with evidence
+deliverables: [observations]
+report:
+  template: security-audit
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

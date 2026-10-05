@@ -1,0 +1,53 @@
+task:
+  id: deep-security-audit
+  title: Deep Security Audit
+  version: 1.0.0
+  type: audit
+  objective: Perform a full read-only security audit across code, dependencies, secrets, and data-access layers.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: []
+skills:
+  required: [authentication, authorization, api-security, secrets, dependency-security, supply-chain, business-logic]
+  optional: [cryptography, configuration]
+capabilities:
+  required: [repository.read, repository.list, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: [semgrep]
+  optional: [trivy, osv-scanner, gitleaks]
+methodology:
+  phases: [reconnaissance, attack-surface, authentication, authorization, data-access, dependencies, secrets, verification]
+  procedures:
+    - inventory targets and entrypoints
+    - collect read-only facts per skill
+    - correlate across sources
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - auth paths inspected
+  - dependency scan completed
+  - high-confidence candidates verified or marked needs-verification
+deliverables: [observations, candidates]
+report:
+  template: security-audit
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

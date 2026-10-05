@@ -1,0 +1,18 @@
+skill:
+  description: Read-only methodology shipped as an extension.
+  domain: application-security
+  evidence_requirements:
+  - observation
+  methodology:
+  - Map entry points
+  - Inspect handling
+  name: Official Extension Skill
+  objectives:
+  - Enumerate inputs
+  - Record evidence
+  security_constraints:
+  - read-only
+  skill_id: official-extension-skill
+  triggers:
+  - audit
+  version: 1.0.0

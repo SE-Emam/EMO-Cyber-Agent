@@ -1,0 +1,44 @@
+playbook:
+  id: container-security-audit
+  title: Container Security Audit
+  version: 1.0.0
+  type: security
+  objective: Audit container definitions, base images, and dependency surfaces using read-only inspection.
+  description: Container review with dependency follow-up.
+tasks:
+  required: [container-security-review, dependency-audit]
+  optional: []
+skills:
+  required: [container-security, dependency-security]
+  optional: [configuration, supply-chain]
+tools:
+  required: [trivy]
+  optional: [semgrep, osv-scanner]
+capabilities:
+  requested: [repository.read, repository.list, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [container-security-review, dependency-audit]
+  conditions: []
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: container-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Container definitions inventoried.
+  - Base-image and dependency risks recorded with evidence references.
+  - Limitations recorded in the report.
+provenance: {source: official}

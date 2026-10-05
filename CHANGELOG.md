@@ -1,0 +1,72 @@
+# Changelog
+
+## 0.1.0 — Final Release (ECA-T016)
+
+Release gate: `reports/development/ECA-T016-release-security-assessment.md`
+(decision PASS; manifest `release/release-manifest.json`).
+
+- MCP stdio adapter (6 high-level tools) and universal CLI (8 commands,
+  documented exit codes, stdout/stderr split, `--version` flag).
+- Extension ecosystem (POST-RC-014): manifest contract, digest-bound
+  identity, host-side trust, compatibility, provenance, conflicts,
+  deterministic resolver, gated loader, read-only CLI/MCP surfaces.
+- Evaluation lab (POST-RC-013): blind corpus, scoring runner, oracles,
+  metric pools, threshold gates, cross-interface parity (all green).
+- Packaging: wheel+sdist with 36 schemas, 2 policies, 94-file official
+  catalog, LICENSE; version-consistent metadata (Core Metadata 2.6,
+  SPDX Apache-2.0); `pyyaml`/`jsonschema` promoted to runtime
+  dependencies (base installs load all content).
+- Verification: 1401 tests green (1350 unit + 51 release), 36/36 schemas,
+  ruff clean on release scope, OSV/Trivy 0 vulnerabilities, no shipped
+  secrets, 12/12 invariants PASS from the installed artifact.
+
+Security fixes (not hidden): execution decisions are now target- and
+policy-version-bound; path/ref validators deny null bytes, percent- and
+double-encoded traversal, and drive-letter paths; Markdown escaping
+collapses newlines in single-line contexts.
+
+Limitations: audit persistence, live runners/harnesses, MCP-over-HTTP,
+progress streaming, and real-network integrations are explicitly out of
+this release. No scores, no remediation automation, no exploit
+capabilities — by design, permanently.
+
+## 0.1.0-rc1 — Release Candidate 1
+
+Delivered through ECA-T001…ECA-T016 (reports in `reports/development/`):
+
+- Domain Core + state machine; PolicyEngine (default-deny) + ToolRegistry.
+- Repository + Supabase read-only integrations (scope-bound, redacted).
+- Deterministic toolchain: semgrep/trivy/osv-scanner/gitleaks behind an
+  argv-only, confined, secret-free execution boundary.
+- Evidence graph + deterministic correlation; reasoning loop with bounded
+  budgets and no model authority; verification layer (plans, never
+  exploits); finding lifecycle with gated promotion; JSON/JSONL/Markdown
+  reporting (projection only, no scores).
+- MCP stdio adapter (5 high-level tools) and universal CLI (7 commands,
+  documented exit codes, stdout/stderr split).
+- Security hardening campaign (ECA-T015): 3 real boundary weaknesses
+  found and fixed in-boundary (execution-decision binding, encoded path
+  traversal, report newline confinement) with regression tests.
+- Packaging: wheel+sdist with bundled schemas/policies/LICENSE,
+  version-consistent metadata, Apache-2.0 license.
+
+Security fixes (not hidden): execution decisions are now target- and
+policy-version-bound; path/ref validators deny null bytes, percent- and
+double-encoded traversal, and drive-letter paths; Markdown escaping
+collapses newlines in single-line contexts.
+
+Limitations: audit persistence, live runners/harnesses, MCP-over-HTTP,
+progress streaming, and real-network integrations are release-integration
+work, explicitly out of this RC. No scores, no remediation automation,
+no exploit capabilities — by design, permanently.
+
+## 0.1.0-foundation
+
+- Initial repository foundation.
+- Project charter and requirements.
+- Architecture and security methodology.
+- MCP/CLI/Python API contracts.
+- Tool and permission model.
+- Versioned JSON schemas.
+- Implementation phases and evaluation plan.
+- Model-agnostic provider interface.

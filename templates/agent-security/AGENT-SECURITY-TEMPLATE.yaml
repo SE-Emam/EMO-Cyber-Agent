@@ -1,0 +1,18 @@
+# AGENT-SECURITY-TEMPLATE — POST-RC-010 starter contract.
+#
+# A declarative starting point: scope + methods + declared MCP
+# servers. Planning input only; never executable. Facts still
+# come from declared architecture metadata, never from prose.
+
+agent_template:
+  id: my-agent-starter
+  name: My Agent Starter
+  version: 1.0.0
+  scope: [assistant-agent]
+  methods: [stride]
+  declared_servers:
+    - id: main-server
+      transport: stdio
+      protocol_version: unknown
+
+provenance: {source: official}

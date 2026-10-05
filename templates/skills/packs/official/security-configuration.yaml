@@ -1,0 +1,72 @@
+pack:
+  id: security-configuration
+  name: Security Configuration Pack
+  version: 1.0.0
+  purpose: Review insecure defaults, debug exposure, transport settings, cross-origin boundaries, and framework security flags with environment separation.
+
+skills: [configuration, backend-security]
+
+code_intelligence:
+  required: [symbols]
+
+evidence:
+  required: [file-evidence, config-record]
+
+verification:
+  methods: [configuration_confirmation, static_confirmation]
+
+applicable_assets: [repo]
+security_domains: [configuration]
+
+methodology:
+  - inventory configuration surfaces with file locations
+  - record defaults for debug, transport, and boundary flags
+  - separate environment-provided from file-stored settings
+
+checks:
+  - id: default-flag-review
+    title: Insecure default review
+    methodology:
+      - list debug and permissive defaults with locations
+      - record production-vs-development separation
+    evidence_required: [config-record]
+    evidence_sufficient: [config-record, location-record]
+    evidence_missing: [runtime-override-gap]
+    verification_required: [configuration_confirmation]
+    verification_safety: passive
+    high_risk: false
+    entry_level: OBSERVED
+    codeintel_needs: [symbols]
+    source_kinds: []
+    sink_kinds: []
+    hypothesis_template: Default at {source} may weaken production posture; requires verification.
+
+  - id: boundary-setting-review
+    title: Cross-origin and transport boundary review
+    methodology:
+      - record cross-origin and transport settings per surface
+      - note wildcard and plaintext shapes as hypotheses
+    evidence_required: [config-record]
+    evidence_sufficient: [config-record, value-record]
+    evidence_missing: [proxy-termination-gap]
+    verification_required: [configuration_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: SUSPECTED
+    codeintel_needs: [symbols]
+    source_kinds: []
+    sink_kinds: []
+    hypothesis_template: Boundary setting at {source} may permit unintended access; requires verification.
+
+stop_conditions: [scope-exhausted, budget-exhausted, no-progress]
+limitations:
+  - Runtime overrides and proxy-terminated transport need live confirmation.
+  - Framework version defaults change; records pin the observed version.
+
+security:
+  requested: [repository.read, code.symbols.read]
+  denied: [repository.write, database.write, destructive]
+
+allowed_tools: [repository.read, semgrep]
+
+provenance: {source: official}

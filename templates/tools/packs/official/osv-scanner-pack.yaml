@@ -1,0 +1,72 @@
+pack:
+  id: osv-scanner-pack
+  name: OSV-Scanner Tool Pack
+  version: 1.0.0
+  vendor: Google / OSV
+  description: Read-only dependency extraction and vulnerability matching producing structured vulnerability evidence. Only the scanning portion is exposed; no fix operation exists in this pack. Requires network for database matching and fails clearly offline.
+  tool_version_range: ">=1.0.0"
+  maintenance_status: active
+  license: Apache-2.0
+  source_provenance: upstream release channel
+  entrypoint: osv-scanner
+  supported_platforms: [linux, darwin]
+  supported_targets: [repo]
+
+definitions:
+  - id: osv-scan
+    tool_id: osv-scanner
+    tool_capability: scanner.network.read
+    mode: scan
+    version_range: ">=1.0.0"
+    adapter: osv-scanner
+    capabilities: [DEPENDENCY_SCAN, VULNERABILITY_LOOKUP, SBOM_SCAN]
+    inputs:
+      fields:
+        - name: snapshot_id
+          type: snapshot_id
+          required: false
+          description: Snapshot binding for manifest-state isolation.
+    outputs:
+      record_kinds: [observation, artifact]
+      retains_raw: false
+      raw_limit: 4096
+      redaction: true
+    runtime:
+      entrypoint: osv-scanner
+      timeout_s: 300
+      stdout_limit: 131072
+      stderr_limit: 16384
+      cwd_scoped: true
+      env_allowlist: []
+    network: network_required
+    supported_targets: [repo]
+    snapshot_binding: true
+    executable: true
+    fixed_args: []
+    value_flags: []
+
+network:
+  default: network_required
+
+filesystem:
+  read_only: true
+
+resource_limits:
+  max_stdout_bytes: 131072
+  timeout_s: 300
+
+secrets:
+  handling: redact-and-never-persist
+  redaction_rules: [credential-patterns, token-patterns]
+
+evidence:
+  mapping:
+    observation: observation_to_evidence_fields
+    artifact: observation_to_evidence_fields
+
+limitations:
+  - Network is required for database matching; offline runs fail deterministically instead of returning partial data.
+  - Vulnerability records describe upstream metadata, never EMO verdicts.
+  - No fix operation is exposed by this pack.
+
+provenance: {source: official}

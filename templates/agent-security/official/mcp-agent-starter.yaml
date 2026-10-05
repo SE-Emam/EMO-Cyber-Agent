@@ -1,0 +1,12 @@
+agent_template:
+  id: mcp-agent-starter
+  name: MCP Agent Starter
+  version: 1.0.0
+  scope: [mcp-tools, delegation]
+  methods: [stride, data-centric]
+  declared_servers:
+    - id: data-server
+      transport: http
+      protocol_version: 2025-06-18
+
+provenance: {source: official}

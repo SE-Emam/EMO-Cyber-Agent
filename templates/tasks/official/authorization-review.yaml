@@ -1,0 +1,50 @@
+task:
+  id: authorization-review
+  title: Authorization Review
+  version: 1.0.0
+  type: review
+  objective: Review object-level and role-based authorization decisions, read-only.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: []
+skills:
+  required: [authorization]
+  optional: [authentication, api-security]
+capabilities:
+  required: [repository.read, repository.search]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: [semgrep]
+  optional: []
+methodology:
+  phases: [reconnaissance, authorization, verification]
+  procedures:
+    - map trust boundaries and ownership checks
+    - flag missing authorization with evidence
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - authorization decisions mapped with evidence
+deliverables: [observations]
+report:
+  template: api-security
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

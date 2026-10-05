@@ -1,0 +1,48 @@
+playbook:
+  id: api-security-deep-audit
+  title: API Security Deep Audit
+  version: 1.0.0
+  type: security
+  objective: Audit API entry points, authentication, authorization, input validation, data exposure, and downstream data paths using read-only methods.
+  description: Sequential API audit. No active network verification unless Core policy allows it.
+tasks:
+  required: [api-security-review, authentication-review, authorization-review]
+  optional: [database-security-review]
+skills:
+  required: [api-security, authentication, authorization]
+  optional: [database-security, secrets]
+tools:
+  required: [semgrep]
+  optional: [trivy, gitleaks]
+capabilities:
+  requested: [repository.read, repository.list, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [api-security-review, authentication-review, authorization-review]
+  conditions:
+    - when_field: evidence.category
+      operator: ==
+      value: data-access
+      select_tasks: [database-security-review]
+  max_tasks: 12
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: api-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - All API entry points inventoried.
+  - Authorization checks inspected per endpoint.
+  - Limitations recorded in the report.
+provenance: {source: official}

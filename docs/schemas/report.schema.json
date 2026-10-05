@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/emo-cyber-agent/schemas/report.schema.json",
+  "title": "EMO Cyber Audit Report",
+  "description": "Export contract for AuditReport projections. Domain model is the source of truth; this schema validates the serialized form. report_version 1.0.",
+  "type": "object",
+  "required": ["metadata", "summary", "findings"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": ["report_version", "schema_version", "generated_at", "audit_id"],
+      "properties": {
+        "report_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"},
+        "schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"},
+        "emo_version": {"type": "string"},
+        "generated_at": {"type": "string"},
+        "audit_id": {"type": "string", "minLength": 1},
+        "project_identity": {"type": "string"},
+        "policy_version": {"type": "string"},
+        "correlation_rule_version": {"type": "string"},
+        "classification_version": {"type": "string"},
+        "scope": {"type": "object"},
+        "limitations": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total_findings"],
+      "properties": {
+        "total_findings": {"type": "integer", "minimum": 0},
+        "confirmed": {"type": "integer", "minimum": 0},
+        "supported": {"type": "integer", "minimum": 0},
+        "refuted": {"type": "integer", "minimum": 0},
+        "inconclusive": {"type": "integer", "minimum": 0},
+        "blocked": {"type": "integer", "minimum": 0},
+        "suppressed": {"type": "integer", "minimum": 0},
+        "duplicate": {"type": "integer", "minimum": 0},
+        "resolved": {"type": "integer", "minimum": 0},
+        "by_severity": {"type": "object"}
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["finding_id", "audit_id", "title", "description", "category", "severity", "confidence", "status", "candidate_id", "fingerprint"],
+        "properties": {
+          "finding_id": {"type": "string", "minLength": 1},
+          "audit_id": {"type": "string", "minLength": 1},
+          "asset_id": {"type": ["string", "null"]},
+          "title": {"type": "string", "minLength": 1},
+          "description": {"type": "string"},
+          "category": {"type": "string"},
+          "severity": {"enum": ["info", "low", "medium", "high", "critical"]},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "status": {"type": "string"},
+          "cwe": {"type": ["string", "null"]},
+          "owasp": {"type": ["string", "null"]},
+          "affected_locations": {"type": "array", "items": {"type": "string"}},
+          "candidate_id": {"type": "string"},
+          "verification_ids": {"type": "array", "items": {"type": "string"}},
+          "observation_ids": {"type": "array", "items": {"type": "string"}},
+          "evidence": {"type": "array"},
+          "verifications": {"type": "array"},
+          "observed_issue": {"type": "string"},
+          "root_cause": {"type": "string"},
+          "impact": {"type": "string"},
+          "remediation": {"type": ["object", "null"]},
+          "references": {"type": "array", "items": {"type": "string"}},
+          "fingerprint": {"type": "string"},
+          "provenance": {"type": "object"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "non_reportable": {"type": "array"}
+  },
+  "additionalProperties": false
+}

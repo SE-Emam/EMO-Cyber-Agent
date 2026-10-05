@@ -1,0 +1,31 @@
+"""Security skill pack errors — POST-RC-006."""
+
+from __future__ import annotations
+
+from enum import StrEnum
+
+
+class PackErrorCode(StrEnum):
+    NOT_FOUND = "PACK_NOT_FOUND"
+    INVALID = "PACK_INVALID"
+    VERSION_INVALID = "PACK_VERSION_INVALID"
+    REFERENCE_INVALID = "PACK_REFERENCE_INVALID"
+    SKILL_MISSING = "PACK_SKILL_MISSING"
+    TOOL_MISSING = "PACK_TOOL_MISSING"
+    CAPABILITY_UNKNOWN = "PACK_CAPABILITY_UNKNOWN"
+    CAPABILITY_ESCALATION = "PACK_CAPABILITY_ESCALATION"
+    VERDICT_AUTHORITY = "PACK_VERDICT_AUTHORITY"
+    RESULT_BIAS = "PACK_RESULT_BIAS"
+    UNSAFE = "PACK_UNSAFE"
+    UNTRUSTED = "PACK_UNTRUSTED"
+    DUPLICATE = "PACK_DUPLICATE"
+    DEPENDENCY_CYCLE = "PACK_DEPENDENCY_CYCLE"
+    CODEINTEL_UNKNOWN = "PACK_CODEINTEL_UNKNOWN"
+    EVIDENCE_GAP = "PACK_EVIDENCE_GAP"
+    VERIFICATION_GAP = "PACK_VERIFICATION_GAP"
+
+
+class PackError(Exception):
+    def __init__(self, code: PackErrorCode, message: str):
+        super().__init__(f"{code.value}: {message}")
+        self.code = code

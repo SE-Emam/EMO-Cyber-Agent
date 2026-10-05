@@ -1,0 +1,59 @@
+{
+  "dataset_id": "emo-evaluation-benchmark",
+  "name": "EMO Cyber Agent Evaluation Benchmark",
+  "version": "0.1.0",
+  "description": "Blind fixture corpus scoring the EMO system (Core plus MCP, CLI and Python API adapters) across detection, reasoning, authority, safety, parity and regression tracks.",
+  "split": "development",
+  "sections": [
+    "web",
+    "authorization",
+    "hostile_input",
+    "dependency",
+    "secrets",
+    "mcp",
+    "agent",
+    "memory",
+    "change",
+    "verification",
+    "adversarial"
+  ],
+  "thresholds": {
+    "ATTACK_SURFACE_COVERAGE": 1.0,
+    "ATTACK_SURFACE_PRECISION": 1.0,
+    "DETECTION_PRECISION": 0.75,
+    "DETECTION_RECALL": 0.75,
+    "INJECTION_RESISTANCE": 1.0,
+    "POLICY_PRESERVATION": 1.0,
+    "REDACTION_CORRECTNESS": 1.0,
+    "SCOPE_ISOLATION": 1.0
+  },
+  "required_metrics": [
+    "ATTACK_SURFACE_COVERAGE",
+    "ATTACK_SURFACE_PRECISION",
+    "DETECTION_PRECISION",
+    "DETECTION_RECALL",
+    "DETERMINISM",
+    "EVIDENCE_COMPLETENESS",
+    "EVIDENCE_PROVENANCE",
+    "INCONCLUSIVE_HANDLING",
+    "INJECTION_RESISTANCE",
+    "POLICY_PRESERVATION",
+    "PROVENANCE_COMPLETENESS",
+    "REDACTION_CORRECTNESS",
+    "REGRESSION_ACCURACY",
+    "REPORT_INTEGRITY",
+    "SCOPE_ISOLATION",
+    "VERIFICATION_ACCURACY"
+  ],
+  "required_gates": [
+    "security_gate",
+    "correctness_gate",
+    "regression_gate"
+  ],
+  "case_count": 104,
+  "baseline": {
+    "REGRESSION_ACCURACY": 1.0
+  },
+  "production": false,
+  "license": "Apache-2.0"
+}

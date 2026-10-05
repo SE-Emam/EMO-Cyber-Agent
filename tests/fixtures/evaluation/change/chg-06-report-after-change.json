@@ -1,0 +1,38 @@
+{
+  "case_id": "chg-06-report-after-change",
+  "title": "Change report stays clean",
+  "track": "reasoning",
+  "taxonomy": "advisory_regression",
+  "stage": "report",
+  "section": "change",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "report",
+    "payload": {
+      "findings": []
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "finding_count",
+      "match": "exact",
+      "value": 0
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "leaked_secret",
+      "match": "exact",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "chg-06-report-after-change"
+  },
+  "notes": "",
+  "tags": [
+    "report"
+  ]
+}

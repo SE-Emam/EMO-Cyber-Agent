@@ -1,0 +1,44 @@
+playbook:
+  id: authentication-security
+  title: Authentication Security
+  version: 1.0.0
+  type: security
+  objective: Review authentication flows, credential handling, session semantics, and secret storage using read-only methods.
+  description: Focused authentication workflow with secret hygiene follow-up.
+tasks:
+  required: [authentication-review, secret-audit]
+  optional: []
+skills:
+  required: [authentication, secrets]
+  optional: [cryptography]
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+capabilities:
+  requested: [repository.read, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [authentication-review, secret-audit]
+  conditions: []
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, auth-flow, file-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: authentication-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - All login and session flows inspected.
+  - Credential storage reviewed with redaction preserved.
+  - Limitations recorded in the report.
+provenance: {source: official}

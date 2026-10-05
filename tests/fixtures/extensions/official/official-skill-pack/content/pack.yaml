@@ -1,0 +1,93 @@
+pack:
+  id: secrets-sensitive-data
+  name: Secrets and Sensitive Data Pack
+  version: 1.0.0
+  purpose: Locate credential-like literals, token patterns, and sensitive-data flows while ensuring raw secret material never becomes evidence content.
+
+skills: [secrets, configuration]
+
+code_intelligence:
+  required: [symbols]
+
+evidence:
+  required: [fingerprint-evidence, file-evidence]
+
+verification:
+  methods: [static_confirmation, configuration_confirmation]
+
+applicable_assets: [repo]
+security_domains: [secrets, configuration]
+
+methodology:
+  - scan tracked files for credential-like literals and token shapes
+  - record digests, locations, and provenance only
+  - trace secret-adjacent values toward logging and exposure points
+  - never persist raw secret values in any record
+
+checks:
+  - id: hardcoded-secret-review
+    title: Hard-coded secret review
+    methodology:
+      - list credential-like literals with file locations
+      - store digest and provenance for each indicator
+      - exclude raw values from every record
+    evidence_required: [fingerprint-evidence]
+    evidence_sufficient: [location-record, digest-record, provenance-record]
+    evidence_missing: [untracked-file-coverage]
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: SUSPECTED
+    codeintel_needs: [symbols]
+    source_kinds: [file_input, environment]
+    sink_kinds: []
+    hypothesis_template: Indicator at {source} resembles stored credential material; requires verification.
+
+  - id: secret-propagation-review
+    title: Secret propagation review
+    methodology:
+      - follow secret-adjacent symbols toward sinks
+      - record logging and external-transfer points reached
+      - redact values at every step
+    evidence_required: [dataflow-path-record]
+    evidence_sufficient: [origin-record, sink-record, redaction-note]
+    evidence_missing: [dynamic-flow-gap]
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [symbols, dataflow]
+    source_kinds: [environment, file_input]
+    sink_kinds: [filesystem, network_request]
+    hypothesis_template: Value from {source} may propagate toward {sink}; requires verification with redaction preserved.
+
+  - id: config-boundary-review
+    title: Configuration boundary review
+    methodology:
+      - separate environment-provided from file-stored configuration
+      - record debug and exposure-relevant flags
+      - note secret-handling paths in configuration
+    evidence_required: [file-evidence]
+    evidence_sufficient: [config-location, flag-record]
+    evidence_missing: [runtime-only-config]
+    verification_required: [configuration_confirmation]
+    verification_safety: passive
+    high_risk: false
+    entry_level: OBSERVED
+    codeintel_needs: [symbols]
+    source_kinds: [environment]
+    sink_kinds: []
+    hypothesis_template: Configuration at {source} may expose sensitive behavior; requires verification.
+
+stop_conditions: [scope-exhausted, budget-exhausted, no-progress]
+limitations:
+  - Raw secret material never becomes evidence content; only digests, locations, provenance.
+  - Untracked files and runtime-only configuration are out of view.
+
+security:
+  requested: [repository.read, repository.list, code.symbols.read]
+  denied: [repository.write, database.write, destructive]
+
+allowed_tools: [repository.read, repository.list, semgrep]
+
+provenance: {source: official}

@@ -1,0 +1,14 @@
+threat_template:
+  id: api-db-starter
+  name: API Database Starter
+  version: 1.0.0
+  methods: [stride, data-centric]
+  scope_assets:
+    - primary-database
+  declared_boundaries:
+    - kind: DATA_SENSITIVITY
+      basis: DECLARED
+      provenance: {declared_by: team, source: data-register}
+      protects: [primary-database]
+
+provenance: {source: official}

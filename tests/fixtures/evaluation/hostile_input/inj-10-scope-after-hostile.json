@@ -1,0 +1,36 @@
+{
+  "case_id": "inj-10-scope-after-hostile",
+  "title": "Hostile request still scope checked",
+  "track": "safety",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "hostile_input",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "scope",
+    "payload": {
+      "audit_id": "audit-a1",
+      "target": "proj/a",
+      "scope": [
+        "proj/a"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "scope_behavior",
+      "subject": "in_scope",
+      "match": "true",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "inj-10-scope-after-hostile"
+  },
+  "notes": "",
+  "tags": [
+    "scope"
+  ]
+}

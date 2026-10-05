@@ -1,0 +1,44 @@
+playbook:
+  id: infrastructure-security-audit
+  title: Infrastructure Security Audit
+  version: 1.0.0
+  type: security
+  objective: Audit infrastructure definitions, cloud configuration, and secret handling using read-only inspection.
+  description: Infrastructure review with cloud and secret follow-ups.
+tasks:
+  required: [infrastructure-review, cloud-security-review, secret-audit]
+  optional: []
+skills:
+  required: [infrastructure-as-code, cloud-security, secrets]
+  optional: [configuration, container-security]
+tools:
+  required: [semgrep]
+  optional: [trivy, gitleaks]
+capabilities:
+  requested: [repository.read, repository.list, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [infrastructure-review, cloud-security-review, secret-audit]
+  conditions: []
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation, configuration_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: security-audit
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Infrastructure definitions inventoried.
+  - Configuration risks recorded with evidence references.
+  - Limitations recorded in the report.
+provenance: {source: official}

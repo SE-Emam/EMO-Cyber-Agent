@@ -1,0 +1,40 @@
+{
+  "case_id": "inj-08-clean-text",
+  "title": "Hostile clean text stays quiet",
+  "track": "safety",
+  "taxonomy": "injection",
+  "stage": "detection",
+  "section": "hostile_input",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "print('hello world')"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_absent",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "injection_sink"
+      }
+    },
+    {
+      "kind": "state",
+      "subject": "detection_count",
+      "match": "exact",
+      "value": 0
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "inj-08-clean-text"
+  },
+  "notes": "",
+  "tags": [
+    "hostile"
+  ]
+}

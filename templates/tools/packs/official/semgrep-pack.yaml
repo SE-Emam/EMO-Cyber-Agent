@@ -1,0 +1,66 @@
+pack:
+  id: semgrep-pack
+  name: Semgrep Tool Pack
+  version: 1.0.0
+  vendor: Semgrep
+  description: Read-only static code pattern analysis producing structured rule observations as evidence facts. Scanner severity labels stay inside untrusted message data and never become EMO severity.
+  tool_version_range: ">=1.0.0"
+  maintenance_status: active
+  license: LGPL-2.1-or-later
+  source_provenance: upstream release channel
+  entrypoint: semgrep
+  supported_platforms: [linux, darwin]
+  supported_targets: [repo]
+
+definitions:
+  - id: semgrep-scan
+    tool_id: semgrep
+    tool_capability: scanner.local.execute
+    mode: scan
+    version_range: ">=1.0.0"
+    adapter: semgrep
+    capabilities: [CODE_PATTERN_SCAN, STATIC_ANALYSIS, LOCAL_REPOSITORY_SCAN]
+    inputs:
+      fields: []
+    outputs:
+      record_kinds: [observation]
+      retains_raw: false
+      raw_limit: 4096
+      redaction: true
+    runtime:
+      entrypoint: semgrep
+      timeout_s: 120
+      stdout_limit: 65536
+      stderr_limit: 16384
+      cwd_scoped: true
+      env_allowlist: []
+    network: network_none
+    supported_targets: [repo]
+    snapshot_binding: false
+    executable: true
+    fixed_args: []
+    value_flags: []
+
+network:
+  default: network_none
+
+filesystem:
+  read_only: true
+
+resource_limits:
+  max_stdout_bytes: 65536
+  timeout_s: 120
+
+secrets:
+  handling: redact-and-never-persist
+  redaction_rules: [credential-patterns, token-patterns]
+
+evidence:
+  mapping:
+    observation: observation_to_evidence_fields
+
+limitations:
+  - Results are untrusted external data until normalized with provenance.
+  - Scanner severity labels are verbatim data, never EMO severity.
+
+provenance: {source: official}

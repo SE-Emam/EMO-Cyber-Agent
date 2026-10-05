@@ -1,0 +1,35 @@
+{
+  "case_id": "chg-04-reg-disappeared",
+  "title": "Change digest state disappeared",
+  "track": "regression",
+  "taxonomy": "advisory_regression",
+  "stage": "regression",
+  "section": "change",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "regression",
+    "payload": {
+      "before_digest": "eee555",
+      "after_digest": "",
+      "after_present": false,
+      "regression_key": "chg-04"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "state",
+      "match": "exact",
+      "value": "DISAPPEARED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "chg-04-reg-disappeared"
+  },
+  "notes": "",
+  "tags": [
+    "regression"
+  ]
+}

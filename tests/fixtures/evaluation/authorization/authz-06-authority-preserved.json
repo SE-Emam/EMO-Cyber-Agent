@@ -1,0 +1,34 @@
+{
+  "case_id": "authz-06-authority-preserved",
+  "title": "Authorization findings stay preserved",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "authority",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "authority",
+    "payload": {
+      "authority_findings": {
+        "f-authz-1": "confirmed"
+      }
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "authority_invariant",
+      "subject": "authority_diff.state",
+      "match": "exact",
+      "value": "PRESERVED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-06-authority-preserved"
+  },
+  "notes": "",
+  "tags": [
+    "authority"
+  ]
+}

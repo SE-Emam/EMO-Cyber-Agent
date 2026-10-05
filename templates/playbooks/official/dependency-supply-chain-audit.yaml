@@ -1,0 +1,44 @@
+playbook:
+  id: dependency-supply-chain-audit
+  title: Dependency Supply Chain Audit
+  version: 1.0.0
+  type: security
+  objective: Audit third-party dependencies and supply-chain integrity across manifests, lockfiles, and build configuration.
+  description: Sequential dependency then supply-chain review with secret hygiene follow-up.
+tasks:
+  required: [dependency-audit, supply-chain-review]
+  optional: [secret-audit]
+skills:
+  required: [dependency-security, supply-chain]
+  optional: [secrets, configuration]
+tools:
+  required: [osv-scanner]
+  optional: [trivy, semgrep]
+capabilities:
+  requested: [repository.read, repository.list, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [dependency-audit, supply-chain-review]
+  conditions: []
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: supply-chain-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Dependency manifests and lockfiles inventoried.
+  - Known-vulnerable dependencies recorded with evidence references.
+  - Limitations recorded in the report.
+provenance: {source: official}

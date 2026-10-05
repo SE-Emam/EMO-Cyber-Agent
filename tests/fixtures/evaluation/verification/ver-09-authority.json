@@ -1,0 +1,34 @@
+{
+  "case_id": "ver-09-authority",
+  "title": "Verification authority preserved",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "authority",
+  "section": "verification",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "authority",
+    "payload": {
+      "authority_findings": {
+        "f-ver-1": "confirmed"
+      }
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "authority_invariant",
+      "subject": "authority_diff.state",
+      "match": "exact",
+      "value": "PRESERVED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "ver-09-authority"
+  },
+  "notes": "",
+  "tags": [
+    "authority"
+  ]
+}

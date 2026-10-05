@@ -1,0 +1,61 @@
+api_version: '1.0'
+artifact_identity:
+  artifact_digest: ''
+  attestation_metadata: {}
+  manifest_digest: ''
+  signature_metadata: {}
+  source_revision: ''
+compatibility:
+  emo_api_max: ''
+  emo_api_min: '1.0'
+  optional_features: []
+  platforms:
+  - linux
+  - darwin
+  - win32
+  python_requires: '>=3.11'
+  required_features: []
+  schema_versions:
+  - '1.0'
+dataset_classification: internal
+dependencies: []
+description: Valid third-party report template extension, newer line.
+digest: e1c0f24a35370376f017139bb62995a1b9064a6b8dbbce21f683ccbf970329c5
+entrypoint_metadata:
+  contract: ''
+  kind: declarative
+  target: ''
+extension_id: valid-third-party
+extension_type: report_template
+license: Apache-2.0
+name: Valid Third Party
+optional_dependencies: []
+provides:
+  declares:
+  - report_template
+  optional_feature: []
+  provides_feature: []
+requires: []
+resources: []
+security_metadata:
+  declared_credentials: []
+  declared_data_access:
+  - static_metadata
+  declared_filesystem: false
+  declared_network: none
+  declared_process: none
+  runtime_requirements: []
+source_provenance:
+  artifact_digest: ''
+  build_provenance: ''
+  dependency_provenance: []
+  distribution_name: valid-third-party
+  distribution_version: 1.1.0
+  license: Apache-2.0
+  publisher_identity: acme-labs
+  released_at: '2026-02-02'
+  source_revision: main
+  source_url: https://example.invalid/valid-third-party
+supported_emo_versions:
+- '>=1.0'
+version: 1.1.0

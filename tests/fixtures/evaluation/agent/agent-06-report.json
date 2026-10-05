@@ -1,0 +1,38 @@
+{
+  "case_id": "agent-06-report",
+  "title": "Agent report stays empty",
+  "track": "reasoning",
+  "taxonomy": "secrets",
+  "stage": "report",
+  "section": "agent",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "report",
+    "payload": {
+      "findings": []
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "finding_count",
+      "match": "exact",
+      "value": 0
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "leaked_secret",
+      "match": "exact",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "agent-06-report"
+  },
+  "notes": "",
+  "tags": [
+    "report"
+  ]
+}

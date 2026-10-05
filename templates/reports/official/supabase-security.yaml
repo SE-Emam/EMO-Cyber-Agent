@@ -1,0 +1,31 @@
+report_template:
+  id: supabase-security
+  name: Supabase Security Report
+  version: 1.0.0
+  type: security
+  description: Database-focused presentation with RLS, grants, views, and auth-dependency emphasis. Core semantics identical.
+
+sections:
+  - name: summary
+    fields: [report.summary]
+  - name: findings
+    fields: [finding.finding_id, finding.title, finding.severity, finding.confidence, finding.status, finding.category, finding.evidence_ids, finding.verification_ids, finding.provenance]
+  - name: evidence
+    fields: [finding.evidence_ids, finding.provenance]
+  - name: limitations
+    fields: []
+
+finding_fields: [finding.finding_id, finding.title, finding.severity, finding.confidence, finding.status, finding.category, finding.locations, finding.evidence_ids, finding.verification_ids, finding.provenance]
+section_order: [summary, findings, evidence, limitations]
+show_non_reportable: false
+evidence_presentation: references
+verification_presentation: status
+limitations_sections: [limitations]
+appendices: [provenance]
+output_formats: [json, jsonl, markdown]
+security:
+  preserve_provenance: true
+  redact_secrets: true
+  deterministic: true
+visibility: []
+provenance: {source: official}

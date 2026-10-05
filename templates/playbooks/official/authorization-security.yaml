@@ -1,0 +1,44 @@
+playbook:
+  id: authorization-security
+  title: Authorization Security
+  version: 1.0.0
+  type: security
+  objective: Review authorization checks across entry points and data-access paths to confirm least-privilege enforcement.
+  description: Focused authorization workflow building on authentication facts.
+tasks:
+  required: [authorization-review, authentication-review]
+  optional: []
+skills:
+  required: [authorization, authentication]
+  optional: [api-security]
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+capabilities:
+  requested: [repository.read, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [authorization-review, authentication-review]
+  conditions: []
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, auth-flow, file-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: authorization-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - All authorization entry points inspected.
+  - Missing-check hypotheses recorded with evidence references.
+  - Limitations recorded in the report.
+provenance: {source: official}

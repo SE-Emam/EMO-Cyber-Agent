@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/emo-cyber-agent/schemas/audit-result.schema.json",
+  "title": "EMO Cyber Audit Result",
+  "type": "object",
+  "required": ["schema_version", "audit_id", "status", "target", "coverage", "findings"],
+  "properties": {
+    "schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"},
+    "audit_id": {"type": "string"},
+    "status": {"enum": ["completed", "partial", "failed", "cancelled"]},
+    "target": {"type": "string"},
+    "mode": {"enum": ["quick", "standard", "deep"]},
+    "permission_profile": {"enum": ["read_only", "verify", "remediate"]},
+    "coverage": {
+      "type": "object",
+      "required": ["controls_total", "controls_evaluated", "controls_not_evaluated"],
+      "properties": {
+        "controls_total": {"type": "integer", "minimum": 0},
+        "controls_evaluated": {"type": "integer", "minimum": 0},
+        "controls_not_evaluated": {"type": "integer", "minimum": 0},
+        "notes": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "array",
+      "items": {"$ref": "finding.schema.json"}
+    },
+    "tool_failures": {"type": "array", "items": {"type": "string"}},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

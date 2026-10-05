@@ -1,0 +1,127 @@
+{
+  "api_version": "1.0",
+  "artifacts": {
+    "sdist": {
+      "name": "emo_cyber_agent-0.1.0.tar.gz",
+      "sha256": "a17247b58eb0cd7806486cbbe3f4c97d197b15e6be5982c73d09c345bd12e8fe",
+      "size": 971977
+    },
+    "wheel": {
+      "name": "emo_cyber_agent-0.1.0-py3-none-any.whl",
+      "sha256": "f82e5d8048bc0b1136886e9f6abd93125db6dc80450b68a215a09080466b8e63",
+      "size": 698015
+    }
+  },
+  "build_timestamp": "2026-10-05T16:01:03.170185+00:00",
+  "build_tool": {
+    "backend": "hatchling",
+    "backend_version": "unknown",
+    "builder": "uv-build",
+    "uv": "uv 0.11.7 (9d177269e 2026-04-15 aarch64-apple-darwin)"
+  },
+  "dependency_snapshot": {
+    "annotated-doc": {
+      "license": "MIT",
+      "version": "0.0.4"
+    },
+    "annotated-types": {
+      "license": "UNKNOWN",
+      "version": "0.7.0"
+    },
+    "attrs": {
+      "license": "MIT",
+      "version": "26.1.0"
+    },
+    "click": {
+      "license": "BSD-3-Clause",
+      "version": "8.4.0"
+    },
+    "jsonschema": {
+      "license": "MIT",
+      "version": "4.26.0"
+    },
+    "jsonschema-specifications": {
+      "license": "MIT",
+      "version": "2025.9.1"
+    },
+    "markdown-it-py": {
+      "license": "UNKNOWN",
+      "version": "4.2.0"
+    },
+    "mdurl": {
+      "license": "UNKNOWN",
+      "version": "0.1.2"
+    },
+    "pydantic": {
+      "license": "MIT",
+      "version": "2.13.4"
+    },
+    "pydantic-core": {
+      "license": "MIT",
+      "version": "2.46.4"
+    },
+    "pydantic-settings": {
+      "license": "MIT",
+      "version": "2.14.2"
+    },
+    "pygments": {
+      "license": "BSD-2-Clause",
+      "version": "2.20.0"
+    },
+    "python-dotenv": {
+      "license": "BSD-3-Clause",
+      "version": "1.2.2"
+    },
+    "pyyaml": {
+      "license": "MIT",
+      "version": "6.0.3"
+    },
+    "referencing": {
+      "license": "MIT",
+      "version": "0.37.0"
+    },
+    "rich": {
+      "license": "MIT",
+      "version": "15.0.0"
+    },
+    "rpds-py": {
+      "license": "MIT",
+      "version": "2026.6.3"
+    },
+    "shellingham": {
+      "license": "ISC License",
+      "version": "1.5.4"
+    },
+    "typer": {
+      "license": "MIT",
+      "version": "0.25.1"
+    },
+    "typing-extensions": {
+      "license": "PSF-2.0",
+      "version": "4.15.0"
+    },
+    "typing-inspection": {
+      "license": "MIT",
+      "version": "0.4.2"
+    }
+  },
+  "evaluation_gate": "PASS",
+  "git_revision": "93999104e590403407a1a2ca441753840e371e20",
+  "invariant_gate": "PASS",
+  "platform": "Darwin-arm64",
+  "project": "emo-cyber-agent",
+  "python_versions": [
+    "3.11",
+    "3.12"
+  ],
+  "release_channel": "final",
+  "ruff_result": "PASS",
+  "schema_count": 36,
+  "schema_result": "36/36",
+  "schema_version": "1.0",
+  "security_gate": "PASS",
+  "source_tree_digest": "c940d5e68247821e0180adb966a252b3bb7e09d89dc64853ebe79a74ed55f1a5",
+  "test_count": 1401,
+  "test_result": "1391 passed, 2 skipped (8 release-manifest tests pending release/)",
+  "version": "0.1.0"
+}

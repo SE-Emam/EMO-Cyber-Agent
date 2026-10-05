@@ -1,0 +1,36 @@
+{
+  "case_id": "mcp-02-tool-scope",
+  "title": "MCP tool call scope enforced",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "mcp",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "scope",
+    "payload": {
+      "audit_id": "audit-a1",
+      "target": "proj/a",
+      "scope": [
+        "proj/a"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "scope_behavior",
+      "subject": "in_scope",
+      "match": "true",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mcp-02-tool-scope"
+  },
+  "notes": "",
+  "tags": [
+    "scope"
+  ]
+}

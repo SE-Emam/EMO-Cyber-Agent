@@ -1,0 +1,35 @@
+{
+  "case_id": "agent-05-coverage",
+  "title": "Agent verification coverage complete",
+  "track": "reasoning",
+  "taxonomy": "configuration",
+  "stage": "coverage",
+  "section": "agent",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "coverage",
+    "payload": {
+      "controls": {
+        "positive": "PRESENT",
+        "negative": "PRESENT"
+      }
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "coverage",
+      "match": "exact",
+      "value": "COMPLETE"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "agent-05-coverage"
+  },
+  "notes": "",
+  "tags": [
+    "coverage"
+  ]
+}

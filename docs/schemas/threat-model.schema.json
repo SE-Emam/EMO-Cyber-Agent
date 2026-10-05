@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/threat-model.schema.json",
+  "title": "ThreatModel interop contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["model_id", "audit_id", "snapshot_id", "methods", "scenarios", "model_digest"],
+  "properties": {
+    "model_id": {"type": "string", "minLength": 1},
+    "audit_id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string"},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "methods": {"type": "array", "items": {"type": "string"}},
+    "scenarios": {"type": "array", "items": {"type": "object"}},
+    "attack_paths": {"type": "array", "items": {"type": "object"}},
+    "controls": {"type": "array", "items": {"type": "object"}},
+    "mitigations": {"type": "array", "items": {"type": "object"}},
+    "handoffs": {"type": "array", "items": {"type": "object"}},
+    "coverage": {"type": "object"},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "model_digest": {"type": "string", "minLength": 1}
+  }
+}

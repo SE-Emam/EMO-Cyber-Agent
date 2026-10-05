@@ -1,0 +1,46 @@
+# VERIFICATION-PLAN — POST-RC-012 starter contract.
+#
+# What a deterministic plan records before anything executes.
+# Every field is Core-decided: the model may suggest a strategy,
+# but selection, policy decision, budget, oracle, and adapter
+# binding are table-driven. This file documents the shape; plans
+# themselves are built by VerificationPlanner.plan(...) and are
+# never read from a document.
+
+verification_plan_template:
+  template_id: verification-plan-starter
+  name: Verification Plan Starter
+  version: 1.0.0
+  fields:
+    plan_id: derived digest of the plan payload (no wall-clock time)
+    audit_id: audit identity the plan is bound to
+    project_id: project identity the plan is bound to
+    snapshot_id: snapshot the target was observed on
+    hypothesis_kind: closed hypothesis vocabulary from the matrix
+    statement: optional bounded hypothesis text (never a verdict)
+    target: explicit snapshot-bound target (no wildcards, no external URLs)
+    strategy_id: strategy chosen deterministically from the matrix row
+    strategy_version: semver of the chosen strategy
+    strategy_digest: content digest of the chosen strategy
+    adapter_id: adapter chosen by resolver (lowest id, highest version)
+    adapter_version: bound adapter version
+    oracle: typed comparison Core will run on adapter observations
+    safety_level: PASSIVE or SAFE_ACTIVE (RESTRICTED_ACTIVE denied by default)
+    required_capabilities: adapter capabilities the strategy demands
+    core_capability: single least-privilege Core capability for policy
+    resource_budget: tightest bound across strategy, runtime, and policy
+    success_criteria: what would hold if the property is intact
+    refutation_criteria: what would break the property
+    available_evidence: evidence kinds present at planning time
+    controls: positive and negative controls, or explicit absence
+    policy_decision_id: allow/deny record this plan executes under
+    policy_version: policy version checked again at dispatch
+    selection_notes: deterministic record of skipped candidates
+    limitations: bounded honest caveats attached to the plan
+  invariants:
+    - model-suggestion-never-decides
+    - plan-digest-is-deterministic
+    - dispatch-rechecks-policy-scope-binding-health-budget
+    - planner-creates-no-findings-and-no-severity
+
+provenance: {source: starter, origin: EMO-Cyber-Agent verification starter, catalog: templates/verification}

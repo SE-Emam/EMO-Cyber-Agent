@@ -1,0 +1,274 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/evaluation-report.schema.json",
+  "title": "Evaluation report interop contract",
+  "version": "1.0",
+  "description": "Published report built from one run; aggregate scores never override gate outcomes.",
+  "definitions": {
+    "GateName": {
+      "enum": [
+        "security_gate",
+        "correctness_gate",
+        "regression_gate"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "GateResult": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/GateName"
+        },
+        "status": {
+          "$ref": "#/definitions/GateStatus"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "metrics": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Metrics",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "status"
+      ],
+      "title": "GateResult",
+      "type": "object"
+    },
+    "GateStatus": {
+      "enum": [
+        "pass",
+        "fail",
+        "partial",
+        "not_evaluated",
+        "not_applicable"
+      ],
+      "title": "GateStatus",
+      "type": "string"
+    },
+    "ReportMetric": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "count": {
+          "default": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "denominator": {
+          "default": 0,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "coverage": {
+          "default": 0.0,
+          "title": "Coverage",
+          "type": "number"
+        },
+        "unknown": {
+          "default": 0,
+          "title": "Unknown",
+          "type": "integer"
+        },
+        "inconclusive": {
+          "default": 0,
+          "title": "Inconclusive",
+          "type": "integer"
+        },
+        "blocked": {
+          "default": 0,
+          "title": "Blocked",
+          "type": "integer"
+        },
+        "confidence": {
+          "default": "",
+          "title": "Confidence",
+          "type": "string"
+        },
+        "notes": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ReportMetric",
+      "type": "object"
+    },
+    "ReportSUT": {
+      "additionalProperties": false,
+      "properties": {
+        "sut_id": {
+          "title": "Sut Id",
+          "type": "string"
+        },
+        "sut_version": {
+          "title": "Sut Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sut_id",
+        "sut_version"
+      ],
+      "title": "ReportSUT",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "report_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Report Id",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "dataset_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "dataset_fingerprint": {
+      "maxLength": 128,
+      "minLength": 8,
+      "title": "Dataset Fingerprint",
+      "type": "string"
+    },
+    "sut": {
+      "$ref": "#/definitions/ReportSUT"
+    },
+    "evaluator_version": {
+      "default": "post-rc-013-v1",
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Evaluator Version",
+      "type": "string"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "run_status": {
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Run Status",
+      "type": "string"
+    },
+    "overall_gate": {
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Overall Gate",
+      "type": "string"
+    },
+    "aggregate_note": {
+      "maxLength": 300,
+      "minLength": 8,
+      "title": "Aggregate Note",
+      "type": "string"
+    },
+    "gates": {
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/GateResult"
+      },
+      "title": "Gates",
+      "type": "array"
+    },
+    "metrics": {
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/ReportMetric"
+      },
+      "title": "Metrics",
+      "type": "array"
+    },
+    "counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Counts",
+      "type": "object"
+    },
+    "determinism_repeats": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Determinism Repeats",
+      "type": "integer"
+    },
+    "determinism_matched": {
+      "default": false,
+      "title": "Determinism Matched",
+      "type": "boolean"
+    },
+    "identity_digest": {
+      "maxLength": 128,
+      "minLength": 8,
+      "title": "Identity Digest",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 24,
+      "title": "Limitations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "report_id",
+    "run_id",
+    "dataset_id",
+    "dataset_fingerprint",
+    "sut",
+    "run_status",
+    "overall_gate",
+    "aggregate_note",
+    "identity_digest"
+  ],
+  "type": "object"
+}

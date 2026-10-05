@@ -1,0 +1,32 @@
+{
+  "case_id": "dep-07-normalize-deps",
+  "title": "Dependency scan text normalized",
+  "track": "detection",
+  "taxonomy": "dependency",
+  "stage": "normalized_facts",
+  "section": "dependency",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "normalize",
+    "payload": {
+      "text": "  dep   scan   complete "
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "normalized_text",
+      "match": "exact",
+      "value": "dep scan complete"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "dep-07-normalize-deps"
+  },
+  "notes": "",
+  "tags": [
+    "normalize"
+  ]
+}

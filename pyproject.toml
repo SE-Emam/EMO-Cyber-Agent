@@ -1,0 +1,113 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "emo-cyber-agent"
+version = "0.1.0"
+description = "Portable, model-agnostic cybersecurity sub-agent exposed via MCP, CLI, and Python API."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+  {name = "EMO-Cyber-Agent Contributors"},
+]
+maintainers = [
+  {name = "EMO-Cyber-Agent Contributors"},
+]
+keywords = ["security", "mcp", "cli", "static-analysis", "verification"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Information Technology",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Security",
+]
+dependencies = [
+  "pydantic>=2.9,<3",
+  "pydantic-settings>=2.6,<3",
+  "typer>=0.16,<1",
+  "rich>=13.9,<15",
+  "pyyaml>=6.0,<7",
+  "jsonschema>=4.23,<5",
+]
+
+[project.urls]
+Homepage = "https://github.com/SE-Emam/EMO-Cyber-Agent"
+Documentation = "https://github.com/SE-Emam/EMO-Cyber-Agent#readme"
+Repository = "https://github.com/SE-Emam/EMO-Cyber-Agent"
+Issues = "https://github.com/SE-Emam/EMO-Cyber-Agent/issues"
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.15,<2"]
+http = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1"]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.25,<1",
+  "ruff>=0.11,<1",
+  "mypy>=1.15,<2",
+  "jsonschema>=4.23,<5",
+  "pyyaml>=6.0,<7",
+]
+all = [
+  "mcp>=1.15,<2",
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.34,<1",
+  "pytest>=8.3,<9",
+  "pytest-asyncio>=0.25,<1",
+  "ruff>=0.11,<1",
+  "mypy>=1.15,<2",
+  "jsonschema>=4.23,<5",
+  "pyyaml>=6.0,<7",
+]
+
+[project.scripts]
+cyber-agent = "emo_cyber_agent.cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/emo_cyber_agent"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"docs/schemas" = "emo_cyber_agent/data/schemas"
+"docs/policies" = "emo_cyber_agent/data/policies"
+"templates" = "emo_cyber_agent/data/official"
+"LICENSE" = "emo_cyber_agent/data/LICENSE"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src",
+  "docs",
+  "tests",
+  "templates",
+  "examples",
+  "scripts",
+  "reports",
+  "LICENSE",
+  "README.md",
+  "CHANGELOG.md",
+  "SECURITY.md",
+  "CONTRIBUTING.md",
+  "pyproject.toml",
+  "Makefile",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+addopts = "-q"
+pythonpath = ["src"]

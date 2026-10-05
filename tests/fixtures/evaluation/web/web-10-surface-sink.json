@@ -1,0 +1,43 @@
+{
+  "case_id": "web-10-surface-sink",
+  "title": "Web markup sink surfaced",
+  "track": "detection",
+  "taxonomy": "injection",
+  "stage": "surface",
+  "section": "web",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "element.innerHTML = userInput"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_present",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "injection_sink"
+      }
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "secret_literal"
+      }
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "web-10-surface-sink"
+  },
+  "notes": "",
+  "tags": [
+    "surface",
+    "sink"
+  ]
+}

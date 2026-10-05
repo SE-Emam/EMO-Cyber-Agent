@@ -1,0 +1,50 @@
+task:
+  id: supply-chain-review
+  title: Supply Chain Review
+  version: 1.0.0
+  type: review
+  objective: Review lockfiles, registries, and CI provenance for supply-chain risk, read-only.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: []
+skills:
+  required: [supply-chain, dependency-security]
+  optional: [configuration]
+capabilities:
+  required: [repository.read, repository.list]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: [trivy]
+  optional: [osv-scanner]
+methodology:
+  phases: [reconnaissance, dependencies, verification]
+  procedures:
+    - verify lockfiles and registries
+    - record CI provenance facts
+evidence:
+  required: [repository_identity, tool-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - lockfile and registry facts recorded
+deliverables: [observations]
+report:
+  template: supply-chain-security
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

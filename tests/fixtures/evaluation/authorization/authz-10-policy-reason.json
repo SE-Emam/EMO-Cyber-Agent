@@ -1,0 +1,44 @@
+{
+  "case_id": "authz-10-policy-reason",
+  "title": "Authorization deny carries reason codes",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "policy",
+    "payload": {
+      "audit_id": "audit-a1",
+      "tool_id": "repo-writer",
+      "target": "proj/a",
+      "profile": "read_only",
+      "capabilities": [
+        "repository.delete"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "allowed",
+      "match": "exact",
+      "value": false
+    },
+    {
+      "kind": "state",
+      "subject": "reason_codes",
+      "match": "nonempty",
+      "value": []
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-10-policy-reason"
+  },
+  "notes": "",
+  "tags": [
+    "policy"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "case_id": "authz-04-policy-allow",
+  "title": "Authorization read capability allowed",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "policy",
+    "payload": {
+      "audit_id": "audit-a1",
+      "tool_id": "repo-reader",
+      "target": "proj/a",
+      "profile": "read_only",
+      "capabilities": [
+        "repository.read"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "allowed",
+      "match": "exact",
+      "value": true
+    },
+    {
+      "kind": "state",
+      "subject": "profile",
+      "match": "exact",
+      "value": "read_only"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-04-policy-allow"
+  },
+  "notes": "",
+  "tags": [
+    "policy"
+  ]
+}

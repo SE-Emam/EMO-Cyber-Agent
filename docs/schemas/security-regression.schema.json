@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/security-regression.schema.json",
+  "title": "Security regression record interop contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["regression_id", "audit_id", "project_id", "regression_key", "state", "digest"],
+  "properties": {
+    "regression_id": {"type": "string", "minLength": 3, "maxLength": 80},
+    "audit_id": {"type": "string", "minLength": 1, "maxLength": 120},
+    "project_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "base_snapshot_id": {"type": "string", "maxLength": 160},
+    "target_snapshot_id": {"type": "string", "maxLength": 160},
+    "regression_key": {"type": "string", "minLength": 1, "maxLength": 320},
+    "before_digest": {"type": "string", "maxLength": 128},
+    "after_digest": {"type": "string", "maxLength": 128},
+    "state": {
+      "enum": ["NEW", "PERSISTING", "CHANGED", "DISAPPEARED", "REINTRODUCED", "INDETERMINATE", "NOT_COMPARABLE"]
+    },
+    "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "digest": {"type": "string", "minLength": 16, "maxLength": 128},
+    "provenance": {
+      "type": "object",
+      "required": ["origin"],
+      "properties": {
+        "origin": {"type": "string", "minLength": 1, "maxLength": 160},
+        "collector": {"type": "string", "maxLength": 160},
+        "normalization_version": {"type": "string", "maxLength": 40},
+        "schema_version": {"type": "string", "maxLength": 40},
+        "evidence_ids": {"type": "array", "items": {"type": "string"}},
+        "parent_digests": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

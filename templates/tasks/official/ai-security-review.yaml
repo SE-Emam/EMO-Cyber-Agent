@@ -1,0 +1,50 @@
+task:
+  id: ai-security-review
+  title: AI Security Review
+  version: 1.0.0
+  type: review
+  objective: Review AI features for prompt handling, output trust, and tool-use boundaries, read-only.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: []
+skills:
+  required: [ai-security]
+  optional: [agent-security, data-exposure]
+capabilities:
+  required: [repository.read, repository.search]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: [semgrep]
+  optional: []
+methodology:
+  phases: [reconnaissance, ai-trust, verification]
+  procedures:
+    - map prompt inputs and output consumers
+    - list tool-use and RAG boundaries
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - AI trust boundaries mapped with evidence
+deliverables: [observations]
+report:
+  template: ai-security
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

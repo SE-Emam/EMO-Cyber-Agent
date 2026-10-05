@@ -1,0 +1,46 @@
+{
+  "case_id": "dep-06-report-malformed",
+  "title": "Report rejects malformed finding rows",
+  "track": "reasoning",
+  "taxonomy": "dependency",
+  "stage": "report",
+  "section": "dependency",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "report",
+    "payload": {
+      "findings": [
+        "not-an-object"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "rejected_findings",
+      "match": "exact",
+      "value": 1
+    },
+    {
+      "kind": "state",
+      "subject": "finding_count",
+      "match": "exact",
+      "value": 0
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "leaked_secret",
+      "match": "exact",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "dep-06-report-malformed"
+  },
+  "notes": "",
+  "tags": [
+    "report"
+  ]
+}

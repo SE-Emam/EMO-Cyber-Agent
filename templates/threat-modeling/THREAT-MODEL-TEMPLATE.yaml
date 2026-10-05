@@ -1,0 +1,20 @@
+# THREAT-MODEL-TEMPLATE — POST-RC-009 starter contract.
+#
+# A declarative starting point: methods + scope + declared assets and
+# boundaries. Planning input only; never executable. Facts still come
+# from Code Intelligence, never from this file's prose.
+
+threat_template:
+  id: my-threat-starter
+  name: My Threat Starter
+  version: 1.0.0
+  methods: [stride]
+  scope_assets:
+    - primary-database
+  declared_boundaries:
+    - kind: TRUST
+      basis: DECLARED
+      provenance: {declared_by: team, source: architecture-notes}
+      protects: [primary-database]
+
+provenance: {source: official}

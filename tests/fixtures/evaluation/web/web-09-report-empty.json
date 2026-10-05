@@ -1,0 +1,44 @@
+{
+  "case_id": "web-09-report-empty",
+  "title": "Web empty report stays clean",
+  "track": "reasoning",
+  "taxonomy": "secrets",
+  "stage": "report",
+  "section": "web",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "report",
+    "payload": {
+      "findings": []
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "finding_count",
+      "match": "exact",
+      "value": 0
+    },
+    {
+      "kind": "state",
+      "subject": "summary_total",
+      "match": "exact",
+      "value": 0
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "leaked_secret",
+      "match": "exact",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "web-09-report-empty"
+  },
+  "notes": "",
+  "tags": [
+    "report"
+  ]
+}

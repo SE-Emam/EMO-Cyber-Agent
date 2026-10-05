@@ -1,0 +1,34 @@
+{
+  "case_id": "adv-07-authority-intact",
+  "title": "Adversarial authority stays intact",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "authority",
+  "section": "adversarial",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "authority",
+    "payload": {
+      "authority_findings": {
+        "f-adv-1": "confirmed"
+      }
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "authority_invariant",
+      "subject": "authority_diff.state",
+      "match": "exact",
+      "value": "PRESERVED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "adv-07-authority-intact"
+  },
+  "notes": "",
+  "tags": [
+    "authority"
+  ]
+}

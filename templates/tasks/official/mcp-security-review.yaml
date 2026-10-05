@@ -1,0 +1,50 @@
+task:
+  id: mcp-security-review
+  title: MCP Security Review
+  version: 1.0.0
+  type: review
+  objective: Review MCP tool surface, scopes, descriptions, and token handling, read-only.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: []
+skills:
+  required: [mcp-security, agent-security]
+  optional: [api-security]
+capabilities:
+  required: [repository.read]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: []
+  optional: [semgrep]
+methodology:
+  phases: [reconnaissance, api-trust, verification]
+  procedures:
+    - enumerate MCP tools and scopes
+    - flag over-broad descriptions and token flows
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - MCP surface inventoried with evidence
+deliverables: [observations]
+report:
+  template: mcp-security
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

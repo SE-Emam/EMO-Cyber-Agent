@@ -1,0 +1,35 @@
+report_template:
+  id: security-audit
+  name: Security Audit Report
+  version: 1.0.0
+  type: security
+  description: Canonical full security audit presentation. All mandatory security fields always present.
+
+sections:
+  - name: summary
+    fields: [report.summary]
+  - name: scope
+    fields: []
+  - name: findings
+    fields: [finding.finding_id, finding.title, finding.severity, finding.confidence, finding.status, finding.category, finding.cwe, finding.owasp, finding.locations, finding.evidence_ids, finding.verification_ids, finding.remediation, finding.provenance]
+  - name: evidence
+    fields: [finding.evidence_ids, finding.provenance]
+  - name: verification
+    fields: [finding.verification_ids, finding.status]
+  - name: limitations
+    fields: []
+
+finding_fields: [finding.finding_id, finding.title, finding.severity, finding.confidence, finding.status, finding.category, finding.cwe, finding.owasp, finding.locations, finding.evidence_ids, finding.verification_ids, finding.remediation, finding.provenance, finding.asset_id, finding.candidate_id, finding.observed_issue, finding.root_cause, finding.impact, finding.references]
+section_order: [summary, scope, findings, evidence, verification, limitations]
+show_non_reportable: false
+evidence_presentation: references
+verification_presentation: detailed
+limitations_sections: [limitations]
+appendices: [provenance]
+output_formats: [json, jsonl, markdown]
+security:
+  preserve_provenance: true
+  redact_secrets: true
+  deterministic: true
+visibility: []
+provenance: {source: official}

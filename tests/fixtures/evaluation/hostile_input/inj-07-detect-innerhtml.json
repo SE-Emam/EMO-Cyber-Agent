@@ -1,0 +1,43 @@
+{
+  "case_id": "inj-07-detect-innerhtml",
+  "title": "Hostile markup sink detected",
+  "track": "safety",
+  "taxonomy": "injection",
+  "stage": "detection",
+  "section": "hostile_input",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "el.innerHTML = untrusted"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_present",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "injection_sink"
+      }
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "ssrf"
+      }
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "inj-07-detect-innerhtml"
+  },
+  "notes": "",
+  "tags": [
+    "hostile",
+    "sink"
+  ]
+}

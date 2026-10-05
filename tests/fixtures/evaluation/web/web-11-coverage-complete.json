@@ -1,0 +1,41 @@
+{
+  "case_id": "web-11-coverage-complete",
+  "title": "Web controls present coverage",
+  "track": "reasoning",
+  "taxonomy": "configuration",
+  "stage": "coverage",
+  "section": "web",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "coverage",
+    "payload": {
+      "controls": {
+        "positive": "PRESENT",
+        "negative": "PRESENT"
+      }
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "coverage",
+      "match": "exact",
+      "value": "COMPLETE"
+    },
+    {
+      "kind": "state",
+      "subject": "conclusion_ceiling",
+      "match": "exact",
+      "value": "context-only"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "web-11-coverage-complete"
+  },
+  "notes": "",
+  "tags": [
+    "coverage"
+  ]
+}

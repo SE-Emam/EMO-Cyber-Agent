@@ -1,0 +1,80 @@
+# authorization-strategies — official verification catalog (POST-RC-012).
+#
+# Identity/privilege strategies. Synthetic test identities only,
+# explicit declared authorization model, deny-by-default oracle
+# expectation. These plans never read production credentials and
+# never change state: the adapter reports decisions, Core judges them.
+
+strategies:
+  - id: authorization-matrix
+    version: 1.0.0
+    name: Authorization matrix
+    category: AUTHORIZATION_MATRIX
+    applicable_hypotheses: [AUTHORIZATION, OBJECT_AUTHORIZATION]
+    required_evidence: [route-record]
+    required_capabilities: [AUTHZ_MATRIX, SYNTHETIC_IDENTITY_TEST]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [ROUTE, API_OPERATION, ENDPOINT]
+    input_contract: [synthetic-identity-pair, declared-facts]
+    oracle_kinds: [AUTHZ_DECISION]
+    success_criteria: Every synthetic identity observes exactly the decision declared for the addressed operation, cell by cell.
+    refutation_criteria: Any identity outside the declared authorization model observes an allowed decision for the operation.
+    limitations:
+      - identities-are-synthetic-only
+      - declared-model-not-inferred
+    resource_budget: {max_requests: 8, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: function-authorization
+    version: 1.0.0
+    name: Function authorization
+    category: AUTHORIZATION_MATRIX
+    applicable_hypotheses: [FUNCTION_AUTHORIZATION, AUTHORIZATION]
+    required_evidence: [route-record]
+    required_capabilities: [AUTHZ_MATRIX, SYNTHETIC_IDENTITY_TEST]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [ROUTE, API_OPERATION, ENDPOINT]
+    input_contract: [synthetic-identity-pair, declared-facts]
+    oracle_kinds: [AUTHZ_DECISION]
+    success_criteria: Privileged operations accept only the identities the privilege record declares, for unauthenticated and regular callers alike.
+    refutation_criteria: An unauthenticated or regular synthetic identity observes an allowed decision on a privileged operation.
+    limitations:
+      - privilege-comes-from-declared-model
+      - endpoint-naming-irrelevant
+    resource_budget: {max_requests: 8, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: state-change-authorization
+    version: 1.0.0
+    name: State change authorization
+    category: STATE_CHANGE_CHECK
+    applicable_hypotheses: [STATE_CHANGE]
+    required_evidence: [state-transition-record]
+    required_capabilities: [AUTHZ_MATRIX, SYNTHETIC_IDENTITY_TEST]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [API_OPERATION, ROUTE]
+    input_contract: [synthetic-identity-pair, declared-facts]
+    oracle_kinds: [AUTHZ_DECISION]
+    success_criteria: Each state transition is observed as allowed only for identities the authorization record declares for that transition.
+    refutation_criteria: A synthetic identity outside the authorization record observes an allowed state transition.
+    limitations:
+      - transitions-executed-in-isolated-sandbox-only
+    resource_budget: {max_requests: 8, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: authentication-boundary
+    version: 1.0.0
+    name: Authentication boundary
+    category: AUTHENTICATION_FLOW
+    applicable_hypotheses: [AUTHENTICATION]
+    required_evidence: [identity-record]
+    required_capabilities: [HTTP_REQUEST, HTTP_ASSERTION]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [ROUTE, API_OPERATION, ENDPOINT]
+    input_contract: [declared-facts, evidence-reference]
+    oracle_kinds: [HTTP_STATUS, HTTP_BODY_PROPERTY]
+    success_criteria: Requests without credentials or with mismatched credentials observe the rejecting status declared by the session record.
+    refutation_criteria: A request without credentials or with mismatched credentials observes an accepted session state.
+    limitations:
+      - no-production-credentials-used
+      - timeout-maps-to-inconclusive
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+provenance: {source: official, origin: EMO-Cyber-Agent verification catalog, catalog: templates/verification/official}

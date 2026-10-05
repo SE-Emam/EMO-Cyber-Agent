@@ -1,0 +1,37 @@
+{
+  "case_id": "web-12-unknown-signal",
+  "title": "Web empty scan reports unknown",
+  "track": "reasoning",
+  "taxonomy": "configuration",
+  "stage": "hypotheses",
+  "section": "web",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": ""
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "unknown",
+      "subject": "detection_confidence",
+      "match": "exact"
+    },
+    {
+      "kind": "state",
+      "subject": "detection_count",
+      "match": "exact",
+      "value": 0
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "web-12-unknown-signal"
+  },
+  "notes": "",
+  "tags": [
+    "uncertainty"
+  ]
+}

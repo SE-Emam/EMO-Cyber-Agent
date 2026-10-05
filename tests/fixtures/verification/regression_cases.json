@@ -1,0 +1,43 @@
+{
+  "audit_id": "audit-2026-regression",
+  "project_id": "payments-api",
+  "regression_key": "authz-matrix@baseline",
+  "cases": [
+    {
+      "case": "baseline-matches-current",
+      "snapshot_id": "snap-2",
+      "adapter_scenario": "SUPPORTED",
+      "expected_status": "SUPPORTED"
+    },
+    {
+      "case": "baseline-drift-detected",
+      "snapshot_id": "snap-2",
+      "adapter_scenario": "REFUTED",
+      "expected_status": "REFUTED"
+    },
+    {
+      "case": "provider-timeout-keeps-inconclusive",
+      "snapshot_id": "snap-2",
+      "adapter_scenario": "TIMEOUT",
+      "expected_status": "INCONCLUSIVE"
+    },
+    {
+      "case": "policy-denial-keeps-blocked",
+      "snapshot_id": "snap-2",
+      "adapter_scenario": "POLICY_DENIED",
+      "expected_status": "BLOCKED"
+    },
+    {
+      "case": "historical-evidence-stays-historical",
+      "prior_snapshot": "snap-1",
+      "current_snapshot": "snap-2",
+      "expected_label": "HISTORICAL"
+    },
+    {
+      "case": "current-evidence-labels-current",
+      "prior_snapshot": "snap-2",
+      "current_snapshot": "snap-2",
+      "expected_label": "CURRENT"
+    }
+  ]
+}

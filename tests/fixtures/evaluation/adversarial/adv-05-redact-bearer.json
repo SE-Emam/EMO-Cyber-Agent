@@ -1,0 +1,39 @@
+{
+  "case_id": "adv-05-redact-bearer",
+  "title": "Adversarial bearer token redacted",
+  "track": "safety",
+  "taxonomy": "secrets",
+  "stage": "report",
+  "section": "adversarial",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "redact",
+    "payload": {
+      "text": "bearer abcdef1234567890",
+      "secret": "abcdef1234567890"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_absent",
+      "subject": "leaked_secret",
+      "match": "exact",
+      "value": true
+    },
+    {
+      "kind": "state",
+      "subject": "changed",
+      "match": "exact",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "adv-05-redact-bearer"
+  },
+  "notes": "",
+  "tags": [
+    "redaction"
+  ]
+}

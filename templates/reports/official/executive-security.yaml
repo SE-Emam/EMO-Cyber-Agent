@@ -1,0 +1,31 @@
+report_template:
+  id: executive-security
+  name: Executive Security Summary
+  version: 1.0.0
+  type: executive
+  description: Management-oriented condensed presentation. Mandatory security fields always present; no scores, no rankings.
+
+sections:
+  - name: summary
+    fields: [report.summary]
+  - name: scope
+    fields: []
+  - name: findings
+    fields: [finding.finding_id, finding.title, finding.severity, finding.confidence, finding.status, finding.evidence_ids, finding.verification_ids, finding.provenance]
+  - name: limitations
+    fields: []
+
+finding_fields: [finding.finding_id, finding.title, finding.severity, finding.confidence, finding.status, finding.evidence_ids, finding.verification_ids, finding.provenance]
+section_order: [summary, scope, findings, limitations]
+show_non_reportable: false
+evidence_presentation: references
+verification_presentation: status
+limitations_sections: [limitations]
+appendices: []
+output_formats: [json, markdown]
+security:
+  preserve_provenance: true
+  redact_secrets: true
+  deterministic: true
+visibility: []
+provenance: {source: official}

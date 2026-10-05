@@ -1,0 +1,76 @@
+pack:
+  id: dependency-supply-chain
+  name: Dependency and Supply Chain Pack
+  version: 1.0.0
+  purpose: Build dependency inventory with version provenance, record direct and transitive relationships, and attach external risk metadata as evidence without confirming risk from presence alone.
+
+skills: [dependency-security, supply-chain]
+
+code_intelligence:
+  required: [dependencies]
+
+evidence:
+  required: [file-evidence, tool-evidence, dependency-record]
+
+verification:
+  methods: [dependency_confirmation, static_confirmation]
+
+applicable_assets: [repo]
+security_domains: [dependency, supply-chain]
+
+methodology:
+  - inventory manifests and lockfiles with digests
+  - record direct and transitive edges with versions
+  - attach external risk metadata with provenance when available
+  - never treat presence as confirmation of exposure
+
+checks:
+  - id: inventory-review
+    title: Dependency inventory review
+    methodology:
+      - list packages with pinned versions per manifest
+      - record lockfile presence and freshness signals
+      - note registry and source anomalies
+    evidence_required: [dependency-record]
+    evidence_sufficient: [manifest-record, version-record, lockfile-record]
+    evidence_missing: [transitive-closure-gap]
+    verification_required: [dependency_confirmation]
+    verification_safety: passive
+    high_risk: false
+    entry_level: OBSERVED
+    codeintel_needs: [dependencies]
+    source_kinds: []
+    sink_kinds: []
+    hypothesis_template: Inventory at {source} is recorded for correlation; no exposure claim is made.
+
+  - id: risk-metadata-review
+    title: External risk metadata review
+    methodology:
+      - attach external risk records with source and timestamp
+      - link each record to the importing code path
+      - record reachability of the affected module
+    evidence_required: [dependency-record, risk-metadata-record]
+    evidence_sufficient: [package-record, risk-record, reachability-record]
+    evidence_missing: [reachability-gap, metadata-freshness-gap]
+    verification_required: [dependency_confirmation, static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: SUSPECTED
+    codeintel_needs: [dependencies, symbols]
+    source_kinds: []
+    sink_kinds: []
+    hypothesis_template: Package {source} carries external risk metadata; exposure requires reachability verification.
+
+stop_conditions: [scope-exhausted, budget-exhausted, no-progress]
+limitations:
+  - Presence never equals exposure; reachability decides.
+  - External metadata enters only through evidence with provenance.
+  - Transitive closure may be incomplete per provider.
+
+security:
+  requested: [repository.read, repository.list, code.dependencies.read]
+  denied: [repository.write, database.write, destructive]
+
+allowed_tools: [repository.read, repository.list, osv-scanner, semgrep]
+
+provenance: {source: official}

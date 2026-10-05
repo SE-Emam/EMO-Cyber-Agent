@@ -1,0 +1,30 @@
+{
+  "case_id": "authz-07-authority-empty",
+  "title": "Authorization empty authority preserved",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "authority",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "authority",
+    "payload": {}
+  },
+  "ground_truth": [
+    {
+      "kind": "authority_invariant",
+      "subject": "authority_diff.state",
+      "match": "exact",
+      "value": "PRESERVED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-07-authority-empty"
+  },
+  "notes": "",
+  "tags": [
+    "authority"
+  ]
+}

@@ -1,0 +1,51 @@
+task:
+  id: dependency-audit
+  title: Dependency Audit
+  version: 1.0.0
+  type: audit
+  objective: Inventory dependencies and record known vulnerability metadata, read-only.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: []
+skills:
+  required: [dependency-security]
+  optional: [supply-chain]
+capabilities:
+  required: [repository.read, repository.list]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: [trivy]
+  optional: [osv-scanner]
+methodology:
+  phases: [reconnaissance, dependencies, verification]
+  procedures:
+    - inventory manifests and lockfiles
+    - match packages against vulnerability metadata
+evidence:
+  required: [repository_identity, tool-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - manifests inventoried
+  - known vulnerabilities recorded with versions
+deliverables: [observations]
+report:
+  template: dependency-security
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

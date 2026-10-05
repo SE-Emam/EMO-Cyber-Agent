@@ -1,0 +1,50 @@
+{
+  "case_id": "mem-03-evidence-store",
+  "title": "Memory evidence stored once",
+  "track": "reasoning",
+  "taxonomy": "data_exposure",
+  "stage": "evidence",
+  "section": "memory",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "evidence",
+    "payload": {
+      "facts": [
+        {
+          "source_tool": "memory-store",
+          "location": "cache/entry-1",
+          "content_hash": "c7c7c7c7c7c7c7c7",
+          "provenance": {
+            "labels": [
+              "observed"
+            ],
+            "collected_by": "runtime"
+          }
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "evidence",
+      "subject": "evidence_count",
+      "match": "exact",
+      "value": 1
+    },
+    {
+      "kind": "evidence",
+      "subject": "provenance_complete",
+      "match": "true",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mem-03-evidence-store"
+  },
+  "notes": "",
+  "tags": [
+    "evidence"
+  ]
+}

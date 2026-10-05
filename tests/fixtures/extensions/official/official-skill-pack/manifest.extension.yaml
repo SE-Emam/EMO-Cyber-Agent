@@ -1,0 +1,66 @@
+api_version: '1.0'
+artifact_identity:
+  artifact_digest: ada6b03c4c7eefed2b663aff926419f248ecd1295c94a642171eacb4e78e7599
+  attestation_metadata: {}
+  manifest_digest: ''
+  signature_metadata: {}
+  source_revision: 1.0.0
+compatibility:
+  emo_api_max: ''
+  emo_api_min: '1.0'
+  optional_features: []
+  platforms:
+  - linux
+  - darwin
+  - win32
+  python_requires: '>=3.11'
+  required_features: []
+  schema_versions:
+  - '1.0'
+dataset_classification: internal
+dependencies: []
+description: Skill pack extension loaded by the existing pack validator.
+digest: 2e72a17bc275a4f953bf3db6c02681263cc3ec1d433152305057161823624fb6
+entrypoint_metadata:
+  contract: ''
+  kind: declarative
+  target: ''
+extension_id: official-skill-pack
+extension_type: skill_pack
+license: Apache-2.0
+name: Official Skill Pack
+optional_dependencies: []
+provides:
+  declares:
+  - skill_pack
+  optional_feature: []
+  provides_feature: []
+requires: []
+resources:
+- digest: ada6b03c4c7eefed2b663aff926419f248ecd1295c94a642171eacb4e78e7599
+  kind: template
+  media_type: application/yaml
+  path: content/pack.yaml
+  resource_id: content
+security_metadata:
+  declared_credentials: []
+  declared_data_access:
+  - static_metadata
+  declared_filesystem: false
+  declared_network: none
+  declared_process: none
+  runtime_requirements: []
+source_provenance:
+  artifact_digest: ada6b03c4c7eefed2b663aff926419f248ecd1295c94a642171eacb4e78e7599
+  build_provenance: host-built fixture
+  dependency_provenance: []
+  distribution_name: official-skill-pack-extension
+  distribution_version: 1.0.0
+  license: Apache-2.0
+  publisher_identity: emo-cyber-agent
+  released_at: '2026-01-01'
+  source_revision: 1.0.0
+  source_url: https://example.invalid/emo-official/extensions
+supported_emo_versions:
+- '>=1.0'
+version: 1.0.0

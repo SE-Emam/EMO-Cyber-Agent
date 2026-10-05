@@ -1,0 +1,50 @@
+{
+  "case_id": "dep-04-evidence-dep",
+  "title": "Dependency evidence carries provenance",
+  "track": "reasoning",
+  "taxonomy": "dependency",
+  "stage": "evidence",
+  "section": "dependency",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "evidence",
+    "payload": {
+      "facts": [
+        {
+          "source_tool": "osv-scanner",
+          "location": "requirements.txt",
+          "content_hash": "e5e5e5e5e5e5e5e5",
+          "provenance": {
+            "labels": [
+              "dependency-cve"
+            ],
+            "collected_by": "scanner"
+          }
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "evidence",
+      "subject": "evidence_count",
+      "match": "exact",
+      "value": 1
+    },
+    {
+      "kind": "evidence",
+      "subject": "provenance_complete",
+      "match": "true",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "dep-04-evidence-dep"
+  },
+  "notes": "",
+  "tags": [
+    "evidence"
+  ]
+}

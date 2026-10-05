@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/security-knowledge.schema.json",
+  "title": "Security knowledge record interop contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id",
+    "audit_id",
+    "project_id",
+    "source_type",
+    "source_id",
+    "category",
+    "provenance",
+    "digest"
+  ],
+  "properties": {
+    "record_id": {"type": "string", "minLength": 3, "maxLength": 80},
+    "audit_id": {"type": "string", "minLength": 1, "maxLength": 120},
+    "project_id": {"type": "string", "minLength": 1, "maxLength": 200},
+    "snapshot_id": {"type": "string", "maxLength": 160},
+    "scope_kind": {"enum": ["SNAPSHOT_BOUND", "RANGE_BOUND", "PROJECT_LIFETIME"]},
+    "source_type": {"type": "string", "minLength": 1, "maxLength": 80},
+    "source_id": {"type": "string", "minLength": 1, "maxLength": 320},
+    "category": {
+      "enum": [
+        "OBSERVED_FACT",
+        "EVIDENCE_SUMMARY",
+        "VERIFICATION_OUTCOME",
+        "THREAT_MODEL_OBSERVATION",
+        "ATTACK_SURFACE_OBSERVATION",
+        "CHANGE_REGRESSION_SIGNAL",
+        "TOOL_OBSERVATION",
+        "CODE_INTELLIGENCE_OBSERVATION",
+        "SECURITY_CONTROL_OBSERVATION"
+      ]
+    },
+    "created_from_evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "content": {"type": "object"},
+    "content_digest": {"type": "string", "maxLength": 128},
+    "related_finding_id": {"type": "string", "maxLength": 160},
+    "verification_ref": {"type": "string", "maxLength": 160},
+    "regression_key": {"type": "string", "maxLength": 320},
+    "trust_level": {"enum": ["untrusted", "UNTRUSTED_SUGGESTION", "untrusted-external", "quarantined"]},
+    "digest": {"type": "string", "minLength": 16, "maxLength": 128},
+    "schema_version": {"type": "string", "maxLength": 40},
+    "provenance": {
+      "type": "object",
+      "required": ["origin"],
+      "properties": {
+        "origin": {"type": "string", "minLength": 1, "maxLength": 160},
+        "collector": {"type": "string", "maxLength": 160},
+        "normalization_version": {"type": "string", "maxLength": 40},
+        "schema_version": {"type": "string", "maxLength": 40},
+        "evidence_ids": {"type": "array", "items": {"type": "string"}},
+        "parent_digests": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "retention": {
+      "type": "object",
+      "properties": {
+        "retention_class": {"type": "string", "maxLength": 60},
+        "created_at": {"type": "string", "maxLength": 60},
+        "expires_at": {"type": "string", "maxLength": 60},
+        "legal_hold": {"type": "boolean"},
+        "retention_reason": {"type": "string", "maxLength": 300}
+      }
+    }
+  }
+}

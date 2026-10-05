@@ -1,0 +1,93 @@
+pack:
+  id: authentication-authorization
+  name: Authentication and Authorization Pack
+  version: 1.0.0
+  purpose: Discover authentication and authorization boundaries, map routes to checks, and record missing-check hypotheses with route and call-graph evidence.
+
+skills: [authentication, authorization, api-security]
+
+code_intelligence:
+  required: [routes, auth_boundaries, call_graph, dataflow]
+
+evidence:
+  required: [file-evidence, route-record, boundary-record]
+
+verification:
+  methods: [static_confirmation, configuration_confirmation]
+
+applicable_assets: [repo, api]
+security_domains: [authentication, authorization]
+
+methodology:
+  - inventory route endpoints with handlers and methods
+  - link each endpoint to its authorization boundary record if present
+  - trace object identifiers from handler to data access
+  - record absent checks as hypotheses, never as findings
+
+checks:
+  - id: route-boundary-mapping
+    title: Route to boundary mapping
+    methodology:
+      - list all endpoints with method, path, and handler
+      - attach the recorded boundary for each endpoint
+      - record endpoints without any boundary record
+    evidence_required: [route-record]
+    evidence_sufficient: [route-record, handler-symbol, boundary-record]
+    evidence_missing: [framework-hidden-route]
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: false
+    entry_level: OBSERVED
+    codeintel_needs: [routes, auth_boundaries]
+    source_kinds: []
+    sink_kinds: []
+    hypothesis_template: Endpoint {source} has no recorded authorization check; requires verification.
+
+  - id: object-access-review
+    title: Object and resource access review
+    methodology:
+      - trace user-controlled identifiers into data-access calls
+      - compare each path against ownership and tenant checks
+      - record mismatches as hypotheses with path evidence
+    evidence_required: [dataflow-path-record, boundary-record]
+    evidence_sufficient: [identifier-origin, access-call, check-record]
+    evidence_missing: [unresolved-ownership-check]
+    verification_required: [static_confirmation, read_only_query]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [dataflow, call_graph, auth_boundaries]
+    source_kinds: [http_parameter, request_body]
+    sink_kinds: []
+    hypothesis_template: Identifier at {source} may reach data access without a recorded ownership check; requires verification.
+
+  - id: state-change-protection-review
+    title: State-changing endpoint protection review
+    methodology:
+      - list state-changing endpoints from route facts
+      - confirm a boundary record exists for each
+      - record unprotected state changes as hypotheses
+    evidence_required: [route-record, boundary-record]
+    evidence_sufficient: [route-record, boundary-record, method-record]
+    evidence_missing: [middleware-chain-gap]
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: SUSPECTED
+    codeintel_needs: [routes, auth_boundaries]
+    source_kinds: []
+    sink_kinds: []
+    hypothesis_template: State-changing endpoint {source} may lack protection; requires verification.
+
+stop_conditions: [scope-exhausted, budget-exhausted, no-progress]
+limitations:
+  - Absent boundary records may reflect provider gaps, not missing checks.
+  - Framework-hidden routes need manual inventory.
+
+security:
+  requested: [repository.read, repository.search, code.routes.read, code.symbols.read]
+  denied: [repository.write, database.write, destructive]
+
+allowed_tools: [repository.read, repository.search, semgrep]
+
+provenance: {source: official}

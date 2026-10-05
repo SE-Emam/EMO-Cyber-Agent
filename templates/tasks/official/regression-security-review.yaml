@@ -1,0 +1,50 @@
+task:
+  id: regression-security-review
+  title: Regression Security Review
+  version: 1.0.0
+  type: review
+  objective: Compare current findings against historical finding identities to detect regressions, without reusing historical evidence.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: [historical-finding-identities]
+skills:
+  required: [code-review-security]
+  optional: [dependency-security, secrets]
+capabilities:
+  required: [repository.read, repository.search]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: [semgrep]
+  optional: [trivy]
+methodology:
+  phases: [reconnaissance, regression-diff, verification]
+  procedures:
+    - collect current findings with fresh evidence
+    - compare identities against history without reusing old evidence
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - regressions identified by identity comparison with fresh evidence
+deliverables: [observations]
+report:
+  template: regression-security
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

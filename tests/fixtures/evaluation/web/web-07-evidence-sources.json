@@ -1,0 +1,59 @@
+{
+  "case_id": "web-07-evidence-sources",
+  "title": "Web independent sources counted",
+  "track": "reasoning",
+  "taxonomy": "data_exposure",
+  "stage": "evidence",
+  "section": "web",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "evidence",
+    "payload": {
+      "facts": [
+        {
+          "source_tool": "semgrep",
+          "location": "app/a.py",
+          "content_hash": "111111111111aaaa",
+          "provenance": {
+            "labels": [
+              "static"
+            ]
+          }
+        },
+        {
+          "source_tool": "git",
+          "location": "app/a.py",
+          "content_hash": "222222222222bbbb",
+          "provenance": {
+            "labels": [
+              "history"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "evidence",
+      "subject": "independent_sources",
+      "match": "exact",
+      "value": 2
+    },
+    {
+      "kind": "evidence",
+      "subject": "evidence_count",
+      "match": "exact",
+      "value": 2
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "web-07-evidence-sources"
+  },
+  "notes": "",
+  "tags": [
+    "evidence"
+  ]
+}

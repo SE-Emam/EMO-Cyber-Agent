@@ -1,0 +1,67 @@
+{
+  "agents": [
+    {"id": "assistant", "name": "Assistant", "role": "executor", "identity_id": "id-service", "model_endpoint_id": "ep-main", "skill_ids": ["mcp-security", "injection"], "tool_ids": ["docs-search"], "subagent_ids": ["researcher"]},
+    {"id": "researcher", "name": "Researcher", "role": "worker", "identity_id": "id-delegated", "skill_ids": ["backend-security"], "tool_ids": ["docs-search", "code-run"], "parent_id": "assistant", "delegation_id": "del-001"}
+  ],
+  "subagents": [
+    {"id": "researcher", "parent_id": "assistant", "role": "worker", "identity_id": "id-delegated", "skill_ids": ["backend-security"], "tool_ids": ["docs-search", "code-run"], "delegation_id": "del-001"}
+  ],
+  "identities": [
+    {"id": "id-service", "kind": "service-identity", "principal": "svc-assistant"},
+    {"id": "id-delegated", "kind": "delegated-subset", "principal": "svc-assistant"}
+  ],
+  "delegations": [
+    {"id": "del-001", "issuer": "assistant", "subject": "research", "delegate": "researcher", "scope": ["docs-search"], "audience": "docs-server", "validity": "2026-10-03T00:00:00Z/2026-10-04T00:00:00Z"}
+  ],
+  "endpoints": [
+    {"id": "ep-main", "provider_identity": "unknown", "model_identity": "unknown", "version": "unknown", "hosting_boundary": "unknown", "tool_use": "yes"}
+  ],
+  "prompt_sources": [
+    {"id": "sys-main", "kind": "system-prompt"}
+  ],
+  "context_sources": [
+    {"id": "ctx-docs", "kind": "repository"},
+    {"id": "ctx-web", "kind": "web-content"}
+  ],
+  "skill_bindings": [
+    {"agent_id": "assistant", "skill_id": "mcp-security"},
+    {"agent_id": "assistant", "skill_id": "injection"},
+    {"agent_id": "researcher", "skill_id": "backend-security"}
+  ],
+  "tool_bindings": [
+    {"agent_id": "assistant", "tool_id": "docs-search", "via_skill_id": "mcp-security"},
+    {"agent_id": "researcher", "tool_id": "docs-search"},
+    {"agent_id": "researcher", "tool_id": "code-run"}
+  ],
+  "mcp_clients": [
+    {"id": "client-main", "agent_id": "assistant", "server_id": "docs-server", "binding": "stdio"}
+  ],
+  "mcp_servers": [
+    {"id": "docs-server", "identity": "unknown", "origin": "local", "transport": "stdio", "protocol_version": "2025-06-18", "authorization_context": "unknown", "capabilities": ["tools", "resources"]}
+  ],
+  "mcp_tools": [
+    {"id": "docs-search", "server_id": "docs-server", "identity": "unknown", "version": "unknown", "capabilities": ["search"]},
+    {"id": "code-run", "server_id": "docs-server", "identity": "unknown", "version": "unknown", "capabilities": ["execute"]}
+  ],
+  "mcp_resources": [
+    {"id": "docs-index", "server_id": "docs-server", "identity": "unknown"}
+  ],
+  "mcp_prompts": [
+    {"id": "summarize", "server_id": "docs-server", "identity": "unknown"}
+  ],
+  "sessions": [
+    {"id": "sess-001", "audit_id": "A", "agent_id": "assistant"}
+  ],
+  "memories": [
+    {"id": "mem-001", "digest": "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12"}
+  ],
+  "retrieval_sources": [
+    {"id": "rag-docs", "kind": "rag"}
+  ],
+  "credential_sources": [
+    {"id": "cred-api-key", "kind": "secret", "material_ref": "digest:ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12"}
+  ],
+  "credential_flows": [
+    {"id": "flow-cred-001", "source_id": "cred-api-key", "consumer_id": "docs-server", "boundary_id": "credential-boundary-cred-api-key", "redacted": true}
+  ]
+}

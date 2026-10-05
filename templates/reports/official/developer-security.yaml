@@ -1,0 +1,29 @@
+report_template:
+  id: developer-security
+  name: Developer Security Report
+  version: 1.0.0
+  type: developer
+  description: Actionable per-finding presentation for developers. Full mandatory fields plus remediation detail.
+
+sections:
+  - name: summary
+    fields: [report.summary]
+  - name: findings
+    fields: [finding.finding_id, finding.title, finding.severity, finding.confidence, finding.status, finding.category, finding.cwe, finding.locations, finding.evidence_ids, finding.verification_ids, finding.remediation, finding.provenance, finding.observed_issue, finding.root_cause]
+  - name: limitations
+    fields: []
+
+finding_fields: [finding.finding_id, finding.title, finding.severity, finding.confidence, finding.status, finding.category, finding.cwe, finding.owasp, finding.locations, finding.evidence_ids, finding.verification_ids, finding.remediation, finding.provenance, finding.observed_issue, finding.root_cause, finding.impact, finding.references]
+section_order: [summary, findings, limitations]
+show_non_reportable: false
+evidence_presentation: references
+verification_presentation: detailed
+limitations_sections: [limitations]
+appendices: [provenance]
+output_formats: [json, jsonl, markdown]
+security:
+  preserve_provenance: true
+  redact_secrets: true
+  deterministic: true
+visibility: []
+provenance: {source: official}

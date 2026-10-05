@@ -1,0 +1,43 @@
+{
+  "case_id": "authz-03-scope-size",
+  "title": "Authorization scope list size observed",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "scope",
+    "payload": {
+      "audit_id": "audit-a1",
+      "target": "proj/a",
+      "scope": [
+        "proj/a",
+        "proj/b"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "scope_size",
+      "match": "exact",
+      "value": 2
+    },
+    {
+      "kind": "scope_behavior",
+      "subject": "in_scope",
+      "match": "true",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-03-scope-size"
+  },
+  "notes": "",
+  "tags": [
+    "scope"
+  ]
+}

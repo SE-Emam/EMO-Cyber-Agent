@@ -1,0 +1,65 @@
+# PLAYBOOK-TEMPLATE — POST-RC-004 authoring contract.
+#
+# A Playbook is a SECURITY WORKFLOW CONTRACT: ordered task references +
+# skill/tool requests + evidence/verification plans + report template +
+# stop rules. It coordinates; it never permits, executes, or reports.
+# Conditions are declarative (when_field/operator/value/select_tasks).
+# No code, no shell, no network, no expressions.
+
+playbook:
+  id: my-security-playbook
+  title: My Security Playbook
+  version: 1.0.0
+  type: security
+  objective: What scoped security question this workflow answers.
+
+tasks:
+  required: [deep-security-audit]
+  optional: [secret-audit]
+
+skills:
+  required: [authentication]
+  optional: [cryptography]
+
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+
+capabilities:
+  requested: [repository.read]
+  denied: [repository.write, database.write, destructive]
+
+execution:
+  order: [deep-security-audit, secret-audit]
+  conditions:
+    - when_field: technology
+      operator: ==
+      value: supabase
+      select_tasks: [supabase-security-review]
+  max_tasks: 12
+  max_iterations: 1
+
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+
+verification:
+  required: true
+  methods: [static_confirmation]
+
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+
+report:
+  template: security-audit
+
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+
+acceptance_criteria:
+  - All in-scope entry points inspected.
+
+provenance: {source: official}

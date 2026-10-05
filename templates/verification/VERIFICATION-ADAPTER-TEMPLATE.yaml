@@ -1,0 +1,59 @@
+# VERIFICATION-ADAPTER-TEMPLATE — POST-RC-012 starter contract.
+#
+# The provider-facing boundary. An adapter declares identity,
+# capabilities, supported strategies and target kinds, health, and
+# provenance — then validates and executes a policy-bound request.
+# It holds no authorization, opens no transport of its own, and
+# returns data only: Core judges observations through a typed
+# oracle. Authority language in provider text becomes a data flag,
+# never a state.
+
+adapter_template:
+  template_id: verification-adapter-starter
+  name: Verification Adapter Starter
+  version: 1.0.0
+  identity:
+    id: example-adapter
+    version: 1.0.0
+    contract_version: "1.0"
+  capabilities:
+    capabilities: [FILE_ASSERTION]        # closed vocabulary, no escalation tokens
+    supported_target_kinds: [FILE]        # explicit kinds, never "*"
+    supported_strategy_ids: []            # strategies this adapter may bind
+  health:
+    state: AVAILABLE                      # AVAILABLE | MISSING | UNSUPPORTED | VERSION_UNSUPPORTED | BROKEN | POLICY_BLOCKED | RESOURCE_LIMITED
+    provider_version: "1.0.0"
+  provenance_required_keys:
+    - adapter_id
+    - adapter_version
+    - provider_identity
+    - provider_version
+    - execution_contract_version
+    - policy_decision_id
+  request_contract:
+    forbidden_fields:
+      - raw_command
+      - shell
+      - arbitrary_argv
+      - arbitrary_sql
+      - arbitrary_url
+      - arbitrary_code
+      - model_prompt
+      - permission_grant
+      - policy_override
+      - finding_state
+      - finding_severity
+    notes:
+      - inputs-are-bounded-contract-values-only
+      - target-identity-must-be-explicit-and-snapshot-bound
+      - adapter-rejects-mismatched-binding-instead-of-reinterpreting
+  response_contract:
+    execution_status: [COMPLETED, BLOCKED, FAILED, TIMEOUT, MALFORMED]
+    operational_result: [OK, TARGET_UNAVAILABLE, TIMEOUT, AUTH_UNAVAILABLE, NETWORK_DENIED, FIXTURE_MISSING, TOOL_MISSING, ENV_MISCONFIGURED, RESOURCE_LIMITED, POLICY_DENIED, MALFORMED_OUTPUT, TARGET_CHANGED, VERSION_MISMATCH]
+    notes:
+      - response-contains-no-authority-fields
+      - operational-outcomes-map-only-to-inconclusive-or-blocked
+      - malformed-output-is-rejected-not-rewritten
+      - provenance-missing-means-unverifiable-not-downgraded
+
+provenance: {source: starter, origin: EMO-Cyber-Agent verification starter, catalog: templates/verification}

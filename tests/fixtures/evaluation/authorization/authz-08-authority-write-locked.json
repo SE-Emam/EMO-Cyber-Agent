@@ -1,0 +1,39 @@
+{
+  "case_id": "authz-08-authority-write-locked",
+  "title": "Authorization write grant stays locked",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "authority",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "authority",
+    "payload": {
+      "authority_grant_write": false
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "authority_grants.write",
+      "match": "exact",
+      "value": false
+    },
+    {
+      "kind": "authority_invariant",
+      "subject": "authority_diff.state",
+      "match": "exact",
+      "value": "PRESERVED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-08-authority-write-locked"
+  },
+  "notes": "",
+  "tags": [
+    "authority",
+    "grant"
+  ]
+}

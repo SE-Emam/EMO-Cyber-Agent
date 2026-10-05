@@ -1,0 +1,44 @@
+{
+  "case_id": "authz-05-policy-deny-network",
+  "title": "Authorization network capability denied",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "policy",
+    "payload": {
+      "audit_id": "audit-a1",
+      "tool_id": "net-scanner",
+      "target": "proj/a",
+      "profile": "read_only",
+      "capabilities": [
+        "scanner.network.read"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "allowed",
+      "match": "exact",
+      "value": false
+    },
+    {
+      "kind": "state",
+      "subject": "reason_codes",
+      "match": "nonempty",
+      "value": []
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-05-policy-deny-network"
+  },
+  "notes": "",
+  "tags": [
+    "policy"
+  ]
+}

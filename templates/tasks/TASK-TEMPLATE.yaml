@@ -1,0 +1,72 @@
+# TASK TEMPLATE — POST-RC-002 (canonical authoring contract, task schema 1.0)
+#
+# A Task is a Security Execution Contract (WHAT should be done). It never
+# permits, executes, confirms, or reports anything by itself — Core does.
+# Skills are requested (never granted); capabilities are advisory;
+# verification/reporting stay under Core authority.
+#
+# task schema version: "1.0" (see docs/schemas/task.schema.json)
+
+task:
+  id: example-task
+  title: Example Task
+  version: 1.0.0
+  type: audit                      # audit | review | verification_support | threat_model
+  objective: State the security question this task answers.
+
+scope:
+  included: [repository]
+  excluded: []
+  target_types: [repo]
+
+inputs:
+  required: [source-tree]
+  optional: []
+
+skills:
+  required: [code-review-security]
+  optional: []
+
+capabilities:                      # REQUESTED ONLY — PolicyEngine decides
+  required: [repository.read]
+  denied: [repository.write, database.write, destructive]
+
+tools:
+  required: []
+  optional: []
+
+methodology:
+  phases: [reconnaissance, review]
+  procedures:
+    - inventory targets
+    - collect read-only facts
+
+evidence:
+  required: [file-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+
+verification:
+  required: false
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+
+acceptance_criteria:
+  - observations carry evidence references
+
+deliverables: [observations]
+
+report:
+  template: security-audit          # forward reference until POST-RC-003
+  required_sections: [summary, findings, limitations]
+
+provenance: {source: example}

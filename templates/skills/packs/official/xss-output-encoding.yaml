@@ -1,0 +1,74 @@
+pack:
+  id: xss-output-encoding
+  name: XSS and Output Encoding Pack
+  version: 1.0.0
+  purpose: Trace untrusted data to HTML, script, and template sinks, record encoding boundaries, and separate reflected from stored contexts as hypotheses.
+
+skills: [frontend-security, api-security]
+
+code_intelligence:
+  required: [dataflow, routes, symbols]
+
+evidence:
+  required: [file-evidence, dataflow-path-record]
+
+verification:
+  methods: [static_confirmation, dataflow_confirmation]
+
+applicable_assets: [repo, api]
+security_domains: [api-security, frontend-security]
+
+methodology:
+  - list rendering sinks by framework pattern
+  - trace rendered values to origin symbols
+  - record encoding calls between origin and sink
+  - separate reflected and stored contexts in records
+
+checks:
+  - id: rendering-sink-review
+    title: Rendering sink review
+    methodology:
+      - inventory template and markup rendering sites
+      - attach origin and encoding records to each site
+      - record unencoded untrusted flows as hypotheses
+    evidence_required: [dataflow-path-record, sink-record]
+    evidence_sufficient: [origin-record, sink-record, encoding-record]
+    evidence_missing: [framework-autoescape-unknown]
+    verification_required: [dataflow_confirmation, static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [dataflow, symbols]
+    source_kinds: [http_parameter, request_body, database]
+    sink_kinds: [html_rendering, template_engine]
+    hypothesis_template: Value from {source} may reach rendering at {sink} without recorded encoding; requires verification.
+
+  - id: stored-context-review
+    title: Stored context review
+    methodology:
+      - follow database-read values into rendering sites
+      - record stored-context flows distinctly from reflected ones
+    evidence_required: [dataflow-path-record]
+    evidence_sufficient: [storage-origin, sink-record]
+    evidence_missing: [stored-data-lineage-gap]
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [dataflow]
+    source_kinds: [database]
+    sink_kinds: [html_rendering, template_engine]
+    hypothesis_template: Stored value from {source} may render at {sink}; requires verification.
+
+stop_conditions: [scope-exhausted, budget-exhausted, no-progress]
+limitations:
+  - Framework autoescape defaults need manual confirmation per version.
+  - Client-side-only flows are out of static view.
+
+security:
+  requested: [repository.read, repository.search, code.dataflow.read, code.routes.read]
+  denied: [repository.write, database.write, destructive]
+
+allowed_tools: [repository.read, repository.search, semgrep]
+
+provenance: {source: official}

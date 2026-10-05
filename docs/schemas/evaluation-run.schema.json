@@ -1,0 +1,596 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/evaluation-run.schema.json",
+  "title": "Evaluation run interop contract",
+  "version": "1.0",
+  "description": "Immutable run record: events, observations, judgments, metrics, gates and identity digest.",
+  "definitions": {
+    "DeterminismScore": {
+      "additionalProperties": false,
+      "properties": {
+        "repeat_count": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Repeat Count",
+          "type": "integer"
+        },
+        "matched": {
+          "default": false,
+          "title": "Matched",
+          "type": "boolean"
+        },
+        "digests": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Digests",
+          "type": "array"
+        }
+      },
+      "title": "DeterminismScore",
+      "type": "object"
+    },
+    "EvaluationEvent": {
+      "additionalProperties": false,
+      "description": "Immutable run event. Only the id is volatile for identity purposes.",
+      "properties": {
+        "event_id": {
+          "title": "Event Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/definitions/EvaluationStage"
+        },
+        "kind": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "sequence": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Sequence",
+          "type": "integer"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "volatile_fields": {
+          "default": [
+            "event_id"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Volatile Fields",
+          "type": "array"
+        }
+      },
+      "required": [
+        "case_id",
+        "stage",
+        "kind"
+      ],
+      "title": "EvaluationEvent",
+      "type": "object"
+    },
+    "EvaluationObservation": {
+      "additionalProperties": false,
+      "description": "One system-produced fact bound to a workflow stage.\n\n``volatile_fields`` names fields excluded from ``identity_digest`` so\nrepeated runs of the same input stay byte-identical.",
+      "properties": {
+        "observation_id": {
+          "title": "Observation Id",
+          "type": "string"
+        },
+        "case_id": {
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "stage": {
+          "$ref": "#/definitions/EvaluationStage"
+        },
+        "kind": {
+          "default": "observation",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        },
+        "volatile_fields": {
+          "default": [
+            "observation_id"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Volatile Fields",
+          "type": "array"
+        }
+      },
+      "required": [
+        "case_id",
+        "stage"
+      ],
+      "title": "EvaluationObservation",
+      "type": "object"
+    },
+    "EvaluationStage": {
+      "description": "Where an observation/judgment sits in the EMO workflow.\n\nThe first block mirrors the mandatory workflow path (Core owns it);\nthe second block adds evaluation protocol stages (parity, regression,\nauthority, coverage) that are properties of an evaluation run rather\nthan of a single audit.",
+      "enum": [
+        "input_facts",
+        "normalized_facts",
+        "evidence",
+        "correlation",
+        "hypotheses",
+        "verification",
+        "finding_eligibility",
+        "report",
+        "authority",
+        "parity",
+        "regression",
+        "coverage",
+        "isolation",
+        "detection",
+        "surface"
+      ],
+      "title": "EvaluationStage",
+      "type": "string"
+    },
+    "GateEvaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "overall": {
+          "$ref": "#/definitions/GateStatus"
+        },
+        "results": {
+          "items": {
+            "$ref": "#/definitions/GateResult"
+          },
+          "title": "Results",
+          "type": "array"
+        },
+        "thresholds": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Thresholds",
+          "type": "object"
+        },
+        "required_metrics": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Metrics",
+          "type": "array"
+        },
+        "required_gates": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Gates",
+          "type": "array"
+        },
+        "aggregate_note": {
+          "default": "overall reflects gate outcomes only; aggregate or average scores never override a failed gate",
+          "title": "Aggregate Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "overall",
+        "results"
+      ],
+      "title": "GateEvaluation",
+      "type": "object"
+    },
+    "GateName": {
+      "enum": [
+        "security_gate",
+        "correctness_gate",
+        "regression_gate"
+      ],
+      "title": "GateName",
+      "type": "string"
+    },
+    "GateResult": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/GateName"
+        },
+        "status": {
+          "$ref": "#/definitions/GateStatus"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 64,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "metrics": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "title": "Metrics",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "status"
+      ],
+      "title": "GateResult",
+      "type": "object"
+    },
+    "GateStatus": {
+      "enum": [
+        "pass",
+        "fail",
+        "partial",
+        "not_evaluated",
+        "not_applicable"
+      ],
+      "title": "GateStatus",
+      "type": "string"
+    },
+    "MetricResult": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "maxLength": 64,
+          "minLength": 3,
+          "title": "Name",
+          "type": "string"
+        },
+        "version": {
+          "default": "eval-metric-v1",
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Version",
+          "type": "string"
+        },
+        "count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "denominator": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        },
+        "coverage": {
+          "default": 0.0,
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Coverage",
+          "type": "number"
+        },
+        "unknown": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Unknown",
+          "type": "integer"
+        },
+        "inconclusive": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Inconclusive",
+          "type": "integer"
+        },
+        "blocked": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Blocked",
+          "type": "integer"
+        },
+        "confidence": {
+          "default": "",
+          "maxLength": 16,
+          "title": "Confidence",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 12,
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "MetricResult",
+      "type": "object"
+    },
+    "OracleJudgment": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "maxLength": 96,
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "oracle": {
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Oracle",
+          "type": "string"
+        },
+        "check": {
+          "maxLength": 48,
+          "minLength": 1,
+          "title": "Check",
+          "type": "string"
+        },
+        "stage": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Stage",
+          "type": "string"
+        },
+        "track": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Track",
+          "type": "string"
+        },
+        "verdict": {
+          "$ref": "#/definitions/OracleVerdict"
+        },
+        "gt_kind": {
+          "default": "",
+          "maxLength": 48,
+          "title": "Gt Kind",
+          "type": "string"
+        },
+        "gt_record_id": {
+          "default": "",
+          "maxLength": 96,
+          "title": "Gt Record Id",
+          "type": "string"
+        },
+        "subject": {
+          "default": "",
+          "maxLength": 256,
+          "title": "Subject",
+          "type": "string"
+        },
+        "reason_codes": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Reason Codes",
+          "type": "array"
+        },
+        "security_relevant": {
+          "default": false,
+          "title": "Security Relevant",
+          "type": "boolean"
+        },
+        "disagreement": {
+          "default": false,
+          "title": "Disagreement",
+          "type": "boolean"
+        },
+        "detail": {
+          "default": "",
+          "maxLength": 300,
+          "title": "Detail",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "oracle",
+        "check",
+        "stage",
+        "track",
+        "verdict"
+      ],
+      "title": "OracleJudgment",
+      "type": "object"
+    },
+    "OracleVerdict": {
+      "enum": [
+        "supported",
+        "refuted",
+        "inconclusive",
+        "error",
+        "not_applicable"
+      ],
+      "title": "OracleVerdict",
+      "type": "string"
+    },
+    "RunStatus": {
+      "enum": [
+        "completed",
+        "partial",
+        "failed"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "run_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "dataset_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "dataset_fingerprint": {
+      "maxLength": 128,
+      "minLength": 8,
+      "title": "Dataset Fingerprint",
+      "type": "string"
+    },
+    "sut_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Sut Id",
+      "type": "string"
+    },
+    "sut_version": {
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Sut Version",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/definitions/RunStatus",
+      "default": "completed"
+    },
+    "started_at": {
+      "title": "Started At",
+      "type": "string"
+    },
+    "completed_at": {
+      "title": "Completed At",
+      "type": "string"
+    },
+    "case_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Case Ids",
+      "type": "array"
+    },
+    "events": {
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/EvaluationEvent"
+      },
+      "title": "Events",
+      "type": "array"
+    },
+    "observations": {
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/EvaluationObservation"
+      },
+      "title": "Observations",
+      "type": "array"
+    },
+    "judgments": {
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/OracleJudgment"
+      },
+      "title": "Judgments",
+      "type": "array"
+    },
+    "metrics": {
+      "additionalProperties": {
+        "$ref": "#/definitions/MetricResult"
+      },
+      "title": "Metrics",
+      "type": "object"
+    },
+    "gates": {
+      "$ref": "#/definitions/GateEvaluation"
+    },
+    "counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Counts",
+      "type": "object"
+    },
+    "determinism": {
+      "$ref": "#/definitions/DeterminismScore",
+      "default": {
+        "repeat_count": 1,
+        "matched": false,
+        "digests": []
+      }
+    },
+    "environment": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Environment",
+      "type": "object"
+    },
+    "identity_digest": {
+      "maxLength": 128,
+      "minLength": 8,
+      "title": "Identity Digest",
+      "type": "string"
+    },
+    "volatile_fields": {
+      "default": [
+        "run_id",
+        "started_at",
+        "completed_at",
+        "environment",
+        "events"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Volatile Fields",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "dataset_id",
+    "dataset_fingerprint",
+    "sut_id",
+    "sut_version",
+    "gates",
+    "identity_digest"
+  ],
+  "type": "object"
+}

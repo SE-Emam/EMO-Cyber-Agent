@@ -1,0 +1,47 @@
+{
+  "case_id": "ver-02-plan-config",
+  "title": "Verification configuration plan produced",
+  "track": "reasoning",
+  "taxonomy": "configuration",
+  "stage": "verification",
+  "section": "verification",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "verify",
+    "payload": {
+      "candidate": {
+        "hypothesis": "config disables transport security",
+        "evidence_ids": [
+          "ev-2"
+        ]
+      },
+      "method": "configuration_confirmation",
+      "kind": "configuration",
+      "locator": "proj/app.conf",
+      "audit_id": "audit-a1"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "status",
+      "match": "exact",
+      "value": "planned"
+    },
+    {
+      "kind": "state",
+      "subject": "method",
+      "match": "exact",
+      "value": "configuration_confirmation"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "ver-02-plan-config"
+  },
+  "notes": "",
+  "tags": [
+    "verification"
+  ]
+}

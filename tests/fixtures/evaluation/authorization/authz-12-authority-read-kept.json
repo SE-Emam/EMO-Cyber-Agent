@@ -1,0 +1,40 @@
+{
+  "case_id": "authz-12-authority-read-kept",
+  "title": "Authorization read grant retained",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "authority",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "authority",
+    "payload": {
+      "authority_findings": {
+        "f-authz-2": "triaged"
+      }
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "authority_grants.read",
+      "match": "true",
+      "value": true
+    },
+    {
+      "kind": "authority_invariant",
+      "subject": "authority_diff.state",
+      "match": "exact",
+      "value": "PRESERVED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-12-authority-read-kept"
+  },
+  "notes": "",
+  "tags": [
+    "authority"
+  ]
+}

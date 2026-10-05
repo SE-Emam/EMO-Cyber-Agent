@@ -1,0 +1,38 @@
+{
+  "case_id": "web-05-normalize",
+  "title": "Web input whitespace normalization",
+  "track": "detection",
+  "taxonomy": "input_validation",
+  "stage": "normalized_facts",
+  "section": "web",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "normalize",
+    "payload": {
+      "text": "  alpha   beta  gamma "
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "normalized_text",
+      "match": "exact",
+      "value": "alpha beta gamma"
+    },
+    {
+      "kind": "state",
+      "subject": "empty_after_normalization",
+      "match": "exact",
+      "value": false
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "web-05-normalize"
+  },
+  "notes": "",
+  "tags": [
+    "normalize"
+  ]
+}

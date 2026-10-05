@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/verification-strategy.schema.json",
+  "title": "Verification strategy interop contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "name", "category", "success_criteria", "refutation_criteria"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$", "maxLength": 80},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "name": {"type": "string", "minLength": 1, "maxLength": 160},
+    "category": {
+      "enum": [
+        "PASSIVE_PROPERTY_CHECK", "STATIC_PROPERTY_CHECK", "STRUCTURAL_CONSISTENCY",
+        "CONFIGURATION_CHECK", "AUTHORIZATION_MATRIX", "AUTHENTICATION_FLOW",
+        "INPUT_BOUNDARY", "OUTPUT_BOUNDARY", "DATA_FLOW_CONFIRMATION",
+        "DEPENDENCY_ASSERTION", "SECRET_EXPOSURE_CHECK", "NETWORK_BEHAVIOR_CHECK",
+        "STATE_CHANGE_CHECK", "SAFE_ACTIVE_REQUEST", "CONTROLLED_REPRODUCTION",
+        "REGRESSION_CHECK", "NEGATIVE_TEST", "POSITIVE_CONTROL"
+      ]
+    },
+    "applicable_hypotheses": {"type": "array", "items": {"type": "string", "maxLength": 60}},
+    "required_evidence": {"type": "array", "items": {"type": "string", "maxLength": 80}},
+    "required_capabilities": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "HTTP_REQUEST", "HTTP_ASSERTION", "AUTHZ_MATRIX", "CONFIG_ASSERTION",
+          "FILE_ASSERTION", "DATABASE_ASSERTION", "PROCESS_ASSERTION", "GRAPH_ASSERTION",
+          "STRUCTURED_TOOL_ASSERTION", "MCP_ASSERTION", "AGENT_BOUNDARY_ASSERTION",
+          "SYNTHETIC_IDENTITY_TEST"
+        ]
+      }
+    },
+    "allowed_safety_levels": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"enum": ["PASSIVE", "SAFE_ACTIVE", "RESTRICTED_ACTIVE"]}
+    },
+    "target_contract": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "FILE", "SYMBOL", "ROUTE", "API_OPERATION", "DATABASE_OBJECT", "DEPENDENCY",
+          "MCP_TOOL", "MCP_RESOURCE", "AGENT_BOUNDARY", "CONFIGURATION", "SNAPSHOT",
+          "REPOSITORY", "ENDPOINT"
+        ]
+      }
+    },
+    "input_contract": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "declared-facts", "evidence-reference", "bounded-property-value",
+          "synthetic-identity-pair", "bounded-url-property", "bounded-path-fixture",
+          "canary-value", "structured-tool-result", "no-input"
+        ]
+      }
+    },
+    "oracle_contract": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "HTTP_STATUS", "HTTP_BODY_PROPERTY", "HEADER_PROPERTY",
+          "DATABASE_STATE_PROPERTY", "FILE_STATE_PROPERTY", "CONFIG_PROPERTY",
+          "GRAPH_PROPERTY", "AUTHZ_DECISION", "PROCESS_EXIT",
+          "STRUCTURED_TOOL_RESULT", "CUSTOM_ASSERTION"
+        ]
+      }
+    },
+    "success_criteria": {"type": "string", "minLength": 1, "maxLength": 500},
+    "refutation_criteria": {"type": "string", "minLength": 1, "maxLength": 500},
+    "limitations": {"type": "array", "items": {"type": "string", "maxLength": 160}},
+    "resource_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_requests": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "max_duration_s": {"type": "integer", "minimum": 1, "maximum": 600},
+        "max_output_bytes": {"type": "integer", "minimum": 256, "maximum": 1048576},
+        "max_redirects": {"type": "integer", "minimum": 0, "maximum": 10},
+        "max_payload_size": {"type": "integer", "minimum": 16, "maximum": 65536},
+        "max_retries": {"type": "integer", "minimum": 0, "maximum": 3},
+        "max_graph_depth": {"type": "integer", "minimum": 1, "maximum": 64},
+        "max_attempts": {"type": "integer", "minimum": 1, "maximum": 10}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source"],
+      "properties": {
+        "source": {"enum": ["official", "starter", "test", "fixture"]},
+        "origin": {"type": "string", "maxLength": 160},
+        "catalog": {"type": "string", "maxLength": 120},
+        "schema_version": {"type": "string", "maxLength": 40}
+      }
+    },
+    "schema_version": {"type": "string", "maxLength": 40},
+    "digest": {"type": "string", "maxLength": 128}
+  }
+}

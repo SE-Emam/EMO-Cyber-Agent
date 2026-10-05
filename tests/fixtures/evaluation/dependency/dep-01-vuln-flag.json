@@ -1,0 +1,49 @@
+{
+  "case_id": "dep-01-vuln-flag",
+  "title": "Dependency vulnerable flag surfaced",
+  "track": "detection",
+  "taxonomy": "dependency",
+  "stage": "detection",
+  "section": "dependency",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "",
+      "dependencies": [
+        {
+          "name": "left-pad",
+          "version": "1.0.0",
+          "vulnerable": true
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_present",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "known_vulnerable_dependency"
+      }
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "secret_literal"
+      }
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "dep-01-vuln-flag"
+  },
+  "notes": "",
+  "tags": [
+    "dependency"
+  ]
+}

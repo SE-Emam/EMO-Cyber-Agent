@@ -1,0 +1,49 @@
+playbook:
+  id: supabase-security-audit
+  title: Supabase Security Audit
+  version: 1.0.0
+  type: security
+  objective: Audit Supabase-backed applications from repository discovery through auth, schema, RLS, grants, views, functions, and application-database correlation using read-only methods.
+  description: RLS findings are never treated as a final verdict alone; application-layer correlation is required.
+tasks:
+  required: [authentication-review, authorization-review]
+  optional: [supabase-security-review, database-security-review]
+skills:
+  required: [authentication, authorization]
+  optional: [supabase, database-security, rls]
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+capabilities:
+  requested: [repository.read, supabase.policy.read, supabase.table.read, supabase.grant.read]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [authentication-review, authorization-review]
+  conditions:
+    - when_field: technology
+      operator: ==
+      value: supabase
+      select_tasks: [supabase-security-review, database-security-review]
+  max_tasks: 12
+  max_iterations: 1
+evidence:
+  required: [repository_identity, project_identity, rls_policies, rls_status, tables, grants, file-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [read_only_query, configuration_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: supabase-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Repository and Supabase project identity recorded.
+  - RLS policies and grants inspected with read-only queries.
+  - Application-database correlation recorded.
+  - Limitations recorded in the report.
+provenance: {source: official}

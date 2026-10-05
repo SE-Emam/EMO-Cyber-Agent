@@ -1,0 +1,36 @@
+{
+  "case_id": "ver-08-scope",
+  "title": "Verification target in scope",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "verification",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "scope",
+    "payload": {
+      "audit_id": "audit-a1",
+      "target": "proj/a",
+      "scope": [
+        "proj/a"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "scope_behavior",
+      "subject": "in_scope",
+      "match": "true",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "ver-08-scope"
+  },
+  "notes": "",
+  "tags": [
+    "scope"
+  ]
+}

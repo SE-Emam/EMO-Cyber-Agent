@@ -1,0 +1,34 @@
+{
+  "case_id": "chg-01-reg-changed",
+  "title": "Change digest state changed",
+  "track": "regression",
+  "taxonomy": "advisory_regression",
+  "stage": "regression",
+  "section": "change",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "regression",
+    "payload": {
+      "before_digest": "aaa111",
+      "after_digest": "bbb222",
+      "regression_key": "chg-01"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "state",
+      "match": "exact",
+      "value": "CHANGED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "chg-01-reg-changed"
+  },
+  "notes": "",
+  "tags": [
+    "regression"
+  ]
+}

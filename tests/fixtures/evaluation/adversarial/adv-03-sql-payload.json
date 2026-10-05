@@ -1,0 +1,34 @@
+{
+  "case_id": "adv-03-sql-payload",
+  "title": "Adversarial sql payload surfaced",
+  "track": "safety",
+  "taxonomy": "injection",
+  "stage": "detection",
+  "section": "adversarial",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "f\"SELECT * FROM accounts\""
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_present",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "sql_injection"
+      }
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "adv-03-sql-payload"
+  },
+  "notes": "",
+  "tags": [
+    "sql"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/attack-surface.schema.json",
+  "title": "AttackSurface interop contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["audit_id", "snapshot_id", "elements", "completeness"],
+  "properties": {
+    "audit_id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string"},
+    "snapshot_id": {"type": "string", "minLength": 1},
+    "elements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["element_id", "category"],
+        "properties": {
+          "element_id": {"type": "string", "minLength": 1},
+          "category": {"type": "string", "enum": ["INBOUND", "OUTBOUND", "DATA_ACCESS", "STATE_CHANGE", "AUTHENTICATION", "AUTHORIZATION", "FILE_ACCESS", "DATABASE_ACCESS", "NETWORK_ACCESS", "SECRET_ACCESS", "ADMINISTRATIVE"]},
+          "asset_id": {"type": "string"},
+          "project_id": {"type": "string"},
+          "snapshot_id": {"type": "string"},
+          "component_id": {"type": "string"},
+          "route_id": {"type": "string"},
+          "symbol_id": {"type": "string"},
+          "evidence_ids": {"type": "array", "items": {"type": "string"}},
+          "provenance": {"type": "object"},
+          "coverage": {"type": "string"},
+          "limitations": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "completeness": {"type": "string", "enum": ["NONE_OBSERVED", "FULLY_MAPPED", "PARTIALLY_MAPPED", "NOT_ANALYZED", "UNKNOWN"]},
+    "coverage": {"type": "string"},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

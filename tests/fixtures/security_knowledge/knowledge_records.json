@@ -1,0 +1,169 @@
+{
+  "records": [
+    {
+      "record_id": "kn-observed-fact-0001",
+      "audit_id": "audit-2026-001",
+      "project_id": "payments-api",
+      "snapshot_id": "snap-2026-09-01",
+      "scope_kind": "SNAPSHOT_BOUND",
+      "source_type": "evidence",
+      "source_id": "ev-0001",
+      "category": "OBSERVED_FACT",
+      "created_from_evidence_ids": ["ev-0001"],
+      "content": {"statement": "transport layer enabled on the edge listener"},
+      "content_digest": "aaaaaaaaaaaaaaaaaaaaaaa1",
+      "regression_key": "regression:route:login:auth",
+      "trust_level": "untrusted",
+      "digest": "bbbbbbbbbbbbbbbbbbbbbbb1",
+      "schema_version": "1.0",
+      "provenance": {
+        "origin": "core:security-knowledge",
+        "collector": "recon",
+        "normalization_version": "1.0",
+        "schema_version": "1.0",
+        "evidence_ids": ["ev-0001"],
+        "parent_digests": []
+      },
+      "retention": {
+        "retention_class": "audit-lifetime",
+        "created_at": "",
+        "expires_at": "",
+        "legal_hold": false,
+        "retention_reason": ""
+      }
+    },
+    {
+      "record_id": "kn-regression-signal-0002",
+      "audit_id": "audit-2026-001",
+      "project_id": "payments-api",
+      "snapshot_id": "snap-2026-09-15",
+      "scope_kind": "RANGE_BOUND",
+      "source_type": "change_analysis",
+      "source_id": "rg-0002",
+      "category": "CHANGE_REGRESSION_SIGNAL",
+      "created_from_evidence_ids": ["ev-0002", "ev-0003"],
+      "content": {"state": "CHANGED", "before_digest": "ccccccccccccccccccccccc1", "after_digest": "ddddddddddddddddddddddd1"},
+      "content_digest": "eeeeeeeeeeeeeeeeeeeeeee1",
+      "regression_key": "regression:route:login:auth",
+      "trust_level": "untrusted",
+      "digest": "fffffffffffffffffffffff1",
+      "schema_version": "1.0",
+      "provenance": {
+        "origin": "layer:change-analysis",
+        "collector": "",
+        "normalization_version": "1.0",
+        "schema_version": "1.0",
+        "evidence_ids": ["ev-0002", "ev-0003"],
+        "parent_digests": []
+      },
+      "retention": {
+        "retention_class": "audit-lifetime",
+        "created_at": "",
+        "expires_at": "",
+        "legal_hold": false,
+        "retention_reason": ""
+      }
+    },
+    {
+      "record_id": "kn-other-audit-0003",
+      "audit_id": "audit-2026-002",
+      "project_id": "payments-api",
+      "snapshot_id": "snap-2026-09-01",
+      "scope_kind": "SNAPSHOT_BOUND",
+      "source_type": "evidence",
+      "source_id": "ev-9001",
+      "category": "OBSERVED_FACT",
+      "created_from_evidence_ids": ["ev-9001"],
+      "content": {"statement": "record belonging to a different audit"},
+      "content_digest": "11111111111111111111111a",
+      "regression_key": "",
+      "trust_level": "untrusted",
+      "digest": "11111111111111111111111b",
+      "schema_version": "1.0",
+      "provenance": {
+        "origin": "core:security-knowledge",
+        "collector": "",
+        "normalization_version": "1.0",
+        "schema_version": "1.0",
+        "evidence_ids": [],
+        "parent_digests": []
+      },
+      "retention": {
+        "retention_class": "audit-lifetime",
+        "created_at": "",
+        "expires_at": "",
+        "legal_hold": false,
+        "retention_reason": ""
+      }
+    },
+    {
+      "record_id": "kn-other-project-0004",
+      "audit_id": "audit-2026-001",
+      "project_id": "billing-worker",
+      "snapshot_id": "snap-2026-09-01",
+      "scope_kind": "SNAPSHOT_BOUND",
+      "source_type": "evidence",
+      "source_id": "ev-9002",
+      "category": "OBSERVED_FACT",
+      "created_from_evidence_ids": ["ev-9002"],
+      "content": {"statement": "record belonging to a different project"},
+      "content_digest": "11111111111111111111111c",
+      "regression_key": "",
+      "trust_level": "untrusted",
+      "digest": "11111111111111111111111d",
+      "schema_version": "1.0",
+      "provenance": {
+        "origin": "core:security-knowledge",
+        "collector": "",
+        "normalization_version": "1.0",
+        "schema_version": "1.0",
+        "evidence_ids": [],
+        "parent_digests": []
+      },
+      "retention": {
+        "retention_class": "audit-lifetime",
+        "created_at": "",
+        "expires_at": "",
+        "legal_hold": false,
+        "retention_reason": ""
+      }
+    }
+  ],
+  "allowed_categories": [
+    "OBSERVED_FACT",
+    "EVIDENCE_SUMMARY",
+    "VERIFICATION_OUTCOME",
+    "THREAT_MODEL_OBSERVATION",
+    "ATTACK_SURFACE_OBSERVATION",
+    "CHANGE_REGRESSION_SIGNAL",
+    "TOOL_OBSERVATION",
+    "CODE_INTELLIGENCE_OBSERVATION",
+    "SECURITY_CONTROL_OBSERVATION"
+  ],
+  "banned_categories": ["FINDING_STATE", "SEVERITY_VERDICT", "REMEDIATION_STATE", "TRUST_GRANT"],
+  "allowed_queries": [
+    "get_record",
+    "find_by_regression_key",
+    "find_related_observations",
+    "compare_with_baseline",
+    "list_project_regressions",
+    "get_prior_verification"
+  ],
+  "forbidden_queries": ["run_sql", "raw_backend_query", "read_audit", "delete_record", "exec", "other_audit_id"],
+  "secret_texts": [
+    "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.payload.signature",
+    "token = ghp_abcdef1234567890",
+    "github_pat_11ABCDEFG00000000000000000",
+    "token: sk-live-abcdef123456"
+  ],
+  "non_secret_texts": [
+    "transport layer enabled on the edge listener",
+    "rate limit configured at the gateway"
+  ],
+  "verdict_texts": [
+    "the endpoint is vulnerable to injection",
+    "issue marked resolved after patch",
+    "severity: high; exploitable: yes",
+    "remediated in release 4.2"
+  ]
+}

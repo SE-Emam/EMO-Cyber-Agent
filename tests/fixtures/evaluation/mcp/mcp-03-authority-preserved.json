@@ -1,0 +1,34 @@
+{
+  "case_id": "mcp-03-authority-preserved",
+  "title": "MCP authority snapshot preserved",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "authority",
+  "section": "mcp",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "authority",
+    "payload": {
+      "authority_findings": {
+        "f-mcp-1": "confirmed"
+      }
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "authority_invariant",
+      "subject": "authority_diff.state",
+      "match": "exact",
+      "value": "PRESERVED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mcp-03-authority-preserved"
+  },
+  "notes": "",
+  "tags": [
+    "authority"
+  ]
+}

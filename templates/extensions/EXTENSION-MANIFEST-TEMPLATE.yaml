@@ -1,0 +1,88 @@
+# EXTENSION-MANIFEST-TEMPLATE — POST-RC-014 authoring contract.
+#
+# An Extension Manifest DESCRIBES WHAT EXISTS. It grants nothing,
+# trusts itself in nothing, executes nothing and decides nothing.
+# Discovery is metadata-first and never imports this package; trust is
+# assigned by the loader from source class + validation + provenance,
+# never read from a document; installation stays with pip/pipx/host.
+#
+# Rules that the validator enforces (fail-closed):
+#   * extension_type is a closed vocabulary — unknown types never load.
+#   * declarative types (skill, skill_pack, task, playbook,
+#     report_template, threat_method, threat_ruleset,
+#     evaluation_dataset) must not ship an implementation entrypoint.
+#   * declared capabilities, network/process/secret/runtime needs and
+#     free text are scanned for authority claims (identifier-aware:
+#     ``code.execute`` stays data, a standalone ``grant`` does not).
+#   * security_metadata DECLARES runtime needs; it never receives them.
+#   * ``digest`` is the canonical identity digest over semantic metadata
+#     plus artifact identity — recompute it after any field change.
+#
+# Compute the digest with:
+#   python3 -c "import json,sys; from emo_cyber_agent.extensions.manifest import compute_manifest_digest; \
+#       print(compute_manifest_digest(json.load(open('manifest.extension.yaml'))))"
+
+extension:
+  extension_id: my-extension
+  name: My Extension
+  version: 1.0.0
+  extension_type: skill            # one of the eleven closed types
+  description: Read-only extension that adds content through an existing contract.
+  api_version: "1.0"               # extension_api_version (major must match host)
+  supported_emo_versions: [">=1.0"]
+
+  dependencies: []                 # {extension_id, version_constraint, dependency_type, required}
+  optional_dependencies: []
+
+  provides:
+    declares: [skill]              # declaration only — never a Policy capability
+    provides_feature: []           # UPPER.DOTTED feature tokens (negotiation, not permission)
+    optional_feature: []
+  requires: []                     # must equal compatibility.required_features
+
+  entrypoint_metadata:
+    kind: declarative              # declarative | implementation
+    target: ""                     # "module:attribute" only for implementation kinds
+    contract: ""                   # e.g. verification-adapter.1
+
+  artifact_identity:
+    artifact_digest: ""            # sha256 of the shipped artifact (optional but verifiable)
+    manifest_digest: ""
+    source_revision: ""
+    signature_metadata: {}         # optional, metadata only — never auto-trusted
+    attestation_metadata: {}
+
+  source_provenance:
+    distribution_name: my-extension
+    distribution_version: 1.0.0
+    artifact_digest: ""
+    source_url: ""
+    source_revision: ""
+    build_provenance: ""
+    publisher_identity: ""         # host allowlist decides official trust
+    released_at: ""
+    license: Apache-2.0
+    dependency_provenance: []
+
+  license: Apache-2.0
+
+  security_metadata:
+    declared_network: none         # none | optional | required
+    declared_filesystem: false
+    declared_process: none         # none | tool_executor_only
+    declared_credentials: []       # uses_existing_redaction | synthetic_test_credentials
+    declared_data_access: [static_metadata]
+    runtime_requirements: []
+
+  compatibility:
+    emo_api_min: "1.0"
+    emo_api_max: ""
+    schema_versions: ["1.0"]
+    required_features: []
+    optional_features: []
+    python_requires: ">=3.11"
+    platforms: [linux, darwin, win32]
+
+  resources: []                    # package-scoped paths only (no absolute, no ..)
+  dataset_classification: internal # public | internal | blind | holdout
+  digest: ""                       # filled by the digest helper above

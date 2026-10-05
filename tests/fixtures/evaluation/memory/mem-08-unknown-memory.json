@@ -1,0 +1,31 @@
+{
+  "case_id": "mem-08-unknown-memory",
+  "title": "Memory scan reports unknown",
+  "track": "reasoning",
+  "taxonomy": "data_exposure",
+  "stage": "hypotheses",
+  "section": "memory",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": ""
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "unknown",
+      "subject": "detection_confidence",
+      "match": "exact"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mem-08-unknown-memory"
+  },
+  "notes": "",
+  "tags": [
+    "uncertainty"
+  ]
+}

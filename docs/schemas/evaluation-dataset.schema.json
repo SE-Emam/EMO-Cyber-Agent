@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/evaluation-dataset.schema.json",
+  "title": "Evaluation dataset manifest interop contract",
+  "version": "1.0",
+  "description": "Dataset manifest: thresholds, required metrics/gates, baseline and case inventory.",
+  "definitions": {
+    "CaseSplit": {
+      "enum": [
+        "development",
+        "validation",
+        "holdout"
+      ],
+      "title": "CaseSplit",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "dataset_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "default": "0.1.0",
+      "maxLength": 32,
+      "minLength": 1,
+      "title": "Version",
+      "type": "string"
+    },
+    "description": {
+      "default": "",
+      "maxLength": 500,
+      "title": "Description",
+      "type": "string"
+    },
+    "split": {
+      "$ref": "#/definitions/CaseSplit",
+      "default": "development"
+    },
+    "sections": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Sections",
+      "type": "array"
+    },
+    "thresholds": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Thresholds",
+      "type": "object"
+    },
+    "required_metrics": {
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "title": "Required Metrics",
+      "type": "array"
+    },
+    "required_gates": {
+      "default": [
+        "security_gate",
+        "correctness_gate",
+        "regression_gate"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Required Gates",
+      "type": "array"
+    },
+    "case_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Case Count",
+      "type": "integer"
+    },
+    "baseline": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Baseline",
+      "type": "object"
+    },
+    "production": {
+      "default": false,
+      "title": "Production",
+      "type": "boolean"
+    },
+    "license": {
+      "default": "",
+      "maxLength": 120,
+      "title": "License",
+      "type": "string"
+    }
+  },
+  "required": [
+    "dataset_id",
+    "name"
+  ],
+  "type": "object"
+}

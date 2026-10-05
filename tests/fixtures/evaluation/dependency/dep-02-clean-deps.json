@@ -1,0 +1,47 @@
+{
+  "case_id": "dep-02-clean-deps",
+  "title": "Dependency clean manifest stays quiet",
+  "track": "detection",
+  "taxonomy": "dependency",
+  "stage": "detection",
+  "section": "dependency",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "",
+      "dependencies": [
+        {
+          "name": "pydantic",
+          "version": "2.9.0",
+          "vulnerable": false
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_absent",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "known_vulnerable_dependency"
+      }
+    },
+    {
+      "kind": "state",
+      "subject": "detection_count",
+      "match": "exact",
+      "value": 0
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "dep-02-clean-deps"
+  },
+  "notes": "",
+  "tags": [
+    "dependency"
+  ]
+}

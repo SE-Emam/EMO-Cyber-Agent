@@ -1,0 +1,44 @@
+{
+  "case_id": "web-02-auth-missing",
+  "title": "Web handler missing auth check",
+  "track": "detection",
+  "taxonomy": "authorization",
+  "stage": "detection",
+  "section": "web",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "def handler(request): return 200",
+      "auth_check": false
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_present",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "auth_check_missing"
+      }
+    },
+    {
+      "kind": "expected_absent",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "sql_injection"
+      }
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "web-02-auth-missing"
+  },
+  "notes": "",
+  "tags": [
+    "auth",
+    "static"
+  ]
+}

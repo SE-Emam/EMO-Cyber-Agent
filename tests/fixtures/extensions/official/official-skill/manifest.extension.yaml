@@ -1,0 +1,66 @@
+api_version: '1.0'
+artifact_identity:
+  artifact_digest: 12ee2006a8936f1789972163c92c92195fb30fc1063baa70e71308f98d786ccc
+  attestation_metadata: {}
+  manifest_digest: ''
+  signature_metadata: {}
+  source_revision: 1.0.0
+compatibility:
+  emo_api_max: ''
+  emo_api_min: '1.0'
+  optional_features: []
+  platforms:
+  - linux
+  - darwin
+  - win32
+  python_requires: '>=3.11'
+  required_features: []
+  schema_versions:
+  - '1.0'
+dataset_classification: internal
+dependencies: []
+description: Read-only skill extension built on the existing SkillSpec contract.
+digest: cf5bb580f5d7cd306820bba38dfa46dad5dcb852d03c2918745708c2e0419442
+entrypoint_metadata:
+  contract: ''
+  kind: declarative
+  target: ''
+extension_id: official-skill
+extension_type: skill
+license: Apache-2.0
+name: Official Skill
+optional_dependencies: []
+provides:
+  declares:
+  - skill
+  optional_feature: []
+  provides_feature: []
+requires: []
+resources:
+- digest: 12ee2006a8936f1789972163c92c92195fb30fc1063baa70e71308f98d786ccc
+  kind: template
+  media_type: application/yaml
+  path: content/skill.yaml
+  resource_id: content
+security_metadata:
+  declared_credentials: []
+  declared_data_access:
+  - static_metadata
+  declared_filesystem: false
+  declared_network: none
+  declared_process: none
+  runtime_requirements: []
+source_provenance:
+  artifact_digest: 12ee2006a8936f1789972163c92c92195fb30fc1063baa70e71308f98d786ccc
+  build_provenance: host-built fixture
+  dependency_provenance: []
+  distribution_name: official-skill-extension
+  distribution_version: 1.0.0
+  license: Apache-2.0
+  publisher_identity: emo-cyber-agent
+  released_at: '2026-01-01'
+  source_revision: 1.0.0
+  source_url: https://example.invalid/emo-official/extensions
+supported_emo_versions:
+- '>=1.0'
+version: 1.0.0

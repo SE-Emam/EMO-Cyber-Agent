@@ -1,0 +1,48 @@
+playbook:
+  id: changed-code-security
+  title: Changed Code Security
+  version: 1.0.0
+  type: security
+  objective: Focus review on changed code and affected assets with secret hygiene and conditional regression follow-up.
+  description: Change-aware entry point. Change analysis itself arrives later; this workflow maps change to affected assets, skills, tasks, and focused verification.
+tasks:
+  required: [changed-code-security-review, secret-audit]
+  optional: [regression-security-review]
+skills:
+  required: [code-review-security, secrets]
+  optional: [backend-security, frontend-security]
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+capabilities:
+  requested: [repository.read, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [changed-code-security-review, secret-audit]
+  conditions:
+    - when_field: candidate.status
+      operator: ==
+      value: NEEDS_VERIFICATION
+      select_tasks: [regression-security-review]
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: developer-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Changed surfaces inventoried.
+  - Affected assets mapped to review tasks.
+  - Limitations recorded in the report.
+provenance: {source: official}

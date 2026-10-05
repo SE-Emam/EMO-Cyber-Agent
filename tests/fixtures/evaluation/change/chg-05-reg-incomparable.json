@@ -1,0 +1,35 @@
+{
+  "case_id": "chg-05-reg-incomparable",
+  "title": "Change digest not comparable",
+  "track": "regression",
+  "taxonomy": "advisory_regression",
+  "stage": "regression",
+  "section": "change",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "regression",
+    "payload": {
+      "before_digest": "fff666",
+      "after_digest": "ggg777",
+      "comparable": false,
+      "regression_key": "chg-05"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "state",
+      "match": "exact",
+      "value": "NOT_COMPARABLE"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "chg-05-reg-incomparable"
+  },
+  "notes": "",
+  "tags": [
+    "regression"
+  ]
+}

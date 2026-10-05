@@ -1,0 +1,36 @@
+{
+  "case_id": "mcp-07-parity-audit-root",
+  "title": "MCP parity across three interfaces",
+  "track": "parity",
+  "taxonomy": "api_security",
+  "stage": "parity",
+  "section": "mcp",
+  "visibility": "internal",
+  "split": "development",
+  "scenario": {
+    "kind": "parity_audit",
+    "payload": {
+      "target": "."
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "mismatched_fields",
+      "match": "absent"
+    },
+    {
+      "kind": "state",
+      "subject": "failed_interfaces",
+      "match": "absent"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mcp-07-parity-audit-root"
+  },
+  "notes": "",
+  "tags": [
+    "parity"
+  ]
+}

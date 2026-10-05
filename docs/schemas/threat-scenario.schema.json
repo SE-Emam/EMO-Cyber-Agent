@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/threat-scenario.schema.json",
+  "title": "ThreatScenario interop contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scenario_id", "method", "category", "subject", "hypothesis_status"],
+  "properties": {
+    "scenario_id": {"type": "string", "minLength": 1},
+    "method": {"type": "string", "minLength": 1},
+    "category": {"type": "string", "minLength": 1},
+    "subject": {"type": "string"},
+    "preconditions": {"type": "array", "items": {"type": "string"}},
+    "attack_goal": {"type": "string"},
+    "affected_assets": {"type": "array", "items": {"type": "string"}},
+    "affected_components": {"type": "array", "items": {"type": "string"}},
+    "affected_flows": {"type": "array", "items": {"type": "string"}},
+    "trust_boundary_crossings": {"type": "array", "items": {"type": "string"}},
+    "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "hypothesis_status": {"type": "string", "enum": ["UNASSESSED", "HYPOTHESIZED", "SUPPORTED_BY_EVIDENCE", "REFUTED", "INCONCLUSIVE"]},
+    "verification_requirements": {"type": "array", "items": {"type": "string"}},
+    "possible_controls": {"type": "array", "items": {"type": "string"}},
+    "coverage": {"type": "string"},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

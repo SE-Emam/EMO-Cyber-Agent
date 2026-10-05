@@ -1,0 +1,51 @@
+task:
+  id: changed-code-security-review
+  title: Changed Code Security Review
+  version: 1.0.0
+  type: review
+  objective: Review changed files and their security-boundary impact without re-scanning the whole project.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree, changed-files]
+  optional: []
+skills:
+  required: [code-review-security]
+  optional: [authorization, secrets, dependency-security]
+capabilities:
+  required: [repository.read, repository.search]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: [semgrep]
+  optional: []
+methodology:
+  phases: [reconnaissance, attack-surface, verification]
+  procedures:
+    - list changed files and touched boundaries
+    - expand scope only when auth or security boundaries are affected
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [static_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - changed files reviewed with evidence
+  - boundary impact stated or marked not-found
+deliverables: [observations]
+report:
+  template: security-audit
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

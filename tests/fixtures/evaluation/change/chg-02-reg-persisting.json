@@ -1,0 +1,34 @@
+{
+  "case_id": "chg-02-reg-persisting",
+  "title": "Change digest state persisting",
+  "track": "regression",
+  "taxonomy": "advisory_regression",
+  "stage": "regression",
+  "section": "change",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "regression",
+    "payload": {
+      "before_digest": "ccc333",
+      "after_digest": "ccc333",
+      "regression_key": "chg-02"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "state",
+      "match": "exact",
+      "value": "PERSISTING"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "chg-02-reg-persisting"
+  },
+  "notes": "",
+  "tags": [
+    "regression"
+  ]
+}

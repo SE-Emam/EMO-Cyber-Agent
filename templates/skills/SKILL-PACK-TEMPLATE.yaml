@@ -1,0 +1,60 @@
+# SKILL-PACK-TEMPLATE — POST-RC-006 authoring contract.
+#
+# A pack is reusable security METHODOLOGY: checks with evidence
+# contracts and verification handoffs. It grants nothing, executes
+# nothing, confirms nothing. Hypotheses stay labeled; verification
+# belongs to VerificationService + PolicyEngine.
+
+pack:
+  id: my-security-pack
+  name: My Security Pack
+  version: 1.0.0
+  purpose: What scoped security question this methodology answers.
+
+skills: [injection]
+
+code_intelligence:
+  required: [dataflow, taint, symbols]
+
+evidence:
+  required: [file-evidence, tool-evidence]
+
+verification:
+  methods: [static_confirmation, dataflow_confirmation]
+
+applicable_assets: [repo, api]
+security_domains: [injection]
+
+methodology:
+  - inventory candidate sources and sinks
+  - record taint paths as facts with provenance
+
+checks:
+  - id: example-taint-review
+    title: Example taint review
+    methodology:
+      - list sources and sinks from code intelligence
+      - record each path with locations and digests
+    evidence_required: [taint-path-record]
+    evidence_sufficient: [source-record, sink-record, path-locations]
+    evidence_missing: [unresolved-call-edges]
+    verification_required: [dataflow_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [dataflow, taint]
+    source_kinds: [http_parameter]
+    sink_kinds: [sql_execution]
+    hypothesis_template: A path from {source} to {sink} may allow untrusted input to reach a sensitive operation; requires verification.
+
+stop_conditions: [scope-exhausted, budget-exhausted, no-progress]
+limitations:
+  - Taint paths are facts, never verdicts.
+
+security:
+  requested: [repository.read, repository.search]
+  denied: [repository.write, database.write, destructive]
+
+allowed_tools: [repository.read, repository.search]
+
+provenance: {source: official}

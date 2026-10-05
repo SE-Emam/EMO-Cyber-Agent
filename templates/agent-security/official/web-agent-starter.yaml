@@ -1,0 +1,12 @@
+agent_template:
+  id: web-agent-starter
+  name: Web Agent Starter
+  version: 1.0.0
+  scope: [assistant-agent, mcp-tools]
+  methods: [stride, attack-tree]
+  declared_servers:
+    - id: docs-server
+      transport: stdio
+      protocol_version: 2025-06-18
+
+provenance: {source: official}

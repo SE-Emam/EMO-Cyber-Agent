@@ -1,0 +1,47 @@
+"""Verification strategy/adapter errors — POST-RC-012.
+
+One closed error vocabulary for the strategy framework, the
+planner, and the adapter boundary. Messages are redacted on the
+way out: an error never leaks credential material.
+"""
+
+from __future__ import annotations
+
+from enum import StrEnum
+
+
+class StrategyErrorCode(StrEnum):
+    INVALID_STRATEGY = "STRATEGY_INVALID"
+    CATALOG_INVALID = "STRATEGY_CATALOG_INVALID"
+    SELECTION_FAILED = "STRATEGY_SELECTION_FAILED"
+    SELECTION_AMBIGUOUS = "STRATEGY_SELECTION_AMBIGUOUS"
+    UNSAFE_LEVEL = "STRATEGY_UNSAFE_LEVEL"
+    TARGET_REJECTED = "STRATEGY_TARGET_REJECTED"
+    WILDCARD_TARGET = "STRATEGY_WILDCARD_TARGET"
+    EXTERNAL_TARGET = "STRATEGY_EXTERNAL_TARGET"
+    BUDGET_EXCEEDED = "STRATEGY_BUDGET_EXCEEDED"
+    ORACLE_REJECTED = "STRATEGY_ORACLE_REJECTED"
+    SCOPE_DENIED = "STRATEGY_SCOPE_DENIED"
+    SNAPSHOT_MISMATCH = "STRATEGY_SNAPSHOT_MISMATCH"
+    AUDIT_MISMATCH = "STRATEGY_AUDIT_MISMATCH"
+    POLICY_DENIED = "STRATEGY_POLICY_DENIED"
+    STALE_POLICY = "STRATEGY_STALE_POLICY"
+    ADAPTER_UNKNOWN = "ADAPTER_UNKNOWN"
+    ADAPTER_CAPABILITY_UNKNOWN = "ADAPTER_CAPABILITY_UNKNOWN"
+    ADAPTER_ESCALATION = "ADAPTER_ESCALATION"
+    ADAPTER_VERSION_MISMATCH = "ADAPTER_VERSION_MISMATCH"
+    ADAPTER_UNHEALTHY = "ADAPTER_UNHEALTHY"
+    ADAPTER_INVALID_REQUEST = "ADAPTER_INVALID_REQUEST"
+    ADAPTER_UNVERIFIABLE = "ADAPTER_UNVERIFIABLE"
+    ADAPTER_DUPLICATE = "ADAPTER_DUPLICATE"
+    PROVENANCE_MISSING = "STRATEGY_PROVENANCE_MISSING"
+    NO_EVIDENCE = "STRATEGY_NO_EVIDENCE"
+    INVALID_REQUEST = "STRATEGY_INVALID_REQUEST"
+
+
+class StrategyError(Exception):
+    def __init__(self, code: StrategyErrorCode, message: str):
+        from emo_cyber_agent.core.repository import redact_credentials
+
+        super().__init__(f"{code.value}: {redact_credentials(message)}")
+        self.code = code

@@ -1,0 +1,44 @@
+playbook:
+  id: agent-security
+  title: Agent Security
+  version: 1.0.0
+  type: security
+  objective: Audit agent delegation surfaces, tool boundaries, and cross-agent trust assumptions using read-only methods.
+  description: Agent review with MCP trust-surface follow-up.
+tasks:
+  required: [agent-security-review, mcp-security-review]
+  optional: []
+skills:
+  required: [agent-security, mcp-security]
+  optional: [ai-security]
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+capabilities:
+  requested: [repository.read, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [agent-security-review, mcp-security-review]
+  conditions: []
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: agent-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Delegation paths mapped.
+  - Trust assumptions recorded with evidence references.
+  - Limitations recorded in the report.
+provenance: {source: official}

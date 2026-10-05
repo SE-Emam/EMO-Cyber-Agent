@@ -1,0 +1,50 @@
+{
+  "case_id": "chg-08-evidence-change",
+  "title": "Change evidence recorded",
+  "track": "reasoning",
+  "taxonomy": "advisory_regression",
+  "stage": "evidence",
+  "section": "change",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "evidence",
+    "payload": {
+      "facts": [
+        {
+          "source_tool": "git",
+          "location": "app/changed.py",
+          "content_hash": "1212121212121212",
+          "provenance": {
+            "labels": [
+              "diff"
+            ],
+            "collected_by": "git"
+          }
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "evidence",
+      "subject": "evidence_count",
+      "match": "exact",
+      "value": 1
+    },
+    {
+      "kind": "evidence",
+      "subject": "provenance_complete",
+      "match": "true",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "chg-08-evidence-change"
+  },
+  "notes": "",
+  "tags": [
+    "evidence"
+  ]
+}

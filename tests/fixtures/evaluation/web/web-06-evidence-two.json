@@ -1,0 +1,67 @@
+{
+  "case_id": "web-06-evidence-two",
+  "title": "Web two provenance complete facts",
+  "track": "reasoning",
+  "taxonomy": "data_exposure",
+  "stage": "evidence",
+  "section": "web",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "evidence",
+    "payload": {
+      "facts": [
+        {
+          "source_tool": "semgrep",
+          "location": "app/session.py",
+          "content_hash": "a1b2c3d4e5f60718",
+          "provenance": {
+            "labels": [
+              "secret-indicator"
+            ],
+            "collected_by": "scanner"
+          }
+        },
+        {
+          "source_tool": "gitleaks",
+          "location": "app/settings.py",
+          "content_hash": "0718a1b2c3d4e5f6",
+          "provenance": {
+            "labels": [
+              "secret-indicator"
+            ],
+            "collected_by": "scanner"
+          }
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "evidence",
+      "subject": "evidence_count",
+      "match": "exact",
+      "value": 2
+    },
+    {
+      "kind": "evidence",
+      "subject": "provenance_complete",
+      "match": "true",
+      "value": true
+    },
+    {
+      "kind": "evidence",
+      "subject": "content_hash_present",
+      "match": "true",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "web-06-evidence-two"
+  },
+  "notes": "",
+  "tags": [
+    "evidence"
+  ]
+}

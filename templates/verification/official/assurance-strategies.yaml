@@ -1,0 +1,224 @@
+# assurance-strategies — official verification catalog (POST-RC-012).
+#
+# Passive assurance strategies: static structure, configuration,
+# dependencies, secrets, regressions, and agent/MCP boundaries.
+# Nothing here executes a target — observations are read from the
+# snapshot and judged by typed oracles in Core.
+
+strategies:
+  - id: static-property-check
+    version: 1.0.0
+    name: Static property check
+    category: STATIC_PROPERTY_CHECK
+    applicable_hypotheses: [CONFIGURATION, INPUT_VALIDATION]
+    required_evidence: [static-record]
+    required_capabilities: [FILE_ASSERTION, STRUCTURED_TOOL_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [FILE, SYMBOL, REPOSITORY]
+    input_contract: [declared-facts, evidence-reference]
+    oracle_kinds: [FILE_STATE_PROPERTY, STRUCTURED_TOOL_RESULT, CONFIG_PROPERTY]
+    success_criteria: The declared structural property is observed as present on every checked location of the snapshot.
+    refutation_criteria: The declared structural property is observed as absent on at least one checked location of the snapshot.
+    limitations:
+      - snapshot-structure-only
+      - runtime-behaviour-not-observed
+    resource_budget: {max_requests: 8, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: structural-consistency
+    version: 1.0.0
+    name: Structural consistency
+    category: STRUCTURAL_CONSISTENCY
+    applicable_hypotheses: [DATA_FLOW]
+    required_evidence: [flow-record]
+    required_capabilities: [GRAPH_ASSERTION, FILE_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [SYMBOL, FILE, SNAPSHOT]
+    input_contract: [declared-facts, evidence-reference]
+    oracle_kinds: [GRAPH_PROPERTY, STRUCTURED_TOOL_RESULT]
+    success_criteria: The observed graph structure matches the declared structure for the addressed snapshot.
+    refutation_criteria: The observed graph structure diverges from the declared structure for the addressed snapshot.
+    limitations:
+      - graph-derived-from-declared-snapshot
+    resource_budget: {max_requests: 8, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 6, max_attempts: 4}
+
+  - id: data-flow-confirmation
+    version: 1.0.0
+    name: Data flow confirmation
+    category: DATA_FLOW_CONFIRMATION
+    applicable_hypotheses: [DATA_FLOW]
+    required_evidence: [flow-record]
+    required_capabilities: [GRAPH_ASSERTION, FILE_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [SYMBOL, FILE]
+    input_contract: [declared-facts, evidence-reference]
+    oracle_kinds: [GRAPH_PROPERTY]
+    success_criteria: No observed flow crosses the declared boundary between the untrusted origin and the protected sink.
+    refutation_criteria: An observed flow crosses the declared boundary between the untrusted origin and the protected sink.
+    limitations:
+      - boundary-comes-from-declared-record
+      - inter-procedural-depth-bounded
+    resource_budget: {max_requests: 8, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 6, max_attempts: 4}
+
+  - id: configuration-property
+    version: 1.0.0
+    name: Configuration property
+    category: CONFIGURATION_CHECK
+    applicable_hypotheses: [CONFIGURATION]
+    required_evidence: [config-record]
+    required_capabilities: [CONFIG_ASSERTION, FILE_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [CONFIGURATION, FILE, REPOSITORY]
+    input_contract: [bounded-property-value, declared-facts]
+    oracle_kinds: [CONFIG_PROPERTY, FILE_STATE_PROPERTY]
+    success_criteria: The observed effective setting equals the value declared by the setting record for the addressed configuration.
+    refutation_criteria: The observed effective setting differs from the value declared by the setting record for the addressed configuration.
+    limitations:
+      - declared-value-not-inferred
+      - environment-overlay-not-evaluated
+    resource_budget: {max_requests: 8, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: dependency-resolution
+    version: 1.0.0
+    name: Dependency resolution
+    category: DEPENDENCY_ASSERTION
+    applicable_hypotheses: [DEPENDENCY]
+    required_evidence: [package-record]
+    required_capabilities: [STRUCTURED_TOOL_ASSERTION, FILE_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [DEPENDENCY, FILE, REPOSITORY]
+    input_contract: [evidence-reference, declared-facts]
+    oracle_kinds: [STRUCTURED_TOOL_RESULT, FILE_STATE_PROPERTY]
+    success_criteria: The resolved dependency identity equals the identity recorded in the lockfile for the addressed package.
+    refutation_criteria: The resolved dependency identity differs from the identity recorded in the lockfile for the addressed package.
+    limitations:
+      - resolution-read-from-lockfile
+      - registry-lookups-not-performed
+    resource_budget: {max_requests: 8, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: secret-exposure
+    version: 1.0.0
+    name: Secret exposure boundary
+    category: SECRET_EXPOSURE_CHECK
+    applicable_hypotheses: [SECRET_EXPOSURE]
+    required_evidence: [credential-boundary-record]
+    required_capabilities: [FILE_ASSERTION, STRUCTURED_TOOL_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [FILE, REPOSITORY, CONFIGURATION, SNAPSHOT]
+    input_contract: [canary-value, evidence-reference]
+    oracle_kinds: [STRUCTURED_TOOL_RESULT, FILE_STATE_PROPERTY]
+    success_criteria: The declared canary value stays inside the credential boundary and never appears in emitted output.
+    refutation_criteria: The declared canary value is observed outside the credential boundary or in emitted output.
+    limitations:
+      - canary-values-only
+      - real-credentials-never-materialized
+    resource_budget: {max_requests: 8, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: path-traversal-boundary
+    version: 1.0.0
+    name: Path traversal boundary
+    category: NEGATIVE_TEST
+    applicable_hypotheses: [PATH_TRAVERSAL]
+    required_evidence: [path-contract-record]
+    required_capabilities: [FILE_ASSERTION, STRUCTURED_TOOL_ASSERTION]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [FILE, REPOSITORY, CONFIGURATION]
+    input_contract: [bounded-path-fixture]
+    oracle_kinds: [FILE_STATE_PROPERTY, STRUCTURED_TOOL_RESULT]
+    success_criteria: A fixture path outside the declared root observes the rejecting decision of the path normalization property.
+    refutation_criteria: A normalized fixture path escapes the declared root without a rejecting decision.
+    limitations:
+      - fixture-paths-only
+      - no-production-filesystem-access
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: regression-check
+    version: 1.0.0
+    name: Regression check
+    category: REGRESSION_CHECK
+    applicable_hypotheses: [REGRESSION]
+    required_evidence: [historical-verification-record]
+    required_capabilities: [STRUCTURED_TOOL_ASSERTION, FILE_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [SNAPSHOT, FILE, REPOSITORY]
+    input_contract: [evidence-reference, declared-facts]
+    oracle_kinds: [STRUCTURED_TOOL_RESULT, FILE_STATE_PROPERTY]
+    success_criteria: The current observation equals the verified baseline observation for the same key on the current snapshot.
+    refutation_criteria: The current observation differs from the verified baseline observation for the same key on the current snapshot.
+    limitations:
+      - historical-evidence-stays-historical
+      - no-cross-audit-baseline-read
+    resource_budget: {max_requests: 8, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: mcp-scope
+    version: 1.0.0
+    name: MCP scope boundary
+    category: PASSIVE_PROPERTY_CHECK
+    applicable_hypotheses: [MCP_SCOPE]
+    required_evidence: [tool-scope-record]
+    required_capabilities: [MCP_ASSERTION, STRUCTURED_TOOL_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [MCP_TOOL, MCP_RESOURCE]
+    input_contract: [declared-facts, evidence-reference]
+    oracle_kinds: [STRUCTURED_TOOL_RESULT]
+    success_criteria: The effective tool scope equals the declared scope recorded for the addressed MCP server.
+    refutation_criteria: The effective tool scope exceeds the declared scope recorded for the addressed MCP server.
+    limitations:
+      - declared-scope-not-inferred
+      - transport-not-opened
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: mcp-tool-output-isolation
+    version: 1.0.0
+    name: MCP tool output isolation
+    category: PASSIVE_PROPERTY_CHECK
+    applicable_hypotheses: [MCP_OUTPUT_ISOLATION]
+    required_evidence: [tool-output-record]
+    required_capabilities: [MCP_ASSERTION, STRUCTURED_TOOL_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [MCP_RESOURCE, MCP_TOOL]
+    input_contract: [structured-tool-result, evidence-reference]
+    oracle_kinds: [STRUCTURED_TOOL_RESULT, GRAPH_PROPERTY]
+    success_criteria: The recorded tool result leaves authorization and policy state unchanged across the declared boundary.
+    refutation_criteria: The recorded tool result alters authorization or policy state across the declared boundary.
+    limitations:
+      - result-is-untrusted-data
+      - authority-language-flagged-not-acted-on
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: agent-delegation-scope
+    version: 1.0.0
+    name: Agent delegation scope
+    category: PASSIVE_PROPERTY_CHECK
+    applicable_hypotheses: [AGENT_DELEGATION]
+    required_evidence: [delegation-record]
+    required_capabilities: [AGENT_BOUNDARY_ASSERTION, GRAPH_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [AGENT_BOUNDARY]
+    input_contract: [declared-facts, evidence-reference]
+    oracle_kinds: [GRAPH_PROPERTY]
+    success_criteria: Every delegated subset stays within the parent scope recorded for the addressed agent boundary.
+    refutation_criteria: A delegated subset widens beyond the parent scope recorded for the addressed agent boundary.
+    limitations:
+      - delegation-derived-from-records
+      - no-live-agent-invocation
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: agent-context-isolation
+    version: 1.0.0
+    name: Agent context isolation
+    category: PASSIVE_PROPERTY_CHECK
+    applicable_hypotheses: [AGENT_CONTEXT]
+    required_evidence: [memory-record]
+    required_capabilities: [AGENT_BOUNDARY_ASSERTION, GRAPH_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [AGENT_BOUNDARY]
+    input_contract: [declared-facts, evidence-reference]
+    oracle_kinds: [GRAPH_PROPERTY]
+    success_criteria: Untrusted context stays outside the declared authorization boundary for the addressed agent memory.
+    refutation_criteria: Untrusted context crosses into the declared authorization boundary for the addressed agent memory.
+    limitations:
+      - boundary-comes-from-declared-record
+      - memory-entries-redacted-before-comparison
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+provenance: {source: official, origin: EMO-Cyber-Agent verification catalog, catalog: templates/verification/official}

@@ -1,0 +1,48 @@
+playbook:
+  id: web-app-deep-audit
+  title: Web Application Deep Audit
+  version: 1.0.0
+  type: security
+  objective: Audit a web application across entry points, authentication, authorization, input handling, and data exposure using read-only methods.
+  description: Sequential web audit. Conditional regression follow-up when verification stays open.
+tasks:
+  required: [web-app-security, authentication-review, authorization-review]
+  optional: [regression-security-review]
+skills:
+  required: [authentication, authorization, api-security]
+  optional: [frontend-security, secrets]
+tools:
+  required: [semgrep]
+  optional: [trivy, gitleaks]
+capabilities:
+  requested: [repository.read, repository.list, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [web-app-security, authentication-review, authorization-review]
+  conditions:
+    - when_field: candidate.status
+      operator: ==
+      value: NEEDS_VERIFICATION
+      select_tasks: [regression-security-review]
+  max_tasks: 12
+  max_iterations: 1
+evidence:
+  required: [repository_identity, auth-flow, file-evidence, tool-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: web-app-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - All web entry points inventoried.
+  - Auth and authorization paths inspected.
+  - Limitations recorded in the report.
+provenance: {source: official}

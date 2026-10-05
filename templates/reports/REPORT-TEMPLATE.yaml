@@ -1,0 +1,51 @@
+# REPORT TEMPLATE — POST-RC-003 (canonical authoring contract, template schema 1.0)
+#
+# A template is a PRESENTATION contract: what to show, how to organize,
+# which sections are visible, how evidence renders. It can never change a
+# finding, severity, confidence, verification, evidence, policy, or state.
+#
+# template schema version: "1.0" (see docs/schemas/report-template.schema.json)
+
+report_template:
+  id: example-report
+  name: Example Report
+  version: 1.0.0
+  type: security                     # security | executive | developer | specialized
+  description: Example presentation contract.
+
+sections:
+  - name: summary
+    fields: [report.summary]
+  - name: findings
+    fields: [finding.title, finding.severity, finding.confidence, finding.evidence_ids, finding.verification_ids, finding.provenance]
+
+finding_fields:                      # projection subset; mandatory security fields always kept
+  - finding.finding_id
+  - finding.title
+  - finding.severity
+  - finding.confidence
+  - finding.status
+  - finding.evidence_ids
+  - finding.verification_ids
+  - finding.provenance
+
+section_order: [summary, findings, limitations]
+
+show_non_reportable: false
+
+evidence_presentation: references   # references | digests
+verification_presentation: status   # status | detailed
+
+limitations_sections: [limitations]
+appendices: []
+
+output_formats: [json, jsonl, markdown]
+
+security:
+  preserve_provenance: true
+  redact_secrets: true
+  deterministic: true
+
+visibility: []                       # optional allowlisted rules; see VisibilityRule
+
+provenance: {source: example}

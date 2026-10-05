@@ -1,0 +1,36 @@
+{
+  "case_id": "adv-06-scope-out",
+  "title": "Adversarial target outside scope",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "adversarial",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "scope",
+    "payload": {
+      "audit_id": "audit-a1",
+      "target": "etc/passwd",
+      "scope": [
+        "proj/a"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "scope_behavior",
+      "subject": "in_scope",
+      "match": "exact",
+      "value": false
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "adv-06-scope-out"
+  },
+  "notes": "",
+  "tags": [
+    "scope"
+  ]
+}

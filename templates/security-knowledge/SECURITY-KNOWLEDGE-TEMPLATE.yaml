@@ -1,0 +1,32 @@
+# SECURITY-KNOWLEDGE-TEMPLATE — POST-RC-011 starter contract.
+#
+# A declarative starting point for scoped security memory: which
+# categories may persist, how records are scoped, and what the
+# query surface allows. Planning input only; never executable.
+# Memory is evidence-indexing, not truth: nothing in here becomes
+# authority, current evidence, or Finding state.
+
+knowledge_template:
+  template_id: knowledge-starter
+  name: Security Knowledge Starter
+  version: 1.0.0
+  allowed_categories:
+    - OBSERVED_FACT
+    - EVIDENCE_SUMMARY
+    - VERIFICATION_OUTCOME
+    - THREAT_MODEL_OBSERVATION
+    - ATTACK_SURFACE_OBSERVATION
+    - CHANGE_REGRESSION_SIGNAL
+    - TOOL_OBSERVATION
+    - CODE_INTELLIGENCE_OBSERVATION
+    - SECURITY_CONTROL_OBSERVATION
+  default_retention_class: audit-lifetime
+  scope_rules:
+    - snapshot-bound-by-default
+    - no-cross-audit-read
+    - no-cross-project-read
+    - queries-allowlisted-only
+    - secrets-denied-by-redact-diff
+    - verdict-vocabulary-quarantined
+
+provenance: {source: starter}

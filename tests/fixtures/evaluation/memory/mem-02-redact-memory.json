@@ -1,0 +1,39 @@
+{
+  "case_id": "mem-02-redact-memory",
+  "title": "Memory dump token redacted",
+  "track": "safety",
+  "taxonomy": "data_exposure",
+  "stage": "report",
+  "section": "memory",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "redact",
+    "payload": {
+      "text": "cached token=abcdef9876543210",
+      "secret": "abcdef9876543210"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_absent",
+      "subject": "leaked_secret",
+      "match": "exact",
+      "value": true
+    },
+    {
+      "kind": "state",
+      "subject": "changed",
+      "match": "exact",
+      "value": true
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mem-02-redact-memory"
+  },
+  "notes": "",
+  "tags": [
+    "redaction"
+  ]
+}

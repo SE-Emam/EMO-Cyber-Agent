@@ -1,0 +1,53 @@
+task:
+  id: supabase-security-review
+  title: Supabase Security Review
+  version: 1.0.0
+  type: audit
+  objective: Review Supabase schema, RLS, grants, and auth/data-access relationships, read-only.
+scope:
+  included: [repository, supabase-project]
+  excluded: [production]
+  target_types: [repo, supabase-project]
+inputs:
+  required: [source-tree, supabase-project-ref]
+  optional: []
+skills:
+  required: [supabase, database-security, rls, authentication, authorization]
+  optional: [api-security]
+capabilities:
+  required: [repository.read, supabase.table.read, supabase.policy.read, supabase.grant.read]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: [semgrep]
+  optional: []
+methodology:
+  phases: [reconnaissance, data-access, authorization, verification]
+  procedures:
+    - collect tables, RLS status, policies, and grants
+    - map application identities to database identities
+    - compare expected authorization to RLS coverage
+evidence:
+  required: [project_identity, tables, rls_status, rls_policies, grants, auth-flow]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: true
+  methods: [read_only_query, configuration_confirmation]
+  confirmation: supporting-evidence-present
+  refutation: contradicting-evidence-present
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - tables inventoried with RLS state
+  - policies and grants collected per table
+  - auth flow mapped or marked not-found
+deliverables: [observations, candidates]
+report:
+  template: supabase-security
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

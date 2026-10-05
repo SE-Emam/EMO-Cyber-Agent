@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/emo-cyber-agent/schemas/audit-request.schema.json",
+  "title": "EMO Cyber Audit Request",
+  "type": "object",
+  "required": ["target"],
+  "properties": {
+    "target": {"type": "string", "minLength": 1},
+    "mode": {"enum": ["quick", "standard", "deep"]},
+    "permission_profile": {"enum": ["read_only", "verify", "remediate"]},
+    "focus": {"type": "array", "items": {"type": "string"}},
+    "include": {"type": "array", "items": {"type": "string"}},
+    "exclude": {"type": "array", "items": {"type": "string"}},
+    "supabase_project_ref": {"type": ["string", "null"]},
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

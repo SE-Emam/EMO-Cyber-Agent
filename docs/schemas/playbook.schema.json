@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/playbook.schema.json",
+  "title": "PlaybookSpec flat contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["playbook_id", "title", "version", "type", "objective"],
+  "properties": {
+    "playbook_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9\\-]{1,78}[a-z0-9]$"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 120},
+    "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "type": {"type": "string"},
+    "objective": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "description": {"type": "string", "maxLength": 2000},
+    "required_tasks": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9\\-]{1,78}[a-z0-9](@\\d+\\.\\d+\\.\\d+)?$"}},
+    "optional_tasks": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9\\-]{1,78}[a-z0-9](@\\d+\\.\\d+\\.\\d+)?$"}},
+    "required_skills": {"type": "array", "items": {"type": "string"}},
+    "optional_skills": {"type": "array", "items": {"type": "string"}},
+    "required_tools": {"type": "array", "items": {"type": "string"}},
+    "optional_tools": {"type": "array", "items": {"type": "string"}},
+    "requested_capabilities": {"type": "array", "items": {"type": "string"}},
+    "denied_capabilities": {"type": "array", "items": {"type": "string"}},
+    "execution_order": {"type": "array", "items": {"type": "string"}},
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["when_field", "operator"],
+        "properties": {
+          "when_field": {"type": "string", "enum": ["technology", "asset.type", "evidence.category", "candidate.status"]},
+          "operator": {"type": "string", "enum": ["==", "!=", "in", "not-in"]},
+          "value": {},
+          "select_tasks": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "max_tasks": {"type": "integer", "minimum": 1, "maximum": 64},
+    "max_iterations": {"type": "integer", "minimum": 1, "maximum": 8},
+    "evidence_required": {"type": "array", "items": {"type": "string"}},
+    "evidence_provenance_required": {"type": "boolean"},
+    "verification_required": {"type": "boolean"},
+    "verification_methods": {"type": "array", "items": {"type": "string"}},
+    "report_template": {"type": "string"},
+    "stop_conditions": {"type": "array", "items": {"type": "string"}},
+    "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
+    "security_read_only_default": {"type": "boolean"},
+    "security_forbidden_actions": {"type": "array", "items": {"type": "string"}},
+    "security_external_targets": {"type": "string"},
+    "security_secrets_policy": {"type": "string"},
+    "security_untrusted_content": {"type": "boolean"},
+    "extends": {"type": ["string", "null"]},
+    "dependencies": {"type": "array", "items": {"type": "string"}},
+    "provenance": {"type": "object"}
+  }
+}

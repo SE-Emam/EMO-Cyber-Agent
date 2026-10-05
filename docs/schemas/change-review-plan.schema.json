@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/change-review-plan.schema.json",
+  "title": "ChangeReviewPlan interop contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["plan_id", "audit_id", "review_mode", "coverage_statement", "plan_digest"],
+  "properties": {
+    "plan_id": {"type": "string", "minLength": 1},
+    "audit_id": {"type": "string", "minLength": 1},
+    "review_mode": {"type": "string", "enum": ["FULL_REVIEW", "TARGETED_REVIEW", "REBASE_REVIEW"]},
+    "targeted_skills": {"type": "array", "items": {"type": "string"}},
+    "targeted_packs": {"type": "array", "items": {"type": "string"}},
+    "targeted_tasks": {"type": "array", "items": {"type": "string"}},
+    "required_codeintel_capabilities": {"type": "array", "items": {"type": "string"}},
+    "required_tools": {"type": "array", "items": {"type": "string"}},
+    "required_evidence": {"type": "array", "items": {"type": "string"}},
+    "verification_handoffs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["handoff_id", "target_snapshot_id", "method", "target"],
+        "properties": {
+          "handoff_id": {"type": "string", "minLength": 1},
+          "target_snapshot_id": {"type": "string", "minLength": 1},
+          "method": {"type": "string", "minLength": 1},
+          "target": {"type": "string", "minLength": 1},
+          "reason": {"type": "string"},
+          "compatible_snapshots": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "coverage_statement": {"type": "string", "minLength": 1},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "plan_digest": {"type": "string", "minLength": 1}
+  }
+}

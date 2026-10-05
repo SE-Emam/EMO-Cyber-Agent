@@ -1,0 +1,39 @@
+{
+  "case_id": "authz-09-authority-network-locked",
+  "title": "Authorization network grant stays locked",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "authority",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "authority",
+    "payload": {
+      "authority_grant_network": false
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "authority_grants.network",
+      "match": "exact",
+      "value": false
+    },
+    {
+      "kind": "authority_invariant",
+      "subject": "authority_diff.state",
+      "match": "exact",
+      "value": "PRESERVED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-09-authority-network-locked"
+  },
+  "notes": "",
+  "tags": [
+    "authority",
+    "grant"
+  ]
+}

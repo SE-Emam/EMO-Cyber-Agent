@@ -1,0 +1,67 @@
+{
+  "case_id": "web-08-correlate-pair",
+  "title": "Web correlated scanner pair",
+  "track": "reasoning",
+  "taxonomy": "secrets",
+  "stage": "correlation",
+  "section": "web",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "correlate",
+    "payload": {
+      "evidence": [
+        {
+          "source_tool": "semgrep",
+          "location": "app/session.py",
+          "content_hash": "c1c1c1c1c1c1c1c1",
+          "summary": "credential material in session helper",
+          "provenance": {
+            "labels": [
+              "secret-indicator"
+            ]
+          }
+        },
+        {
+          "source_tool": "repository",
+          "location": "app/session.py",
+          "content_hash": "d1d1d1d1d1d1d1d1",
+          "summary": "tracked source file",
+          "provenance": {
+            "labels": [
+              "tracked-file"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "stored_evidence",
+      "match": "exact",
+      "value": 2
+    },
+    {
+      "kind": "state",
+      "subject": "candidate_count",
+      "match": "exact",
+      "value": 1
+    },
+    {
+      "kind": "state",
+      "subject": "conflict_count",
+      "match": "exact",
+      "value": 0
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "web-08-correlate-pair"
+  },
+  "notes": "",
+  "tags": [
+    "correlation"
+  ]
+}

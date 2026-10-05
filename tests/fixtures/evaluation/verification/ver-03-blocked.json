@@ -1,0 +1,49 @@
+{
+  "case_id": "ver-03-blocked",
+  "title": "Verification blocked by policy",
+  "track": "reasoning",
+  "taxonomy": "configuration",
+  "stage": "verification",
+  "section": "verification",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "verify",
+    "payload": {
+      "candidate": {
+        "hypothesis": "reproduction needed",
+        "evidence_ids": [
+          "ev-3"
+        ]
+      },
+      "method": "controlled_reproduction",
+      "kind": "endpoint",
+      "locator": "proj/a",
+      "audit_id": "audit-a1",
+      "profile": "read_only"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "status",
+      "match": "exact",
+      "value": "blocked"
+    },
+    {
+      "kind": "state",
+      "subject": "error_code",
+      "match": "exact",
+      "value": "VERIFICATION_POLICY_DENIED"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "ver-03-blocked"
+  },
+  "notes": "",
+  "tags": [
+    "verification",
+    "policy"
+  ]
+}

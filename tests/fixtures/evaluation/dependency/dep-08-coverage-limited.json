@@ -1,0 +1,41 @@
+{
+  "case_id": "dep-08-coverage-limited",
+  "title": "Coverage capped by missing control",
+  "track": "reasoning",
+  "taxonomy": "dependency",
+  "stage": "coverage",
+  "section": "dependency",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "coverage",
+    "payload": {
+      "controls": {
+        "positive": "PRESENT",
+        "negative": "ABSENT"
+      }
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "coverage",
+      "match": "exact",
+      "value": "LIMITED"
+    },
+    {
+      "kind": "state",
+      "subject": "conclusion_ceiling",
+      "match": "exact",
+      "value": "context-only"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "dep-08-coverage-limited"
+  },
+  "notes": "",
+  "tags": [
+    "coverage"
+  ]
+}

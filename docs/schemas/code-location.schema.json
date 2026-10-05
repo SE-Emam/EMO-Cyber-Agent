@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/code-location.schema.json",
+  "title": "CodeLocation interop contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["path", "line", "column"],
+  "properties": {
+    "path": {"type": "string", "minLength": 1, "maxLength": 512, "not": {"pattern": "(^|/)\\.\\.(/|$)|^/|\\\\|%[0-9a-fA-F]{2}|\\x00"}},
+    "line": {"type": "integer", "minimum": 1},
+    "column": {"type": "integer", "minimum": 1},
+    "end_line": {"type": ["integer", "null"], "minimum": 1}
+  }
+}

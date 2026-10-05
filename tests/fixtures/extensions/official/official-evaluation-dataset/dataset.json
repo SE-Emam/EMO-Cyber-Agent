@@ -1,0 +1,17 @@
+{
+  "baseline": {},
+  "case_count": 1,
+  "dataset_id": "official-evaluation-dataset",
+  "description": "One blind case shipped as an extension sample.",
+  "license": "Apache-2.0",
+  "name": "Official Evaluation Dataset Extension Sample",
+  "production": false,
+  "required_gates": [],
+  "required_metrics": [],
+  "sections": [
+    "web"
+  ],
+  "split": "development",
+  "thresholds": {},
+  "version": "1.0.0"
+}

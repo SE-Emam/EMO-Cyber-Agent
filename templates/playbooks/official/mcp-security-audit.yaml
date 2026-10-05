@@ -1,0 +1,44 @@
+playbook:
+  id: mcp-security-audit
+  title: MCP Security Audit
+  version: 1.0.0
+  type: security
+  objective: Audit MCP server configuration, transport, authentication, tool surfaces, capability scope, output trust, and cross-agent trust using read-only methods.
+  description: The auditor never acquires privileges from the MCP target during review.
+tasks:
+  required: [mcp-security-review, agent-security-review]
+  optional: []
+skills:
+  required: [mcp-security, agent-security]
+  optional: [api-security, secrets]
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+capabilities:
+  requested: [repository.read, repository.search, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [mcp-security-review, agent-security-review]
+  conditions: []
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation, configuration_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: mcp-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Tool surfaces and capability scopes inventoried.
+  - Tool-poisoning hypotheses recorded with evidence references.
+  - Limitations recorded in the report.
+provenance: {source: official}

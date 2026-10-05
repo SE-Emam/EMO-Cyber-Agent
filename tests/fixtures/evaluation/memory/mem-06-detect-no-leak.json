@@ -1,0 +1,40 @@
+{
+  "case_id": "mem-06-detect-no-leak",
+  "title": "Memory config scan stays quiet",
+  "track": "detection",
+  "taxonomy": "data_exposure",
+  "stage": "detection",
+  "section": "memory",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "detect",
+    "payload": {
+      "text": "The config loads environment variables safely"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "expected_absent",
+      "subject": "detections",
+      "match": "contains",
+      "value": {
+        "rule": "secret_literal"
+      }
+    },
+    {
+      "kind": "state",
+      "subject": "detection_count",
+      "match": "exact",
+      "value": 0
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mem-06-detect-no-leak"
+  },
+  "notes": "",
+  "tags": [
+    "scan"
+  ]
+}

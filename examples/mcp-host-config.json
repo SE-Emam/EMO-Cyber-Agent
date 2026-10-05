@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "emo-cyber-agent": {
+      "command": "cyber-agent",
+      "args": ["mcp"]
+    }
+  }
+}

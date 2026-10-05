@@ -1,0 +1,482 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/extension-manifest.schema.json",
+  "title": "ExtensionManifest flat contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "extension_id",
+    "name",
+    "version",
+    "extension_type",
+    "description",
+    "api_version",
+    "supported_emo_versions",
+    "dependencies",
+    "optional_dependencies",
+    "provides",
+    "requires",
+    "entrypoint_metadata",
+    "artifact_identity",
+    "source_provenance",
+    "license",
+    "security_metadata",
+    "digest"
+  ],
+  "properties": {
+    "extension_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9\\-]{1,78}[a-z0-9]$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "extension_type": {
+      "type": "string",
+      "enum": [
+        "skill",
+        "skill_pack",
+        "task",
+        "playbook",
+        "report_template",
+        "tool_pack",
+        "verification_strategy",
+        "verification_adapter",
+        "threat_method",
+        "threat_ruleset",
+        "evaluation_dataset"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "api_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$"
+    },
+    "supported_emo_versions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 120
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/dependency"
+      }
+    },
+    "optional_dependencies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/dependency"
+      }
+    },
+    "provides": {
+      "$ref": "#/definitions/provides"
+    },
+    "requires": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/feature"
+      }
+    },
+    "entrypoint_metadata": {
+      "$ref": "#/definitions/entrypoint"
+    },
+    "artifact_identity": {
+      "$ref": "#/definitions/artifact"
+    },
+    "source_provenance": {
+      "$ref": "#/definitions/provenance"
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "security_metadata": {
+      "$ref": "#/definitions/security"
+    },
+    "compatibility": {
+      "$ref": "#/definitions/compatibility"
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/resource"
+      }
+    },
+    "dataset_classification": {
+      "type": "string",
+      "enum": [
+        "public",
+        "internal",
+        "blind",
+        "holdout"
+      ]
+    },
+    "digest": {
+      "type": "string",
+      "maxLength": 128
+    }
+  },
+  "definitions": {
+    "feature": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*(\\.[A-Z][A-Z0-9_]*)*$",
+      "maxLength": 120
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "extension_id",
+        "version_constraint",
+        "dependency_type",
+        "required"
+      ],
+      "properties": {
+        "extension_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9\\-]{1,78}[a-z0-9]$"
+        },
+        "version_constraint": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "dependency_type": {
+          "type": "string",
+          "enum": [
+            "content",
+            "contract",
+            "implementation"
+          ]
+        },
+        "required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "provides": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "declares",
+        "provides_feature",
+        "optional_feature"
+      ],
+      "properties": {
+        "declares": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "skill",
+              "skill_pack",
+              "task",
+              "playbook",
+              "report_template",
+              "tool_pack",
+              "verification_strategy",
+              "verification_adapter",
+              "threat_method",
+              "threat_ruleset",
+              "evaluation_dataset"
+            ]
+          }
+        },
+        "provides_feature": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature"
+          }
+        },
+        "optional_feature": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature"
+          }
+        }
+      }
+    },
+    "entrypoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "target",
+        "contract"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "declarative",
+            "implementation"
+          ]
+        },
+        "target": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "contract": {
+          "type": "string",
+          "maxLength": 64
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_digest",
+        "manifest_digest",
+        "source_revision",
+        "signature_metadata",
+        "attestation_metadata"
+      ],
+      "properties": {
+        "artifact_digest": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "manifest_digest": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "source_revision": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "signature_metadata": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "attestation_metadata": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "declared_network",
+        "declared_filesystem",
+        "declared_process",
+        "declared_credentials",
+        "declared_data_access",
+        "runtime_requirements"
+      ],
+      "properties": {
+        "declared_network": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "declared_filesystem": {
+          "type": "boolean"
+        },
+        "declared_process": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "declared_credentials": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "declared_data_access": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "runtime_requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature"
+          }
+        }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource_id",
+        "kind",
+        "path",
+        "media_type",
+        "digest"
+      ],
+      "properties": {
+        "resource_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9\\-]{1,78}[a-z0-9]$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "schema",
+            "template",
+            "rule",
+            "fixture",
+            "documentation",
+            "static_metadata"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "media_type": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "digest": {
+          "type": "string",
+          "maxLength": 128
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "distribution_name",
+        "distribution_version",
+        "artifact_digest",
+        "source_url",
+        "source_revision",
+        "build_provenance",
+        "publisher_identity",
+        "released_at",
+        "license",
+        "dependency_provenance"
+      ],
+      "properties": {
+        "distribution_name": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "distribution_version": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "artifact_digest": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "source_url": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "source_revision": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "build_provenance": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "publisher_identity": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "released_at": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "license": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "dependency_provenance": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "emo_api_min",
+        "emo_api_max",
+        "schema_versions",
+        "required_features",
+        "optional_features",
+        "python_requires",
+        "platforms"
+      ],
+      "properties": {
+        "emo_api_min": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+$",
+          "maxLength": 16
+        },
+        "emo_api_max": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "schema_versions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 16
+          }
+        },
+        "required_features": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature"
+          }
+        },
+        "optional_features": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/feature"
+          }
+        },
+        "python_requires": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 32
+          }
+        }
+      }
+    }
+  }
+}

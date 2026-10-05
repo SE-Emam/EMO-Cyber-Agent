@@ -1,0 +1,47 @@
+{
+  "case_id": "mcp-05-verify-plan",
+  "title": "MCP verification returns a plan",
+  "track": "reasoning",
+  "taxonomy": "configuration",
+  "stage": "verification",
+  "section": "mcp",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "verify",
+    "payload": {
+      "candidate": {
+        "hypothesis": "session helper leaks material",
+        "evidence_ids": [
+          "ev-1"
+        ]
+      },
+      "method": "static_confirmation",
+      "kind": "repository",
+      "locator": "proj/a",
+      "audit_id": "audit-a1"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "status",
+      "match": "exact",
+      "value": "planned"
+    },
+    {
+      "kind": "state",
+      "subject": "method",
+      "match": "exact",
+      "value": "static_confirmation"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mcp-05-verify-plan"
+  },
+  "notes": "",
+  "tags": [
+    "verification"
+  ]
+}

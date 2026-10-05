@@ -1,0 +1,40 @@
+version: "1.0"
+name: verify
+permission_profile: verify
+
+scope:
+  allow_local_workspace: true
+  allow_external_targets: false
+  require_explicit_repository_authorization: true
+  require_explicit_cloud_scope: true
+
+allowed_capabilities:
+  - source_read
+  - git_read
+  - repository_metadata_read
+  - security_findings_read
+  - database_metadata_read
+  - schema_read
+  - rls_policy_read
+  - auth_metadata_read
+  - sast_scan
+  - dependency_scan
+  - secret_scan
+  - configuration_scan
+  - safe_local_verification
+  - safe_test_environment_verification
+  - report_write_local
+
+blocked_capabilities:
+  - file_write
+  - git_push
+  - pr_merge
+  - database_write
+  - production_mutation
+  - resource_delete
+  - unrestricted_shell
+
+verification:
+  enabled: true
+  require_test_environment: true
+  allow_destructive: false

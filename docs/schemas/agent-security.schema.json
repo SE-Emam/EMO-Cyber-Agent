@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://emo-cyber-agent/schemas/agent-security.schema.json",
+  "title": "AgentSystem interop contract",
+  "version": "1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["audit_id", "agents"],
+  "properties": {
+    "audit_id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string"},
+    "snapshot_id": {"type": "string"},
+    "agents": {"type": "array", "items": {"type": "object"}},
+    "subagents": {"type": "array", "items": {"type": "object"}},
+    "mcp_servers": {"type": "array", "items": {"type": "object"}},
+    "mcp_tools": {"type": "array", "items": {"type": "object"}},
+    "delegations": {"type": "array", "items": {"type": "object"}},
+    "coverage": {"type": "string"},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

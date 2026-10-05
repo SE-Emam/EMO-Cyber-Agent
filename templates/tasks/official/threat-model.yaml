@@ -1,0 +1,52 @@
+task:
+  id: threat-model
+  title: Threat Modeling
+  version: 1.0.0
+  type: threat_model
+  objective: Enumerate assets, trust boundaries, dataflows, and threats without asserting vulnerabilities.
+scope:
+  included: [repository]
+  excluded: [production]
+  target_types: [repo]
+inputs:
+  required: [source-tree]
+  optional: [architecture-docs]
+skills:
+  required: [threat-modeling]
+  optional: [api-security, data-exposure]
+capabilities:
+  required: [repository.read, repository.list]
+  denied: [repository.write, database.write, destructive]
+tools:
+  required: []
+  optional: []
+methodology:
+  phases: [reconnaissance, attack-surface, threat-enumeration]
+  procedures:
+    - inventory assets and entrypoints
+    - map trust boundaries and dataflows
+    - enumerate threats per boundary
+evidence:
+  required: [repository_identity, file-evidence]
+  provenance_required: true
+  minimum_quality: sourced-with-locator
+verification:
+  required: false
+  methods: []
+  confirmation: ""
+  refutation: ""
+  stop_conditions: [scope-exhausted]
+security_constraints:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: redact-and-never-persist
+  untrusted_content: data-only
+acceptance_criteria:
+  - assets and boundaries mapped with evidence
+  - no confirmed vulnerabilities asserted
+deliverables: [observations]
+report:
+  template: threat-model
+  required_sections: [summary, findings, limitations]
+provenance: {source: official}

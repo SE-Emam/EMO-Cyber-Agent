@@ -1,0 +1,44 @@
+{
+  "case_id": "agent-03-policy-allow",
+  "title": "Agent read capability allowed",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "agent",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "policy",
+    "payload": {
+      "audit_id": "audit-a1",
+      "tool_id": "agent-reader",
+      "target": "proj/a",
+      "profile": "read_only",
+      "capabilities": [
+        "repository.read"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "allowed",
+      "match": "exact",
+      "value": true
+    },
+    {
+      "kind": "state",
+      "subject": "profile",
+      "match": "exact",
+      "value": "read_only"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "agent-03-policy-allow"
+  },
+  "notes": "",
+  "tags": [
+    "policy"
+  ]
+}

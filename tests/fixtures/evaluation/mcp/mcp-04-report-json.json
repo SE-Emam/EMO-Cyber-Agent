@@ -1,0 +1,38 @@
+{
+  "case_id": "mcp-04-report-json",
+  "title": "MCP report produces no findings",
+  "track": "reasoning",
+  "taxonomy": "secrets",
+  "stage": "report",
+  "section": "mcp",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "report",
+    "payload": {
+      "findings": []
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "finding_count",
+      "match": "exact",
+      "value": 0
+    },
+    {
+      "kind": "state",
+      "subject": "summary_total",
+      "match": "exact",
+      "value": 0
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "mcp-04-report-json"
+  },
+  "notes": "",
+  "tags": [
+    "report"
+  ]
+}

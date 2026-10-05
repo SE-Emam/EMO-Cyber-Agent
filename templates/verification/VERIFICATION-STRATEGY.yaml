@@ -1,0 +1,37 @@
+# VERIFICATION-STRATEGY — POST-RC-012 starter contract.
+#
+# A declarative starting point for one bounded verification
+# strategy: which hypothesis it may test, which evidence it needs,
+# which capabilities an adapter must hold, the safety ceiling it
+# may never cross, and the oracle Core will use to judge it.
+# Planning input only; strategies grant no permission and run
+# nothing by themselves.
+
+strategy:
+  id: example-strategy
+  version: 1.0.0
+  name: Example verification strategy
+  category: PASSIVE_PROPERTY_CHECK
+  applicable_hypotheses: [CONFIGURATION]
+  required_evidence: [config-record, setting-record]
+  required_capabilities: [FILE_ASSERTION]
+  allowed_safety_levels: [PASSIVE]
+  target_kinds: [CONFIGURATION, FILE]
+  input_contract: [declared-facts]
+  oracle_kinds: [CONFIG_PROPERTY]
+  success_criteria: The observed property equals the value declared by the evidence record for the addressed target.
+  refutation_criteria: The observed property differs from the value declared by the evidence record for the addressed target.
+  limitations:
+    - snapshot-structure-only
+    - declared-values-not-inferred
+  resource_budget:
+    max_requests: 4
+    max_duration_s: 30
+    max_output_bytes: 65536
+    max_redirects: 0
+    max_payload_size: 1024
+    max_retries: 0
+    max_graph_depth: 4
+    max_attempts: 2
+
+provenance: {source: starter, origin: EMO-Cyber-Agent verification starter, catalog: templates/verification}

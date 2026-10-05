@@ -1,0 +1,44 @@
+playbook:
+  id: pre-release-security
+  title: Pre-Release Security
+  version: 1.0.0
+  type: security
+  objective: Gate a release candidate with secret hygiene, regression confirmation, and focused re-review of changed surfaces.
+  description: Release gate. Never asserts safety from zero findings; limitations always ship with the verdict.
+tasks:
+  required: [pre-release-security-review, regression-security-review, secret-audit]
+  optional: []
+skills:
+  required: [secrets, code-review-security]
+  optional: [configuration, dependency-security]
+tools:
+  required: [semgrep]
+  optional: [gitleaks, trivy]
+capabilities:
+  requested: [repository.read, repository.list, scanner.local.execute]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [pre-release-security-review, regression-security-review, secret-audit]
+  conditions: []
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [repository_identity, file-evidence, tool-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [static_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: pre-release-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Release scope inventoried.
+  - Open verification items listed explicitly.
+  - Limitations recorded in the report.
+provenance: {source: official}

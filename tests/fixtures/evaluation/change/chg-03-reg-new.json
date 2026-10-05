@@ -1,0 +1,35 @@
+{
+  "case_id": "chg-03-reg-new",
+  "title": "Change digest state new",
+  "track": "regression",
+  "taxonomy": "advisory_regression",
+  "stage": "regression",
+  "section": "change",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "regression",
+    "payload": {
+      "before_digest": "",
+      "after_digest": "ddd444",
+      "before_present": false,
+      "regression_key": "chg-03"
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "state",
+      "subject": "state",
+      "match": "exact",
+      "value": "NEW"
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "chg-03-reg-new"
+  },
+  "notes": "",
+  "tags": [
+    "regression"
+  ]
+}

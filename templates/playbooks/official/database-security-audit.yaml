@@ -1,0 +1,44 @@
+playbook:
+  id: database-security-audit
+  title: Database Security Audit
+  version: 1.0.0
+  type: security
+  objective: Audit database schema, access grants, and data-access paths with read-only inspection.
+  description: Focused database workflow with authorization correlation.
+tasks:
+  required: [database-security-review, authorization-review]
+  optional: []
+skills:
+  required: [database-security, authorization]
+  optional: [supabase, rls]
+tools:
+  required: [semgrep]
+  optional: [gitleaks]
+capabilities:
+  requested: [repository.read, supabase.table.read, supabase.grant.read]
+  denied: [repository.write, database.write, destructive]
+execution:
+  order: [database-security-review, authorization-review]
+  conditions: []
+  max_tasks: 8
+  max_iterations: 1
+evidence:
+  required: [project_identity, tables, grants, file-evidence]
+  provenance_required: true
+verification:
+  required: true
+  methods: [read_only_query, configuration_confirmation]
+security:
+  read_only_default: true
+  forbidden_actions: [write, escalate, exfiltrate]
+  external_targets: deny
+  secrets_policy: strict
+  untrusted_content: true
+report:
+  template: database-security
+stop_conditions: [policy_violation, scope_violation, evidence_integrity_failure, security_boundary_break, task_failure, budget_exhausted, no_progress, unresolved_critical_conflict]
+acceptance_criteria:
+  - Schema objects and grants inventoried.
+  - Data-access paths correlated with authorization checks.
+  - Limitations recorded in the report.
+provenance: {source: official}

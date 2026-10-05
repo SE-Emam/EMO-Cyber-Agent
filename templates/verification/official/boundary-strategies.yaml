@@ -1,0 +1,151 @@
+# boundary-strategies — official verification catalog (POST-RC-012).
+#
+# Input/output/network boundary strategies. Active checks run only
+# inside the declared budget behind the adapter contract; passive
+# checks read structure without executing anything. Every input is a
+# bounded contract value — never a shell string, never arbitrary code.
+
+strategies:
+  - id: input-boundary
+    version: 1.0.0
+    name: Input boundary
+    category: INPUT_BOUNDARY
+    applicable_hypotheses: [INPUT_VALIDATION]
+    required_evidence: [input-contract-record]
+    required_capabilities: [HTTP_REQUEST, HTTP_ASSERTION]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [ROUTE, API_OPERATION, ENDPOINT]
+    input_contract: [evidence-reference, bounded-property-value]
+    oracle_kinds: [HTTP_STATUS, HTTP_BODY_PROPERTY]
+    success_criteria: A value outside the declared input contract observes the rejecting decision at the validation boundary.
+    refutation_criteria: A value outside the declared input contract crosses the validation boundary without a rejecting decision.
+    limitations:
+      - contract-derived-values-only
+      - no-production-side-effects
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: output-encoding
+    version: 1.0.0
+    name: Output encoding
+    category: OUTPUT_BOUNDARY
+    applicable_hypotheses: [OUTPUT_ENCODING]
+    required_evidence: [output-contract-record]
+    required_capabilities: [HTTP_REQUEST, HTTP_ASSERTION]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [ROUTE, API_OPERATION, ENDPOINT]
+    input_contract: [bounded-property-value, evidence-reference]
+    oracle_kinds: [HTTP_BODY_PROPERTY, HTTP_STATUS]
+    success_criteria: An untrusted value emitted into the target context observes the encoding declared by the encoding record.
+    refutation_criteria: An untrusted value is emitted into the target context without the declared encoding applied.
+    limitations:
+      - context-is-declared-not-inferred
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: ssrf-boundary
+    version: 1.0.0
+    name: SSRF boundary
+    category: NETWORK_BEHAVIOR_CHECK
+    applicable_hypotheses: [SSRF, NETWORK_BEHAVIOR]
+    required_evidence: [url-contract-record]
+    required_capabilities: [HTTP_REQUEST, HTTP_ASSERTION]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [ROUTE, API_OPERATION, ENDPOINT]
+    input_contract: [bounded-url-property, evidence-reference]
+    oracle_kinds: [HTTP_STATUS, HTTP_BODY_PROPERTY]
+    success_criteria: A destination outside the declared URL allowlist observes the rejecting decision of the URL validation property, with zero redirects granted.
+    refutation_criteria: A private or non-allowlisted destination is accepted by the URL validation property or leaves the declared allowlist through a redirect.
+    limitations:
+      - allowlist-comes-from-declared-record
+      - redirects-denied-by-default
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: sql-injection-safe
+    version: 1.0.0
+    name: SQL injection boundary
+    category: NEGATIVE_TEST
+    applicable_hypotheses: [INJECTION]
+    required_evidence: [dataflow-record]
+    required_capabilities: [HTTP_REQUEST, HTTP_ASSERTION]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [ROUTE, API_OPERATION, ENDPOINT]
+    input_contract: [evidence-reference, bounded-property-value]
+    oracle_kinds: [STRUCTURED_TOOL_RESULT, HTTP_STATUS]
+    success_criteria: A structured test value observes parameterized handling at the data boundary instead of query structure interpretation.
+    refutation_criteria: A structured test value is interpreted as query structure by the data boundary.
+    limitations:
+      - structured-values-only
+      - no-arbitrary-query-input
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: command-injection-safe
+    version: 1.0.0
+    name: Command injection boundary
+    category: NEGATIVE_TEST
+    applicable_hypotheses: [INJECTION]
+    required_evidence: [dataflow-record]
+    required_capabilities: [HTTP_REQUEST, HTTP_ASSERTION]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [ROUTE, API_OPERATION, ENDPOINT]
+    input_contract: [evidence-reference, bounded-property-value]
+    oracle_kinds: [STRUCTURED_TOOL_RESULT, HTTP_STATUS]
+    success_criteria: A structured test value observes argument separation at the process boundary instead of interpreter interpretation.
+    refutation_criteria: A structured test value is interpreted by an interpreter at the process boundary.
+    limitations:
+      - no-shell-input-accepted
+      - sandbox-execution-only
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: template-injection-safe
+    version: 1.0.0
+    name: Template injection boundary
+    category: NEGATIVE_TEST
+    applicable_hypotheses: [INJECTION]
+    required_evidence: [dataflow-record]
+    required_capabilities: [HTTP_REQUEST, HTTP_ASSERTION]
+    allowed_safety_levels: [SAFE_ACTIVE]
+    target_kinds: [ROUTE, API_OPERATION, ENDPOINT]
+    input_contract: [evidence-reference, bounded-property-value]
+    oracle_kinds: [STRUCTURED_TOOL_RESULT, HTTP_STATUS]
+    success_criteria: A structured test value observes literal rendering at the template boundary instead of template structure interpretation.
+    refutation_criteria: A structured test value is interpreted as template structure by the rendering boundary.
+    limitations:
+      - literal-rendering-declared-not-inferred
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: interpreter-boundary
+    version: 1.0.0
+    name: Interpreter boundary
+    category: STATIC_PROPERTY_CHECK
+    applicable_hypotheses: [INJECTION, DATA_FLOW]
+    required_evidence: [boundary-record]
+    required_capabilities: [FILE_ASSERTION, STRUCTURED_TOOL_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [FILE, SYMBOL, REPOSITORY]
+    input_contract: [declared-facts, evidence-reference]
+    oracle_kinds: [FILE_STATE_PROPERTY, STRUCTURED_TOOL_RESULT]
+    success_criteria: Every untrusted flow into an interpreter sink observes the declared boundary helper recorded for the symbol.
+    refutation_criteria: An untrusted flow reaches an interpreter sink without the declared boundary helper present.
+    limitations:
+      - static-structure-only
+      - runtime-behaviour-not-observed
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+  - id: deserialization-boundary
+    version: 1.0.0
+    name: Deserialization boundary
+    category: STATIC_PROPERTY_CHECK
+    applicable_hypotheses: [INJECTION, DATA_FLOW]
+    required_evidence: [boundary-record]
+    required_capabilities: [FILE_ASSERTION, STRUCTURED_TOOL_ASSERTION]
+    allowed_safety_levels: [PASSIVE]
+    target_kinds: [FILE, SYMBOL, REPOSITORY]
+    input_contract: [declared-facts, evidence-reference]
+    oracle_kinds: [FILE_STATE_PROPERTY, STRUCTURED_TOOL_RESULT]
+    success_criteria: Every untrusted flow into a deserialization entry point observes the declared validation step recorded for the symbol.
+    refutation_criteria: An untrusted flow reaches a deserialization entry point without the declared validation step present.
+    limitations:
+      - static-structure-only
+      - no-object-graph-execution
+    resource_budget: {max_requests: 6, max_duration_s: 30, max_output_bytes: 65536, max_redirects: 0, max_payload_size: 1024, max_retries: 0, max_graph_depth: 4, max_attempts: 4}
+
+provenance: {source: official, origin: EMO-Cyber-Agent verification catalog, catalog: templates/verification/official}

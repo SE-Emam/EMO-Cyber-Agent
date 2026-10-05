@@ -1,0 +1,73 @@
+pack:
+  id: path-traversal-file-access
+  name: Path Traversal and File Access Pack
+  version: 1.0.0
+  purpose: Trace user-controlled file paths to filesystem sinks, record normalization gaps and archive-extraction boundaries as hypotheses.
+
+skills: [backend-security, api-security]
+
+code_intelligence:
+  required: [dataflow, symbols]
+
+evidence:
+  required: [file-evidence, dataflow-path-record]
+
+verification:
+  methods: [static_confirmation, dataflow_confirmation]
+
+applicable_assets: [repo, api]
+security_domains: [injection, api-security]
+
+methodology:
+  - list filesystem sink call sites with path argument origins
+  - record normalization and validation checks on each path
+  - treat encoded and archive-derived paths as distinct review items
+
+checks:
+  - id: path-origin-review
+    title: File path origin review
+    methodology:
+      - trace path arguments to origin symbols
+      - record origins deriving from untrusted input
+      - note normalization calls found along each path
+    evidence_required: [dataflow-path-record, sink-record]
+    evidence_sufficient: [origin-record, sink-record, normalization-record]
+    evidence_missing: [encoding-variant-gap]
+    verification_required: [dataflow_confirmation, static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: HYPOTHESIS
+    codeintel_needs: [dataflow, symbols]
+    source_kinds: [http_parameter, external_input, file_input]
+    sink_kinds: [filesystem]
+    hypothesis_template: Path at {source} may reach filesystem sink {sink} without recorded normalization; requires verification.
+
+  - id: archive-extraction-review
+    title: Archive extraction boundary review
+    methodology:
+      - list archive extraction call sites
+      - record destination handling and traversal guards
+    evidence_required: [sink-record]
+    evidence_sufficient: [sink-record, destination-record]
+    evidence_missing: [nested-archive-gap]
+    verification_required: [static_confirmation]
+    verification_safety: passive
+    high_risk: true
+    entry_level: SUSPECTED
+    codeintel_needs: [symbols]
+    source_kinds: [file_input, external_input]
+    sink_kinds: [filesystem]
+    hypothesis_template: Extraction at {sink} may write outside the intended destination; requires verification.
+
+stop_conditions: [scope-exhausted, budget-exhausted, no-progress]
+limitations:
+  - Encoded traversal variants need targeted review beyond static facts.
+  - Runtime working directories are not visible statically.
+
+security:
+  requested: [repository.read, repository.search, code.dataflow.read, code.symbols.read]
+  denied: [repository.write, database.write, destructive]
+
+allowed_tools: [repository.read, repository.search, semgrep]
+
+provenance: {source: official}

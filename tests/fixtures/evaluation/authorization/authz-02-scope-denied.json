@@ -1,0 +1,36 @@
+{
+  "case_id": "authz-02-scope-denied",
+  "title": "Authorization out of scope target denied",
+  "track": "authority",
+  "taxonomy": "authorization",
+  "stage": "isolation",
+  "section": "authorization",
+  "visibility": "public",
+  "split": "development",
+  "scenario": {
+    "kind": "scope",
+    "payload": {
+      "audit_id": "audit-a1",
+      "target": "proj/b",
+      "scope": [
+        "proj/a"
+      ]
+    }
+  },
+  "ground_truth": [
+    {
+      "kind": "scope_behavior",
+      "subject": "in_scope",
+      "match": "exact",
+      "value": false
+    }
+  ],
+  "source": {
+    "system": "internal",
+    "fixture": "authz-02-scope-denied"
+  },
+  "notes": "",
+  "tags": [
+    "scope"
+  ]
+}
