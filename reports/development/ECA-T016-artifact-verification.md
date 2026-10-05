@@ -4,8 +4,8 @@
 
 ## Release Artifacts
 
-- **Wheel**: /Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0-py3-none-any.whl (581789 bytes)
-- **Sdist**: /Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0.tar.gz (737069 bytes)
+- **Wheel**: /Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0-py3-none-any.whl (698016 bytes)
+- **Sdist**: /Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0.tar.gz (981219 bytes)
 - **Manifest**: /Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/release/release-manifest.json
 - **Checksums**: /Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/SHA256SUMS
 
