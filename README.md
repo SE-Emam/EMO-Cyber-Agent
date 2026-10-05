@@ -1,4 +1,11 @@
+![EMO-Cyber-Agent banner](assets/banner.png)
+
+![EMO-Cyber-Agent logo](assets/logo.png)
+
 # EMO-Cyber-Agent
+
+A portable, model-agnostic, governed cybersecurity subagent
+for code, applications, agents, prompts, MCP, and cloud security.
 
 Portable, model-agnostic cybersecurity sub-agent for software projects.
 
@@ -56,9 +63,20 @@ task in `reports/development/ECA-T*.md`.
 ## Installation
 
 ```bash
-pip install -e '.[all]'   # package + MCP/HTTP/dev extras
+pip install emo-cyber-agent
 cyber-agent --help
-cyber-agent doctor
+```
+
+Optional isolation:
+
+```bash
+pipx install emo-cyber-agent
+```
+
+From source (developers):
+
+```bash
+pip install -e '.[all]'   # package + MCP/HTTP/dev extras
 ```
 
 ## Quickstart
@@ -111,3 +129,36 @@ Read-only by default; repository content is untrusted data; no material
 finding without evidence; no destructive action without an explicit
 permission transition; MCP and CLI are thin adapters — Core decides,
 tools prove, verification confirms, reporting projects.
+
+Progress is advisory-only (never authorizes actions). Recovery is bounded
+and fail-closed (`POLICY_DENIED` / `INTEGRITY_FAILURE` never retry).
+Host-supplied context is untrusted until scope-bound by Core/Policy.
+
+## Host integration
+
+Register EMO once as an MCP server, then delegate security work from any
+compatible host. Full per-host guides live in `docs/integrations/`.
+
+```json
+{ "mcpServers": { "emo-cyber-agent": { "command": "cyber-agent", "args": ["mcp"] } } }
+```
+
+| Host | Status |
+|---|---|
+| Generic MCP host (stdio) | Contract Tested |
+| OpenCode | Supported (config), Contract Tested discovery |
+| Pi (stdio / Streamable HTTP) | Supported (config), project-scoped |
+| Hermes (per-server filtering) | Supported (config), least-surface guidance |
+| Jan (Desktop + Agent/CLI shared config) | Supported (config) |
+| AnythingLLM (workspace/RAG = untrusted inputs) | Supported (config), boundary guidance |
+
+Levels: Supported = config + mapping shipped; Contract Tested = in-repo
+contract tests; Environment Tested = live binary exercised (where available);
+otherwise Not Tested — see `docs/integrations/` per host.
+
+## Limitations
+
+Read-only analysis; no auto-remediation, no exploit capabilities, no
+scores-as-verdicts. Live-host interop beyond contract tests is
+environment-dependent (see host docs). Progress never gates security
+decisions; recovery never mutates policy, evidence, or findings.
