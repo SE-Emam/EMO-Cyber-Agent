@@ -119,15 +119,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     version = _version()
-    wheel = DIST / f"emo_cyber_agent-{version}-py3-none-any.whl"
-    sdist = DIST / f"emo_cyber_agent-{version}.tar.gz"
+    with (ROOT / "pyproject.toml").open("rb") as fh:
+        dist_prefix = tomllib.load(fh)["project"]["name"].replace("-", "_")
+    wheel = DIST / f"{dist_prefix}-{version}-py3-none-any.whl"
+    sdist = DIST / f"{dist_prefix}-{version}.tar.gz"
     for artifact in (wheel, sdist):
         if not artifact.is_file():
             print(f"missing artifact: {artifact}", file=sys.stderr)
             return 2
 
     manifest = {
-        "project": "emo-cyber-agent",
+        "project": "emo-cyber",
         "version": version,
         "release_channel": args.release_channel,
         "api_version": "1.0",

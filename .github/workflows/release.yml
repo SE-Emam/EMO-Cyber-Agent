@@ -116,14 +116,14 @@ jobs:
             --draft \
             --title "EMO-Cyber-Agent v${{ needs.build-verify.outputs.version }}" \
             --notes "EMO-Cyber-Agent v${{ needs.build-verify.outputs.version }}. Portable, model-agnostic, governed cybersecurity subagent. Verify with SHA256SUMS; identity pinned in release-manifest.json." \
-            dist/emo_cyber_agent-*.whl dist/emo_cyber_agent-*.tar.gz dist/SHA256SUMS dist/release-manifest.json
+            dist/emo_cyber-*.whl dist/emo_cyber-*.tar.gz dist/SHA256SUMS dist/release-manifest.json
 
   pypi-publish:
     needs: [build-verify, github-release]
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/emo-cyber-agent/
+      url: https://pypi.org/project/emo-cyber/
     permissions:
       id-token: write
     steps:

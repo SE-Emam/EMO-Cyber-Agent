@@ -12,8 +12,8 @@ def main():
     print("=== ECA-T016 Final Artifact Verification ===")
     
     # Expected artifact paths
-    wheel_path = REPO_ROOT / "dist" / "emo_cyber_agent-0.1.0-py3-none-any.whl"
-    sdist_path = REPO_ROOT / "dist" / "emo_cyber_agent-0.1.0.tar.gz"
+    wheel_path = REPO_ROOT / "dist" / "emo_cyber-0.1.0-py3-none-any.whl"
+    sdist_path = REPO_ROOT / "dist" / "emo_cyber-0.1.0.tar.gz"
     
     print("[MANDATORY] Checking artifact paths...")
     
@@ -38,7 +38,7 @@ def main():
     # Check artifact names
     print("[MANDATORY] Validating artifact names...")
     
-    expected_wheel = "emo_cyber_agent-0.1.0-py3-none-any.whl"
+    expected_wheel = "emo_cyber-0.1.0-py3-none-any.whl"
     if wheel_path.name != expected_wheel:
         print(f"[FAIL] Wheel name mismatch: expected {expected_wheel}, got {wheel_path.name}")
         sys.exit(1)
@@ -225,12 +225,12 @@ def main():
     sys.exit(0)
 
 def find_wheel():
-    for path in REPO_ROOT.rglob("emo_cyber_agent-0.1.0-py3-none-any.whl"):
+    for path in REPO_ROOT.rglob("emo_cyber-0.1.0-py3-none-any.whl"):
         return path
     return None
 
 def find_sdist():
-    for path in REPO_ROOT.rglob("emo_cyber_agent-0.1.0.tar.gz"):
+    for path in REPO_ROOT.rglob("emo_cyber-0.1.0.tar.gz"):
         return path
     return None
 

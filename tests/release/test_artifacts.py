@@ -64,7 +64,9 @@ def _sdist_names() -> list[str]:
 
 def test_wheel_contains_required_files():
     names = _wheel_names()
-    dist_info = f"emo_cyber_agent-{VERSION}.dist-info"
+    from conftest import DIST_INFO
+
+    dist_info = DIST_INFO
     for required in ("METADATA", "WHEEL", "RECORD", "entry_points.txt"):
         assert f"{dist_info}/{required}" in names, required
     assert f"{dist_info}/licenses/LICENSE" in names
@@ -93,7 +95,9 @@ def test_wheel_contains_all_schemas_policies_and_official_catalog():
 def test_wheel_record_hashes_are_valid():
     with zipfile.ZipFile(WHEEL) as z:
         bad = []
-        for row in csv.reader(z.read(f"emo_cyber_agent-{VERSION}.dist-info/RECORD").decode().splitlines()):
+        from conftest import DIST_INFO
+
+        for row in csv.reader(z.read(f"{DIST_INFO}/RECORD").decode().splitlines()):
             if len(row) < 3 or not row[1]:
                 continue
             path, expected_hash, _size = row[0], row[1], row[2]

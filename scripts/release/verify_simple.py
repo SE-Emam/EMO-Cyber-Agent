@@ -11,8 +11,8 @@ if not (REPO_ROOT / "pyproject.toml").exists():
 def main():
     print("=== ECA-T016 Final Artifact Verification ===\n")
     
-    wheel_path = REPO_ROOT / "dist" / "emo_cyber_agent-0.1.0-py3-none-any.whl"
-    sdist_path = REPO_ROOT / "dist" / "emo_cyber_agent-0.1.0.tar.gz"
+    wheel_path = REPO_ROOT / "dist" / "emo_cyber-0.1.0-py3-none-any.whl"
+    sdist_path = REPO_ROOT / "dist" / "emo_cyber-0.1.0.tar.gz"
     manifest_path = REPO_ROOT / "release" / "release-manifest.json"
     checksums_path = REPO_ROOT / "dist" / "SHA256SUMS"
     
@@ -33,7 +33,7 @@ def main():
     print(f"[MANDATORY] Sdist detected: {sdist_path}")
     
     # Check wheel name
-    expected_wheel_name = "emo_cyber_agent-0.1.0-py3-none-any.whl"
+    expected_wheel_name = "emo_cyber-0.1.0-py3-none-any.whl"
     if wheel_path.name != expected_wheel_name:
         print(f"[FAIL] Wheel name mismatch. Expected: {expected_wheel_name}, Got: {wheel_path.name}")
         sys.exit(1)

@@ -55,7 +55,7 @@ def test_manifest_exists_and_has_all_required_fields():
 
 def test_manifest_identity_matches_package():
     body = _manifest()
-    assert body["project"] == "emo-cyber-agent"
+    assert body["project"] == "emo-cyber"
     assert body["version"] == VERSION
     with (ROOT / "pyproject.toml").open("rb") as fh:
         assert body["version"] == tomllib.load(fh)["project"]["version"]

@@ -35,12 +35,12 @@ main() {
     WHEEL_PATH=""
     SDIST_PATH=""
     
-    if [[ -f "$REPO_ROOT/dist/emo_cyber_agent-0.1.0-py3-none-any.whl" ]]; then
-        WHEEL_PATH="$REPO_ROOT/dist/emo_cyber_agent-0.1.0-py3-none-any.whl"
-    elif [[ -f "/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0-py3-none-any.whl" ]]; then
-        WHEEL_PATH="/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0-py3-none-any.whl"
+    if [[ -f "$REPO_ROOT/dist/emo_cyber-0.1.0-py3-none-any.whl" ]]; then
+        WHEEL_PATH="$REPO_ROOT/dist/emo_cyber-0.1.0-py3-none-any.whl"
+    elif [[ -f "/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber-0.1.0-py3-none-any.whl" ]]; then
+        WHEEL_PATH="/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber-0.1.0-py3-none-any.whl"
     else
-        WHEEL_PATH=$(find "$REPO_ROOT" -name "emo_cyber_agent-0.1.0-py3-none-any.whl" -type f 2>/dev/null | head -1)
+        WHEEL_PATH=$(find "$REPO_ROOT" -name "emo_cyber-0.1.0-py3-none-any.whl" -type f 2>/dev/null | head -1)
         if [[ -z "$WHEEL_PATH" ]]; then
             print_blocked "Wheel artifact not found"
             exit 1
@@ -48,12 +48,12 @@ main() {
         echo "Found wheel at: $WHEEL_PATH"
     fi
     
-    if [[ -f "$REPO_ROOT/dist/emo_cyber_agent-0.1.0.tar.gz" ]]; then
-        SDIST_PATH="$REPO_ROOT/dist/emo_cyber_agent-0.1.0.tar.gz"
-    elif [[ -f "/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0.tar.gz" ]]; then
-        SDIST_PATH="/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0.tar.gz"
+    if [[ -f "$REPO_ROOT/dist/emo_cyber-0.1.0.tar.gz" ]]; then
+        SDIST_PATH="$REPO_ROOT/dist/emo_cyber-0.1.0.tar.gz"
+    elif [[ -f "/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber-0.1.0.tar.gz" ]]; then
+        SDIST_PATH="/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber-0.1.0.tar.gz"
     else
-        SDIST_PATH=$(find "$REPO_ROOT" -name "emo_cyber_agent-0.1.0.tar.gz" -type f 2>/dev/null | head -1)
+        SDIST_PATH=$(find "$REPO_ROOT" -name "emo_cyber-0.1.0.tar.gz" -type f 2>/dev/null | head -1)
         if [[ -z "$SDIST_PATH" ]]; then
             print_blocked "Sdist artifact not found"
             exit 1
@@ -64,7 +64,7 @@ main() {
     print_mandatory "Wheel detected: $WHEEL_PATH"
     print_mandatory "Sdist detected: $SDIST_PATH"
     
-    EXPECTED_WHEEL="emo_cyber_agent-0.1.0-py3-none-any.whl"
+    EXPECTED_WHEEL="emo_cyber-0.1.0-py3-none-any.whl"
     
     if [[ "$(basename "$WHEEL_PATH")" != "$EXPECTED_WHEEL" ]]; then
         print_fail "Wheel name mismatch: expected $EXPECTED_WHEEL, got $(basename "$WHEEL_PATH")"

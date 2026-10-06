@@ -27,8 +27,11 @@ DIST = ROOT / "dist"
 with (ROOT / "pyproject.toml").open("rb") as _fh:
     VERSION = tomllib.load(_fh)["project"]["version"]
 
-WHEEL = DIST / f"emo_cyber_agent-{VERSION}-py3-none-any.whl"
-SDIST = DIST / f"emo_cyber_agent-{VERSION}.tar.gz"
+WHEEL = DIST / f"emo_cyber-{VERSION}-py3-none-any.whl"
+SDIST = DIST / f"emo_cyber-{VERSION}.tar.gz"
+# dist-info dir inside the wheel, derived from the wheel filename
+# (tracks distribution renames automatically).
+DIST_INFO = f"{WHEEL.name.split('-py3-none-any.whl')[0]}.dist-info"
 
 
 def _uv() -> str:

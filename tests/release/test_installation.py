@@ -20,8 +20,8 @@ from conftest import ROOT, VERSION, WHEEL, run_installed
 
 def test_pip_install_into_fresh_venv_succeeds(venv):
     """The venv fixture is the proof: pip install of the wheel succeeded."""
-    proc = run_installed(venv / "bin" / "python", ["-m", "pip", "show", "emo-cyber-agent"])
-    assert "Name: emo-cyber-agent" in proc.stdout
+    proc = run_installed(venv / "bin" / "python", ["-m", "pip", "show", "emo-cyber"])
+    assert "Name: emo-cyber" in proc.stdout
     assert f"Version: {VERSION}" in proc.stdout
 
 
@@ -113,7 +113,7 @@ def test_pipx_install_and_run_from_outside_project(tmp_path):
             timeout=120,
             env=env,
         )
-        assert "emo-cyber-agent" in listed.stdout
+        assert "emo-cyber" in listed.stdout
         # run from /tmp — outside the project directory
         run = subprocess.run(
             ["cyber-agent", "--version"],
@@ -136,4 +136,4 @@ def test_pipx_install_and_run_from_outside_project(tmp_path):
         assert doctor.returncode == 0, doctor.stderr[-1000:]
         assert json.loads(doctor.stdout)["status"] == "ok"
     finally:
-        subprocess.run([pipx, "uninstall", "emo-cyber-agent"], capture_output=True, timeout=300, env=env)
+        subprocess.run([pipx, "uninstall", "emo-cyber"], capture_output=True, timeout=300, env=env)

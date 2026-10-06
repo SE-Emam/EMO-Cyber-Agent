@@ -210,7 +210,7 @@ _check_manifest() {
     
     print_step "Manifest exists: $manifest_path"
     
-    local wheel_ref="$MANIFEST_PATH/refs/emo_cyber_agent-0.1.0-py3-none-any.whl"
+    local wheel_ref="$MANIFEST_PATH/refs/emo_cyber-0.1.0-py3-none-any.whl"
     if [[ -f "$wheel_ref" ]]; then
         print_pass "Manifest wheel reference matches"
     else
@@ -509,7 +509,7 @@ scan_for_secrets() {
 _check_artifact_name() {
     local artifact_path=$1
     local artifact_name=$(basename "$artifact_path")
-    local expected_name="emo_cyber_agent-0.1.0-py3-none-any.whl"
+    local expected_name="emo_cyber-0.1.0-py3-none-any.whl"
     
     if [[ "$artifact_name" != "$expected_name" ]]; then
         print_fail "Artifact name mismatch: expected $expected_name, got $artifact_name"
@@ -528,11 +528,11 @@ main() {
     local sdist_path=""
     
     # Check for wheel
-    if [[ -f "$REPO_ROOT/dist/emo_cyber_agent-0.1.0-py3-none-any.whl" ]]; then
-        wheel_path="$REPO_ROOT/dist/emo_cyber_agent-0.1.0-py3-none-any.whl"
-    elif [[ -f "/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0-py3-none-any.whl" ]]; then
-        wheel_path="/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0-py3-none-any.whl"
-    elif find "$REPO_ROOT" -name "emo_cyber_agent-0.1.0-py3-none-any.whl" -type f 2>/dev/null | head -1 > /tmp/wheel_path && [[ -s /tmp/wheel_path ]]; then
+    if [[ -f "$REPO_ROOT/dist/emo_cyber-0.1.0-py3-none-any.whl" ]]; then
+        wheel_path="$REPO_ROOT/dist/emo_cyber-0.1.0-py3-none-any.whl"
+    elif [[ -f "/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber-0.1.0-py3-none-any.whl" ]]; then
+        wheel_path="/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber-0.1.0-py3-none-any.whl"
+    elif find "$REPO_ROOT" -name "emo_cyber-0.1.0-py3-none-any.whl" -type f 2>/dev/null | head -1 > /tmp/wheel_path && [[ -s /tmp/wheel_path ]]; then
         wheel_path=$(cat /tmp/wheel_path)
         echo "Found wheel at: $wheel_path"
     else
@@ -541,11 +541,11 @@ main() {
     fi
     
     # Check for sdist
-    if [[ -f "$REPO_ROOT/dist/emo_cyber_agent-0.1.0.tar.gz" ]]; then
-        sdist_path="$REPO_ROOT/dist/emo_cyber_agent-0.1.0.tar.gz"
-    elif [[ -f "/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0.tar.gz" ]]; then
-        sdist_path="/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber_agent-0.1.0.tar.gz"
-    elif find "$REPO_ROOT" -name "emo_cyber_agent-0.1.0.tar.gz" -type f 2>/dev/null | head -1 > /tmp/sdist_path && [[ -s /tmp/sdist_path ]]; then
+    if [[ -f "$REPO_ROOT/dist/emo_cyber-0.1.0.tar.gz" ]]; then
+        sdist_path="$REPO_ROOT/dist/emo_cyber-0.1.0.tar.gz"
+    elif [[ -f "/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber-0.1.0.tar.gz" ]]; then
+        sdist_path="/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/dist/emo_cyber-0.1.0.tar.gz"
+    elif find "$REPO_ROOT" -name "emo_cyber-0.1.0.tar.gz" -type f 2>/dev/null | head -1 > /tmp/sdist_path && [[ -s /tmp/sdist_path ]]; then
         sdist_path=$(cat /tmp/sdist_path)
         echo "Found sdist at: $sdist_path"
     else

@@ -61,14 +61,14 @@ task in `reports/development/ECA-T*.md`.
 ## Installation
 
 ```bash
-pip install emo-cyber-agent
+pip install emo-cyber
 cyber-agent --help
 ```
 
 Optional isolation:
 
 ```bash
-pipx install emo-cyber-agent
+pipx install emo-cyber
 ```
 
 From source (developers):

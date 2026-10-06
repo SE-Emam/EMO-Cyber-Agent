@@ -15,13 +15,13 @@ import tarfile
 import zipfile
 
 
-from conftest import ROOT, SDIST, VERSION, WHEEL, _uv
+from conftest import DIST_INFO, ROOT, SDIST, VERSION, WHEEL, _uv
 
 
 def _metadata() -> email.message.Message:
     with zipfile.ZipFile(WHEEL) as z:
         return email.parser.Parser().parsestr(
-            z.read(f"emo_cyber_agent-{VERSION}.dist-info/METADATA").decode()
+            z.read(f"{DIST_INFO}/METADATA").decode()
         )
 
 
@@ -34,7 +34,7 @@ def test_wheel_and_sdist_exist():
 
 def test_metadata_valid_per_core_metadata_2_6():
     meta = _metadata()
-    assert meta["Name"] == "emo-cyber-agent"
+    assert meta["Name"] == "emo-cyber"
     assert meta["Version"] == VERSION
     assert meta["Requires-Python"] == ">=3.11"
     # PEP 639 SPDX expression + license file (Core Metadata 2.4+ semantics)
@@ -61,7 +61,7 @@ def test_metadata_valid_per_core_metadata_2_6():
     assert "License :: OSI Approved :: Apache Software License" in meta.get_all("Classifier", [])
     # console script entry point
     with zipfile.ZipFile(WHEEL) as z:
-        entry_points = z.read(f"emo_cyber_agent-{VERSION}.dist-info/entry_points.txt").decode()
+        entry_points = z.read(f"{DIST_INFO}/entry_points.txt").decode()
     assert "cyber-agent = emo_cyber_agent.cli.main:app" in entry_points
 
 
@@ -102,7 +102,7 @@ def test_build_reproduces_from_current_tree(tmp_path):
     assert (out / SDIST.name).is_file()
     # wheel tag appropriate for a pure-Python package
     with zipfile.ZipFile(out / WHEEL.name) as z:
-        wheel_meta = z.read(f"emo_cyber_agent-{VERSION}.dist-info/WHEEL").decode()
+        wheel_meta = z.read(f"{DIST_INFO}/WHEEL").decode()
     assert "Root-Is-Purelib: true" in wheel_meta
     assert "Tag: py3-none-any" in wheel_meta
 

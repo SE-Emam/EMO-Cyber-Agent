@@ -2,17 +2,17 @@
   "api_version": "1.0",
   "artifacts": {
     "sdist": {
-      "name": "emo_cyber_agent-0.1.0.tar.gz",
-      "sha256": "6494ab5a589f218b572d6916f62a9b09469a92c3ede68ca2fe50f0c4a70dfcb0",
-      "size": 981952
+      "name": "emo_cyber-0.1.0.tar.gz",
+      "sha256": "da865c803de1d175f2d9b84266ed1aebe4500a16ea4e11730c6a4f05ab8d1f5f",
+      "size": 982739
     },
     "wheel": {
-      "name": "emo_cyber_agent-0.1.0-py3-none-any.whl",
-      "sha256": "b22b385a45050ebaf423a2e73c97a237991756c0220370d19384f906cd73a229",
-      "size": 698729
+      "name": "emo_cyber-0.1.0-py3-none-any.whl",
+      "sha256": "0b9e35b7401807f42dd6c9fde55e132ff706dbc64f48f2aa34197eea9addf4ab",
+      "size": 698673
     }
   },
-  "build_timestamp": "2026-10-06T05:04:43.897185+00:00",
+  "build_timestamp": "2026-10-06T13:19:42.640796+00:00",
   "build_tool": {
     "backend": "hatchling",
     "backend_version": "unknown",
@@ -106,10 +106,10 @@
     }
   },
   "evaluation_gate": "PASS",
-  "git_revision": "66cc00cfe53df68511417877220a0e6be138e381",
+  "git_revision": "5e9b7f58003307913a8e4fb01a2abf5b55b8dea3",
   "invariant_gate": "PASS",
   "platform": "Darwin-arm64",
-  "project": "emo-cyber-agent",
+  "project": "emo-cyber",
   "python_versions": [
     "3.11",
     "3.12"
@@ -120,7 +120,7 @@
   "schema_result": "36/36",
   "schema_version": "1.0",
   "security_gate": "PASS",
-  "source_tree_digest": "b3f1b3d6d1f94a6675358445621e2bdc08bf494fb13143d19556d2acb5089cef",
+  "source_tree_digest": "e02abc03844e8f873d4a1ef7da62dde89177d8dc396bf8b54d72faeca44c6c6a",
   "test_count": 2205,
   "test_result": "2202 passed, 3 skipped",
   "version": "0.1.0"
