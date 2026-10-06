@@ -97,18 +97,23 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/download-artifact@v4
         with:
           name: dist-${{ needs.build-verify.outputs.version }}
           path: dist/
 
-      - name: Publish GitHub Release (tag must already exist; --verify-tag)
+      - name: Create DRAFT GitHub Release (tag must already exist; --verify-tag)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ls -la dist/
           gh release create "v${{ needs.build-verify.outputs.version }}" \
             --verify-tag \
+            --draft \
             --title "EMO-Cyber-Agent v${{ needs.build-verify.outputs.version }}" \
             --notes "EMO-Cyber-Agent v${{ needs.build-verify.outputs.version }}. Portable, model-agnostic, governed cybersecurity subagent. Verify with SHA256SUMS; identity pinned in release-manifest.json." \
             dist/emo_cyber_agent-*.whl dist/emo_cyber_agent-*.tar.gz dist/SHA256SUMS dist/release-manifest.json
