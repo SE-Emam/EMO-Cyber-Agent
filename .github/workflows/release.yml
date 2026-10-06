@@ -55,7 +55,7 @@ jobs:
         run: |
           python -m pytest tests/unit -q --tb=short -p no:cacheprovider > /tmp/unit.log 2>&1
           code=$?
-          tail -3 /tmp/unit.log
+          tail -5 /tmp/unit.log
           exit $code
 
       # Regenerate release records FROM the CI-built bytes (builds are not

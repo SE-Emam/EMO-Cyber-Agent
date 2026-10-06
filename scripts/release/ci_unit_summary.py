@@ -22,12 +22,21 @@ def main() -> int:
     except OSError as exc:
         print(f"cannot read log: {path}: {exc}", file=sys.stderr)
         return 1
-    match = re.search(r"(\d+) passed, (\d+) skipped", log)
+    # Accept "<N> passed" with optional ", <M> skipped" (skip counts vary
+    # by environment), but fail closed on any failure/error signal.
+    match = re.search(r"(\d+) passed(?:, (\d+) skipped)?", log)
     if not match:
         print("--- unit.log tail (summary not found) ---", file=sys.stderr)
         print("\n".join(log.splitlines()[-15:]), file=sys.stderr)
         return 1
-    print(f'SUMMARY="{match.group(1)} passed, {match.group(2)} skipped"')
+    summary_line = next(
+        (line for line in log.splitlines() if "passed" in line), ""
+    )
+    if re.search(r"(\d+) failed|(\d+) error", summary_line):
+        print(f"unit suite has failures: {summary_line}", file=sys.stderr)
+        return 1
+    skipped = match.group(2) or "0"
+    print(f'SUMMARY="{match.group(1)} passed, {skipped} skipped"')
     print(f"COUNT={match.group(1)}")
     return 0
 
