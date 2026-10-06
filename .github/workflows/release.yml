@@ -49,10 +49,14 @@ jobs:
           ls -la dist/
 
       # Unit suite first (needs no dist/). Counts feed the manifest honestly.
+      # NOTE: pytest's own exit code is the gate (a tail/grep gate once
+      # swallowed the summary line behind the warnings footer).
       - name: Run unit suite
         run: |
-          python -m pytest tests/unit -q --tb=short -p no:cacheprovider 2>&1 | tee /tmp/unit.log | tail -2
-          grep -qE "[0-9]+ passed" /tmp/unit.log || { echo "unit suite failed"; exit 1; }
+          python -m pytest tests/unit -q --tb=short -p no:cacheprovider > /tmp/unit.log 2>&1
+          code=$?
+          tail -3 /tmp/unit.log
+          exit $code
 
       # Regenerate release records FROM the CI-built bytes (builds are not
       # assumed byte-stable across machines; identity is re-established here).
