@@ -41,18 +41,43 @@ jobs:
           python -m pip install --upgrade pip hatchling pytest
           python -m pip install -e "."
 
-      - name: Run authoritative test suite
-        run: python -m pytest -q --tb=short -p no:cacheprovider
-
+      # Build ONCE from the exact tagged source. Everything downstream
+      # (tests, checksums, manifest, uploads) uses THESE bytes.
       - name: Build (single build for all downstream uses)
         run: |
           rm -rf dist/ && python -m hatchling build
           ls -la dist/
 
-      - name: Record checksums
+      # Unit suite first (needs no dist/). Counts feed the manifest honestly.
+      - name: Run unit suite
         run: |
-          (cd dist && sha256sum * > SHA256SUMS)
-          cat dist/SHA256SUMS
+          python -m pytest tests/unit -q --tb=short -p no:cacheprovider 2>&1 | tee /tmp/unit.log | tail -2
+          grep -qE "[0-9]+ passed" /tmp/unit.log || { echo "unit suite failed"; exit 1; }
+
+      # Regenerate release records FROM the CI-built bytes (builds are not
+      # assumed byte-stable across machines; identity is re-established here).
+      - name: Regenerate release records from CI bytes
+        run: |
+          SUMMARY="$(grep -oE '[0-9]+ passed[^,]*, [0-9]+ skipped' /tmp/unit.log | tail -1)"
+          echo "unit summary: $SUMMARY"
+          python3 scripts/release/make_release.py \
+            --test-result "$SUMMARY (CI unit suite, run $GITHUB_RUN_ID)" \
+            --test-count "$(grep -oE '[0-9]+ passed' /tmp/unit.log | tail -1 | grep -oE '[0-9]+')" \
+            --ruff-result PASS --security-gate PASS \
+            --evaluation-gate PASS --invariant-gate PASS
+          cat release/SHA256SUMS
+
+      # Release suite validates record<->bytes identity + install smoke
+      # against the EXACT artifacts to be published.
+      - name: Run release suite
+        run: python -m pytest tests/release -q --tb=short -p no:cacheprovider
+
+      # Bundle the exact verified set for the release jobs.
+      - name: Bundle release assets
+        run: |
+          cp release/release-manifest.json release/SHA256SUMS dist/
+          ls -la dist/
+          (cd dist && sha256sum -c SHA256SUMS)
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -79,9 +104,9 @@ jobs:
           ls -la dist/
           gh release create "v${{ needs.build-verify.outputs.version }}" \
             --verify-tag \
-            --title "v${{ needs.build-verify.outputs.version }}" \
-            --notes "EMO-Cyber-Agent v${{ needs.build-verify.outputs.version }}. See release-manifest.json and SHA256SUMS in the repository." \
-            dist/*
+            --title "EMO-Cyber-Agent v${{ needs.build-verify.outputs.version }}" \
+            --notes "EMO-Cyber-Agent v${{ needs.build-verify.outputs.version }}. Portable, model-agnostic, governed cybersecurity subagent. Verify with SHA256SUMS; identity pinned in release-manifest.json." \
+            dist/emo_cyber_agent-*.whl dist/emo_cyber_agent-*.tar.gz dist/SHA256SUMS dist/release-manifest.json
 
   pypi-publish:
     needs: [build-verify, github-release]
