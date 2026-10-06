@@ -1,7 +1,5 @@
 ![EMO-Cyber-Agent banner](assets/banner.png)
 
-![EMO-Cyber-Agent logo](assets/logo.png)
-
 # EMO-Cyber-Agent
 
 A portable, model-agnostic, governed cybersecurity subagent
