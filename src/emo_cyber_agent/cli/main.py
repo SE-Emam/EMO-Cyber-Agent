@@ -38,11 +38,28 @@ EXIT_INTERRUPTED = 130
 app = typer.Typer(help="EMO-Cyber-Agent cybersecurity specialist (read-only by default)")
 
 
+def _dist_name() -> str:
+    """Installed distribution name (tracks renames; never hardcoded)."""
+    try:
+        from importlib import metadata as _md
+
+        for candidate in ("emo-cyber", "emo-cyber-agent"):
+            try:
+                name = _md.metadata(candidate)["Name"]
+                if name:
+                    return name
+            except _md.PackageNotFoundError:
+                continue
+    except Exception:
+        pass
+    return "emo-cyber"
+
+
 def _version_callback(value: bool) -> None:
     if value:
         from emo_cyber_agent import __version__
 
-        typer.echo(f"emo-cyber-agent {__version__}")
+        typer.echo(f"{_dist_name()} {__version__}")
         raise typer.Exit()
 
 
@@ -276,7 +293,7 @@ def doctor(format: str = typer.Option("human", "--format", help="Output format: 
     import importlib.util
 
     checks: dict[str, str] = {}
-    checks["package"] = f"emo-cyber-agent {__version__}"
+    checks["package"] = f"{_dist_name()} {__version__}"
     checks["python"] = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     try:
 
