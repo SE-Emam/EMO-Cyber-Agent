@@ -9,9 +9,14 @@ handling, concurrency isolation, shell safety, contract + security + E2E
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
+
+# Repo root derived from this file's location (machine-independent;
+# never hardcode a developer's absolute checkout path).
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 from emo_cyber_agent.cli.main import (
     EXIT_DOMAIN_FAILURE,
@@ -200,7 +205,7 @@ def test_no_direct_adapter_or_business_logic_in_cli():
 
 def test_signal_handling_sigint(tmp_path):
     script = "import sys; sys.path.insert(0, 'src'); from emo_cyber_agent.cli.main import app; app(['mcp'])"
-    proc = subprocess.Popen([sys.executable, "-c", script], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd="/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent", text=True)
+    proc = subprocess.Popen([sys.executable, "-c", script], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=str(_REPO_ROOT), text=True)
     try:
         proc.wait(timeout=5)
         code = proc.returncode
@@ -263,7 +268,7 @@ def test_ci_mode_json_pipe_clean():
 def test_packaging_contract():
     import tomllib
 
-    with open("/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/pyproject.toml", "rb") as fh:
+    with open(_REPO_ROOT / "pyproject.toml", "rb") as fh:
         project = tomllib.load(fh)
     assert project["project"]["scripts"]["cyber-agent"] == "emo_cyber_agent.cli.main:app"
     assert runner.invoke(app, ["--help"]).exit_code == 0

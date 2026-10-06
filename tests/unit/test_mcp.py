@@ -9,12 +9,17 @@ import io
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
 from emo_cyber_agent.mcp import protocol as proto
 from emo_cyber_agent.mcp.server import create_server
 from emo_cyber_agent.mcp.tools import TOOL_NAMES, TOOLS, InvalidInput, validate_arguments
+
+# Repo root derived from this file's location (machine-independent;
+# never hardcode a developer's absolute checkout path).
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _call(server, name, arguments, req_id=1):
@@ -295,7 +300,7 @@ def test_stdio_end_to_end_subprocess():
     proc = subprocess.run(
         [sys.executable, "-c", script],
         input="\n".join(__import__("json").dumps(m) for m in messages) + "\n",
-        capture_output=True, text=True, timeout=60, cwd="/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent",
+        capture_output=True, text=True, timeout=60, cwd=str(_REPO_ROOT),
     )
     assert proc.returncode == 0, proc.stderr[-500:]
     lines = [json.loads(line) for line in proc.stdout.strip().split("\n")]
@@ -308,7 +313,7 @@ def test_stdio_end_to_end_subprocess():
 def test_packaging_entry_points():
     import tomllib
 
-    with open("/Users/emamabdullaziz/Desktop/EMO-Cyber-Agent/pyproject.toml", "rb") as fh:
+    with open(_REPO_ROOT / "pyproject.toml", "rb") as fh:
         project = tomllib.load(fh)
     assert project["project"]["scripts"]["cyber-agent"] == "emo_cyber_agent.cli.main:app"
     assert create_server().__class__.__name__ == "McpServer"
