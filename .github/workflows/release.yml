@@ -62,11 +62,11 @@ jobs:
       # assumed byte-stable across machines; identity is re-established here).
       - name: Regenerate release records from CI bytes
         run: |
-          SUMMARY="$(grep -oE '[0-9]+ passed[^,]*, [0-9]+ skipped' /tmp/unit.log | tail -1)"
-          echo "unit summary: $SUMMARY"
+          eval "$(python3 scripts/release/ci_unit_summary.py /tmp/unit.log)"
+          echo "unit summary: $SUMMARY (count=$COUNT)"
           python3 scripts/release/make_release.py \
             --test-result "$SUMMARY (CI unit suite, run $GITHUB_RUN_ID)" \
-            --test-count "$(grep -oE '[0-9]+ passed' /tmp/unit.log | tail -1 | grep -oE '[0-9]+')" \
+            --test-count "$COUNT" \
             --ruff-result PASS --security-gate PASS \
             --evaluation-gate PASS --invariant-gate PASS
           cat release/SHA256SUMS
