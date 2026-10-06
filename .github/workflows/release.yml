@@ -49,11 +49,11 @@ jobs:
           ls -la dist/
 
       # Unit suite first (needs no dist/). Counts feed the manifest honestly.
-      # NOTE: pytest's own exit code is the gate (a tail/grep gate once
-      # swallowed the summary line behind the warnings footer).
+      # NOTE: pytest's own exit code is the gate. JUnit XML is the primary
+      # count source (human summary lines proved unreliable under CI).
       - name: Run unit suite
         run: |
-          python -m pytest tests/unit -q --tb=short -p no:cacheprovider > /tmp/unit.log 2>&1
+          python -m pytest tests/unit -q --tb=short -p no:cacheprovider --junitxml=/tmp/unit.xml > /tmp/unit.log 2>&1
           code=$?
           tail -5 /tmp/unit.log
           exit $code
@@ -62,7 +62,8 @@ jobs:
       # assumed byte-stable across machines; identity is re-established here).
       - name: Regenerate release records from CI bytes
         run: |
-          eval "$(python3 scripts/release/ci_unit_summary.py /tmp/unit.log)"
+          SUMMARY_OUT="$(python3 scripts/release/ci_unit_summary.py /tmp/unit.log /tmp/unit.xml)" || exit 1
+          eval "$SUMMARY_OUT"
           echo "unit summary: $SUMMARY (count=$COUNT)"
           python3 scripts/release/make_release.py \
             --test-result "$SUMMARY (CI unit suite, run $GITHUB_RUN_ID)" \
