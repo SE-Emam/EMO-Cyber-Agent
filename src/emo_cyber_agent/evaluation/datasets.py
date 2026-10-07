@@ -254,6 +254,10 @@ def load_dataset(root: str | Path, *, manifest_name: str = MANIFEST_NAME) -> Eva
                 EvaluationErrorCode.DATASET_NOT_FOUND,
                 f"declared sections missing: {', '.join(missing)}",
             )
+        # Load declared sections only: sibling directories added later
+        # (e.g. post_t020 benchmark corpus in a different case shape) must
+        # not be swept into this dataset (POST-T020 G9).
+        section_dirs = [base / name for name in declared]
 
     cases: list[EvaluationCase] = []
     for section_dir in section_dirs:

@@ -103,6 +103,7 @@ def test_tool_mapping_completeness_identity():
     mapping = get_tool_mapping()
     assert set(mapping) == set(mcp_tools.TOOL_NAMES)
     assert set(mapping) == set(discovery.KNOWN_TOOL_NAMES)
+    assert len(mapping) == 7  # 5 safe-default + 2 opt-in
     for server_name, host_name in mapping.items():
         assert server_name == host_name  # cyber_* as-is
         assert server_name in TOOL_NAME_MAPPING
@@ -113,8 +114,13 @@ def test_safe_default_exposure():
     assert tuple(SAFE_DEFAULT_TOOLS) == tuple(get_safe_default_tools())
     assert len(SAFE_DEFAULT_TOOLS) == 5
     assert "cyber_extensions" not in SAFE_DEFAULT_TOOLS
-    assert tuple(OPT_IN_TOOLS) == ("cyber_extensions",)
+    assert "cyber_threat_intel" not in SAFE_DEFAULT_TOOLS
+    assert tuple(OPT_IN_TOOLS) == ("cyber_extensions", "cyber_threat_intel")
+    assert len(OPT_IN_TOOLS) == 2
     assert set(SAFE_DEFAULT_TOOLS) | set(OPT_IN_TOOLS) == set(mcp_tools.TOOL_NAMES)
+    assert set(SAFE_DEFAULT_TOOLS) & set(OPT_IN_TOOLS) == set()
+    # opt-in identity mapping holds for both opt-in tools
+    assert get_tool_mapping()["cyber_threat_intel"] == "cyber_threat_intel"
 
 
 def test_capability_mapping_matches_discovery():
@@ -123,6 +129,9 @@ def test_capability_mapping_matches_discovery():
     for tool in mcp_tools.TOOL_NAMES:
         assert tuple(mapping[tool]) == tuple(discovery.describe_tool(tool).capabilities)
         assert tuple(CAPABILITY_MAPPING[tool]) == tuple(mapping[tool])
+    # 7th opt-in tool mirrors discovery capabilities exactly
+    assert tuple(mapping["cyber_threat_intel"]) == ("evidence.read", "threatintel.read")
+    assert discovery.describe_tool("cyber_threat_intel").safe_default is False
 
 
 def test_boundary_notes_untrusted_default():
@@ -207,12 +216,16 @@ def test_negotiation_helper_explicit_no_hardcode():
     assert "PROTOCOL_VERSIONS" in hosts_anythingllm.PROTOCOL_NEGOTIATION_NOTE or "discovery" in hosts_anythingllm.PROTOCOL_NEGOTIATION_NOTE
 
 
-def test_honesty_labels_not_tested():
-    assert SUPPORT_STATUS == SupportStatus.NOT_TESTED
-    assert hosts_anythingllm.SUPPORT_STATUS.value == "Not-tested"
-    assert HOST_MATRIX[HOST_ID].support_status == SupportStatus.NOT_TESTED
+def test_honesty_labels_environment_tested():
+    # Upgraded 2026-10-07: live full loop proven (G1-anythingllm addendum
+    # parts 2-4). All three sources must agree, with dated evidence.
+    assert SUPPORT_STATUS == SupportStatus.ENVIRONMENT_TESTED
+    assert hosts_anythingllm.SUPPORT_STATUS.value == "Environment-tested"
+    assert HOST_MATRIX[HOST_ID].support_status == SupportStatus.ENVIRONMENT_TESTED
     assert HOST_ID == "anythingllm" and DISPLAY_NAME == "AnythingLLM"
     assert hosts_anythingllm.SUPPORT_EVIDENCE.strip()
+    assert "2026-10-07" in hosts_anythingllm.SUPPORT_EVIDENCE
+    assert "2026-10-07" in HOST_MATRIX[HOST_ID].support_evidence
 
 
 def test_troubleshooting_data():

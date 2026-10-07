@@ -88,7 +88,7 @@ def test_unknown_method_and_malformed_messages():
 
 def test_tool_discovery_high_level_only():
     tools = MockMcpClient().list_tools()["result"]["tools"]
-    assert sorted(t["name"] for t in tools) == ["cyber_audit", "cyber_extensions", "cyber_report", "cyber_review", "cyber_status", "cyber_verify"]
+    assert sorted(t["name"] for t in tools) == ["cyber_audit", "cyber_extensions", "cyber_report", "cyber_review", "cyber_status", "cyber_threat_intel", "cyber_verify"]
     blob = json.dumps(tools).lower()
     for leaked in ("semgrep", "trivy", "gitleaks", "osv", "github api", "supabase"):
         assert leaked not in blob

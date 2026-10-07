@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from emo_cyber_agent.report_templates.spec import ReportTemplateSpec, TemplateTrust
 
 
@@ -9,13 +11,35 @@ class ReportTemplateValidator:
     """Schema + safety + mandatory-field validation. Declarative only."""
 
     # Directives that are never allowed anywhere in template text.
-    UNSAFE_MARKERS = ("javascript:", "<script", "exec(", "eval(", "__import__", "os.system", "subprocess", "fetch(", "XMLHttpRequest", "import ", "require(")
+    # G11-L2: all entries are lowercase because the haystack is lowered
+    # before matching (`XMLHttpRequest` was dead — it could never match a
+    # lowered haystack; now `xmlhttprequest`).
+    UNSAFE_MARKERS = ("javascript:", "<script", "exec(", "eval(", "__import__", "os.system", "subprocess", "fetch(", "xmlhttprequest", "import ", "require(")
+
+    # G11-L2: whitespace-tolerant variants (`require (`, `fetch (`, `eval (`,
+    # `exec (`) — substring markers above miss a space before the paren.
+    UNSAFE_WS_PATTERNS: tuple[re.Pattern[str], ...] = (
+        re.compile(r"require\s*\("),
+        re.compile(r"fetch\s*\("),
+        re.compile(r"eval\s*\("),
+        re.compile(r"exec\s*\("),
+    )
 
     def validate(self, spec: ReportTemplateSpec) -> tuple[bool, TemplateTrust, tuple[str, ...], tuple[str, ...]]:
-        from emo_cyber_agent.report_templates.spec import MANDATORY_FINDING_FIELDS
+        from emo_cyber_agent.report_templates.spec import ALLOWED_FINDING_FIELDS, MANDATORY_FINDING_FIELDS
 
         errors: list[str] = []
         warnings: list[str] = []
+        # R1: re-check the finding-field allowlist here. The pydantic
+        # constructor validators enforce it, but model_copy(update=...)
+        # bypasses validation, so validate() must not trust construction.
+        for field in spec.finding_fields:
+            if field not in ALLOWED_FINDING_FIELDS and not field.startswith("report.") and not field.startswith("meta."):
+                errors.append(f"field-invalid:{field}")
+        for section in spec.sections:
+            for field in section.fields:
+                if field not in ALLOWED_FINDING_FIELDS and not field.startswith("report.") and not field.startswith("meta."):
+                    errors.append(f"field-invalid:{section.name}:{field}")
         if spec.type in ("security", "executive", "developer"):
             present = set(spec.finding_fields)
             missing = [f for f in MANDATORY_FINDING_FIELDS if f not in present]
@@ -30,6 +54,14 @@ class ReportTemplateValidator:
             for marker in self.UNSAFE_MARKERS:
                 if marker in lowered:
                     errors.append(f"unsafe-directive:{marker}")
+            for pattern in self.UNSAFE_WS_PATTERNS:
+                match = pattern.search(lowered)
+                if match:
+                    raw = match.group(0)
+                    # Stable no-space marker name (`require (` → `require(`).
+                    tight = re.sub(r"\s+", "", raw)
+                    if f"unsafe-directive:{tight}" not in errors:
+                        errors.append(f"unsafe-directive:{tight}")
         for section in spec.sections:
             for rule in section.visibility:
                 if rule.operator not in ("==", "!=", "in", "not-in"):
@@ -40,7 +72,11 @@ class ReportTemplateValidator:
             errors.append("redaction-disabled-denied")
         if not spec.deterministic:
             errors.append("nondeterministic-denied")
+        # R2: this validator never confers TRUSTED. A self-claimed
+        # provenance['source'] == 'official' is untrusted input, so deriving
+        # trust from it would let any spec mint trust. TRUSTED is conferred
+        # only by the official builders (build_official_registry /
+        # load_official_registry) via Registry.register(trust=TRUSTED),
+        # which re-validates before accepting TRUSTED.
         trust = TemplateTrust.UNTRUSTED
-        if not errors and spec.provenance.get("source") == "official":
-            trust = TemplateTrust.TRUSTED
         return (not errors, trust, tuple(errors), tuple(warnings))

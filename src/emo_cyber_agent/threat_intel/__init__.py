@@ -1,0 +1,101 @@
+"""Threat-intel package — DEFENSIVE KNOWLEDGE ONLY.
+
+Leak intelligence, IoC fusion triage, ATT&CK technique mapping, and a
+Kali tool detector pack. Everything here is patterns, mappings, and
+triage: nothing executes, exploits, scans live targets, or crawls, and
+no module performs network calls.
+"""
+
+from emo_cyber_agent.threat_intel.feed_triage import (
+    IOC_KINDS,
+    FeedFinding,
+    IoC,
+    ThreatFeedTriage,
+    TriageVerdict,
+    ioc_ref,
+    match,
+    match_ioc,
+    normalize_value,
+    prioritize,
+)
+from emo_cyber_agent.threat_intel.kali_detectors import (
+    TOOL_CATEGORIES,
+    TOOL_NAMES,
+    CoverageReport,
+    ExposureReport,
+    KaliTool,
+    KaliToolDetectorPack,
+    all_tool_names,
+    coverage,
+    detect_exposure,
+    get_tool,
+)
+from emo_cyber_agent.threat_intel.leak_monitor import (
+    HIBP_API_BASE,
+    THREATFOX_API_URL,
+    THREATFOX_IOC_TYPES,
+    DarkLeakMonitor,
+    LeakFinding,
+    hibp_breach_request,
+    parse_hibp_response,
+    parse_threatfox_response,
+    sha256_hex,
+    threatfox_ioc_request,
+    triage,
+    triage_leak,
+)
+from emo_cyber_agent.threat_intel.technique_mapper import (
+    TECHNIQUES,
+    VALID_TACTICS,
+    AttackTechnique,
+    AttackTechniqueMapper,
+    TechniqueRef,
+    all_technique_ids,
+    get_technique,
+    map_finding,
+    technique_known,
+)
+
+__all__ = [
+    "IOC_KINDS",
+    "FeedFinding",
+    "IoC",
+    "ThreatFeedTriage",
+    "TriageVerdict",
+    "ioc_ref",
+    "match",
+    "match_ioc",
+    "normalize_value",
+    "prioritize",
+    "TOOL_CATEGORIES",
+    "TOOL_NAMES",
+    "CoverageReport",
+    "ExposureReport",
+    "KaliTool",
+    "KaliToolDetectorPack",
+    "all_tool_names",
+    "coverage",
+    "detect_exposure",
+    "get_tool",
+    "HIBP_API_BASE",
+    "THREATFOX_API_URL",
+    "THREATFOX_IOC_TYPES",
+    "DarkLeakMonitor",
+    "LeakFinding",
+    "hibp_breach_request",
+    "parse_hibp_response",
+    "parse_threatfox_response",
+    "sha256_hex",
+    "threatfox_ioc_request",
+    "triage",
+    "triage_leak",
+    "TECHNIQUES",
+    "VALID_TACTICS",
+    "AttackTechnique",
+    "AttackTechniqueMapper",
+    "TechniqueRef",
+    "all_technique_ids",
+    "get_technique",
+    "map_finding",
+    "technique_known",
+]

@@ -31,9 +31,10 @@ stdio transport"). Per-vendor quirks are explicitly not covered by this entry
   (adapter constants + `discovery.SERVER_NAME`).
 - Tool table from `discovery` (advertised via `build_advertisement()`)
   `Supported`: `cyber_audit`, `cyber_review`, `cyber_verify`, `cyber_report`,
-  `cyber_status` (`safe_default=True`), `cyber_extensions`
-  (`safe_default=False`, advertised in the full set but withheld from
-  per-task default subsets). `list_tools()` order is stable `Supported`.
+  `cyber_status` (`safe_default=True`), `cyber_extensions`,
+  `cyber_threat_intel` (`safe_default=False`, advertised in the full set
+  but withheld from per-task default subsets). `list_tools()` order is
+  stable `Supported`.
 - Per-task subset: only `security-review` is defined in
   `TASK_TOOL_SUBSETS` (the 5 safe tools) `Supported`; `tools_for_task()`
   rejects unknown kinds `Supported`. `build_advertisement(task_kind, only)`
@@ -100,7 +101,7 @@ noted):
 | symptom | fix |
 |---|---|
 | `initialize` fails / unsupported protocol version | Intersect offered versions with `discovery.PROTOCOL_VERSIONS` (`2024-11-05, 2025-03-26, 2025-06-18`); use latest common; abort on none (`negotiate_protocol_version` pattern) `Supported`. |
-| `tools/list` shows unexpected set | Compare with `build_advertisement()` / `KNOWN_TOOL_NAMES`; apply `only` narrowing or task subset; `cyber_extensions` is opt-in `Supported`. |
+| `tools/list` shows unexpected set | Compare with `build_advertisement()` / `KNOWN_TOOL_NAMES`; apply `only` narrowing or task subset; `cyber_extensions` and `cyber_threat_intel` are opt-in `Supported`. |
 | Empty tool filter selection | `build_advertisement(only=...)` raises on empty set; widen the allow-list within the task subset `Supported`. |
 | Unknown task kind | `tools_for_task` raises (`COMPAT_UNKNOWN`); use `security-review` or full set `Supported`. |
 | Vendor-specific quirk (naming, HTTP wrapping, approval UI) | Out of scope for this baseline; see the per-host doc, all `Not-tested` `Known-limitation`. |

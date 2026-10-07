@@ -56,9 +56,11 @@ def _case(case_id="t-01-case", **overrides):
 def test_shipped_corpus_loads_with_expected_shape():
     dataset = load_dataset(CORPUS)
     assert len(dataset.cases) == dataset.manifest.case_count == 104
-    assert dataset.sections == tuple(sorted(path.name for path in CORPUS.iterdir() if path.is_dir()))
-    assert len(dataset.sections) == 11
+    # Sections follow the manifest declaration, not a directory sweep:
+    # sibling roots (e.g. post_t020 benchmark corpus, different schema) must
+    # not leak into this dataset (POST-T020 G9).
     assert set(dataset.sections) == set(dataset.manifest.sections)
+    assert len(dataset.sections) == 11
     assert dataset.fingerprint == load_dataset(CORPUS).fingerprint
     assert len(dataset.fingerprint) >= 8
     counts = dataset.counts()

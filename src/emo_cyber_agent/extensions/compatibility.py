@@ -212,7 +212,14 @@ def check_compatibility(manifest: ExtensionManifest, host: HostProfile) -> Compa
         reasons.append(f"python-not-satisfied:needs={manifest.compatibility.python_requires},host={host.python_version}")
 
     checks.append("platform")
-    if host.platform and manifest.compatibility.platforms and host.platform not in manifest.compatibility.platforms:
+    # Platform vocabulary differs by source: manifests default to
+    # sys.platform tokens ("win32") while host_profile() emits
+    # platform.system().lower() ("windows"). Normalize both sides so a
+    # default manifest evaluates compatible on Windows (POST-T020 G7).
+    _PLATFORM_ALIASES = {"win32": "windows", "windows": "win32"}
+    declared = {p.lower() for p in manifest.compatibility.platforms}
+    declared |= {_PLATFORM_ALIASES[p] for p in declared if p in _PLATFORM_ALIASES}
+    if host.platform and manifest.compatibility.platforms and host.platform.lower() not in declared:
         reasons.append(f"platform-unsupported:needs={','.join(manifest.compatibility.platforms)},host={host.platform}")
 
     checks.append("schema")

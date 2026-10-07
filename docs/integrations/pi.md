@@ -39,9 +39,10 @@ key `pi` maps to decision id `pi-host` (`DECISION_HOST_IDS`) because
 - Reload note: after registering or editing config, reload the Pi session so
   the new server/tool list takes effect `Supported` (`RELOAD_NOTE` as adapter
   guidance). Observed effect is `Not-tested`.
-- Exposure-change note: opting `cyber_extensions` in/out requires config edit
-  + Pi reload + re-list; default is the 5 safe tools only `Supported`
-  (`EXPOSURE_CHANGE_NOTE`). Observed effect is `Not-tested`.
+- Exposure-change note: opting `cyber_extensions` / `cyber_threat_intel`
+  in/out requires config edit + Pi reload + re-list; default is the 5 safe
+  tools only `Supported` (`EXPOSURE_CHANGE_NOTE`). Observed effect is
+  `Not-tested`.
 - Tool naming `kebab-case`, session `server-managed` `Supported`; honored by
   Pi in practice `Not-tested`. Server names pass through as-is under Pi's own
   tool namespace `Supported` (`PI_TOOL_NAMESPACE_NOTE`, identity
@@ -102,7 +103,7 @@ From `hosts_pi.TROUBLESHOOTING` (data only; behavior `Not-tested`):
 | `server-not-found` | Pi reports the server missing / command fails to start. | Verify `cyber-agent` on `PATH` (`cyber-agent --help`); check the `mcpServers` snippet. |
 | `project-scoped-server-not-visible` | Works in one project, absent in another. | Expected for project-config registration; use user config for global use or repeat per-project registration. |
 | `reload-required` | Old server/tool list after config edit. | Reload the Pi session, then re-list via `tools/list`. |
-| `tool-not-visible` | `cyber_*` missing or `cyber_extensions` unexpected. | Default is 5 safe tools; `cyber_extensions` opt-in; re-list via `tools/list`. |
+| `tool-not-visible` | `cyber_*` missing or `cyber_extensions` unexpected. | Default is 5 safe tools; `cyber_extensions` and `cyber_threat_intel` opt-in; re-list via `tools/list`. |
 | `protocol-version-mismatch` | `initialize` fails / unsupported version. | Re-run `negotiate_protocol_version()`; abort if no overlap. |
 | `http-connection-refused` | Streamable HTTP URL unreachable. | Confirm the server is serving HTTP at the registered URL and Pi was reloaded. |
 
@@ -118,7 +119,8 @@ From `hosts_pi.TROUBLESHOOTING` (data only; behavior `Not-tested`):
 - Capability map is metadata only (`cyber_audit/review→repo.read,
   codeintel.read, evidence.read`; `cyber_verify→verification.safe,
   evidence.read`; `cyber_report→report.generate, evidence.read`;
-  `cyber_status→()`; `cyber_extensions→evidence.read`) `Supported`.
+  `cyber_status→()`; `cyber_extensions→evidence.read`;
+  `cyber_threat_intel→evidence.read, threatintel.read`) `Supported`.
 
 ## Version Compatibility
 

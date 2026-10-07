@@ -68,7 +68,19 @@ _FILLER = r"(?:all|the|these|those|any|my|our|your|of)[\s\-_]+"
 # The hide-finding / grant-write families tolerate filler words and
 # inflections; role-confusion / system-message mirror sanitizer classes (M2).
 HOSTILE_PATTERNS: dict[str, tuple[re.Pattern[str], ...]] = {
-    "ignore policy": (re.compile(r"ignore\s+(the\s+|all\s+)?polic"),),
+    "ignore policy": (
+        re.compile(r"ignore\s+(the\s+|all\s+)?polic"),
+        # G11-M1: generalized disregard family — mirrors sanitizer (lowercased
+        # input here, so no IGNORECASE needed).
+        re.compile(
+            r"dis[\s\-_]*regard[\s\-_/]+"
+            r"(the[\s\-_/]+|all[\s\-_/]+|any[\s\-_/]+)?"
+            r"(polic\w*|previous|prior|above|instructions?\b)"
+        ),
+        # G11-M1: do-not family — hyphen/concat-tolerant with
+        # verify/validate/check verbs; mirrors sanitizer.
+        re.compile(r"do[\s\-_]*not[\s\-_]*(verif\w*|validat\w*|check\w*)"),
+    ),
     "grant write": (
         re.compile(r"\bgrant(?:ed|ing|s)?\b.{0,40}\bwrite\b"),
         re.compile(r"\bgrant(?:ed|ing|s)?\b.{0,40}\bpermission\b"),

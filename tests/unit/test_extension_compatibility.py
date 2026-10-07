@@ -142,6 +142,19 @@ def test_python_platform_and_schema_disagreements_are_reported_individually():
     assert any(reason.startswith("schema-version-unsupported:") for reason in result.reasons)
 
 
+def test_platform_vocabulary_win32_and_windows_agree():
+    # Manifests default to sys.platform tokens ("win32") while host_profile()
+    # emits platform.system().lower() ("windows"). Both must evaluate
+    # compatible; genuinely foreign platforms must stay rejected (G7).
+    m = manifest("official-skill")
+    for plat in ("windows", "win32", "darwin", "linux"):
+        result = check_compatibility(m, HostProfile(platform=plat))
+        assert result.compatible, (plat, result.reasons)
+    result = check_compatibility(m, HostProfile(platform="plan9"))
+    assert not result.compatible
+    assert any(reason.startswith("platform-unsupported:") for reason in result.reasons)
+
+
 def test_missing_required_feature_is_refused_not_ignored():
     m = manifest("official-skill")
     with_feature = m.model_copy(

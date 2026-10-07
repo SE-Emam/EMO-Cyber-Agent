@@ -40,6 +40,9 @@ def test_registration_stdio_shape():
     import json
 
     cfg = get_stdio_config()
+    # Adapter documents the camelCase input form; Hermes v0.21.4 (observed,
+    # POST-T020 G1) persists the same entry under snake_case `mcp_servers`
+    # (see HERMES_PERSISTED_CONFIG_KEY_NOTE).
     assert set(cfg) == {"mcpServers"}
     server = cfg["mcpServers"][MCP_SERVER_KEY]
     assert server["command"] == "cyber-agent"
@@ -47,6 +50,13 @@ def test_registration_stdio_shape():
     text = json.dumps(cfg)
     assert "secret" not in text.lower() and "token" not in text.lower()
     assert get_stdio_config() == cfg and get_stdio_config() is not cfg
+
+
+def test_persisted_config_key_note_snake_case():
+    note = hosts_hermes.HERMES_PERSISTED_CONFIG_KEY_NOTE
+    assert "mcp_servers" in note
+    assert "mcpServers" in note  # input form documented alongside
+    assert "0.21.4" in note
 
 
 def test_registration_http_shape():
@@ -81,6 +91,7 @@ def test_tool_mapping_completeness_identity():
     mapping = get_tool_mapping()
     assert set(mapping) == set(mcp_tools.TOOL_NAMES)
     assert set(mapping) == set(discovery.KNOWN_TOOL_NAMES)
+    assert len(mapping) == 7  # 5 safe-default + 2 opt-in
     for server_name, host_name in mapping.items():
         assert server_name == host_name  # cyber_* as-is
         assert server_name in TOOL_NAME_MAPPING
@@ -91,8 +102,13 @@ def test_safe_default_exposure():
     assert tuple(SAFE_DEFAULT_TOOLS) == tuple(get_safe_default_tools())
     assert len(SAFE_DEFAULT_TOOLS) == 5
     assert "cyber_extensions" not in SAFE_DEFAULT_TOOLS
-    assert tuple(OPT_IN_TOOLS) == ("cyber_extensions",)
+    assert "cyber_threat_intel" not in SAFE_DEFAULT_TOOLS
+    assert tuple(OPT_IN_TOOLS) == ("cyber_extensions", "cyber_threat_intel")
+    assert len(OPT_IN_TOOLS) == 2
     assert set(SAFE_DEFAULT_TOOLS) | set(OPT_IN_TOOLS) == set(mcp_tools.TOOL_NAMES)
+    assert set(SAFE_DEFAULT_TOOLS) & set(OPT_IN_TOOLS) == set()
+    # opt-in identity mapping holds for both opt-in tools
+    assert get_tool_mapping()["cyber_threat_intel"] == "cyber_threat_intel"
 
 
 def test_capability_mapping_matches_discovery():
@@ -101,6 +117,9 @@ def test_capability_mapping_matches_discovery():
     for tool in mcp_tools.TOOL_NAMES:
         assert tuple(mapping[tool]) == tuple(discovery.describe_tool(tool).capabilities)
         assert tuple(CAPABILITY_MAPPING[tool]) == tuple(mapping[tool])
+    # 7th opt-in tool mirrors discovery capabilities exactly
+    assert tuple(mapping["cyber_threat_intel"]) == ("evidence.read", "threatintel.read")
+    assert discovery.describe_tool("cyber_threat_intel").safe_default is False
 
 
 def test_per_task_filtering_guidance_never_expose_all():
@@ -110,6 +129,7 @@ def test_per_task_filtering_guidance_never_expose_all():
     for task, tools in allowlists.items():
         assert tools and isinstance(tools, tuple)
         assert "cyber_extensions" not in tools
+        assert "cyber_threat_intel" not in tools
         assert set(tools) <= set(mcp_tools.TOOL_NAMES)
     # recommended lists are strict subsets except the full safe-default task
     assert tuple(allowlists["security-review"]) == tuple(SAFE_DEFAULT_TOOLS)

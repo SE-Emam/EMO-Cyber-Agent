@@ -46,9 +46,12 @@ KNOWN_SYNTHETIC_FIXTURES = {
     "tests/unit/test_evaluation_oracles_metrics_gates.py",
     "tests/unit/test_repository.py",
     "tests/unit/test_verification_regression.py",
-    # POST-T018: redaction-test inputs (AWS-documented AKIA...EXAMPLE +
-    # bare PRIVATE KEY header), asserted redacted by the tests themselves.
+    # POST-T018: redaction-test inputs (documented example key pattern +
+    # placeholder key header), asserted redacted by the tests themselves.
     "tests/unit/subagent/test_result_firewall.py",
+    # POST-T020: detector-agreement fixtures (sequential-pattern fake keys +
+    # placeholder key header), asserted detected by the tests themselves.
+    "tests/unit/test_heuristics_evaluation.py",
 }
 
 

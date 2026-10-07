@@ -74,7 +74,7 @@ def test_version_consistency_across_contracts():
     assert pkg.__version__ == VERSION == "0.1.0"
     assert EMO_VERSION == pkg.__version__
     assert mcp_proto.SERVER_VERSION == pkg.__version__
-    assert len(TOOLS) == 6
+    assert len(TOOLS) == 7  # +cyber_threat_intel post-0.1.0 (tag v0.1.0 pins 6)
     # independent versions stay independent (never implicitly tied)
     from emo_cyber_agent.core import policy as policy_mod
     from emo_cyber_agent.core.correlation import CORRELATION_RULES_VERSION

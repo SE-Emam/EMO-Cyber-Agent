@@ -31,6 +31,7 @@ EXPECTED_TOOLS = (
     "cyber_report",
     "cyber_review",
     "cyber_status",
+    "cyber_threat_intel",
     "cyber_verify",
 )
 
@@ -65,6 +66,7 @@ def test_filtered_subset_per_task_kind():
     assert ad.tool_names() == tuple(sorted(ad.tool_names()))
     assert set(ad.tool_names()) <= set(KNOWN_TOOL_NAMES)
     assert "cyber_extensions" not in ad.tool_names()  # safe_default=False withheld
+    assert "cyber_threat_intel" not in ad.tool_names()  # safe_default=False withheld
     assert set(ad.tool_names()) == {
         "cyber_audit",
         "cyber_review",
@@ -113,7 +115,8 @@ def test_safe_default_flag_present():
     ad = build_advertisement()
     flags = {t.name: t.safe_default for t in ad.tools}
     assert flags["cyber_extensions"] is False
-    assert all(flags[n] is True for n in EXPECTED_TOOLS if n != "cyber_extensions")
+    assert flags["cyber_threat_intel"] is False
+    assert all(flags[n] is True for n in EXPECTED_TOOLS if n not in ("cyber_extensions", "cyber_threat_intel"))
 
 
 def test_module_has_no_execution_or_socket():

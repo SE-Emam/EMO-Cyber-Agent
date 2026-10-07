@@ -21,7 +21,7 @@ TRIGGER_TABLE: dict[str, tuple[str, ...]] = {
     ".py": ("backend-security", "injection", "business-logic"),
     "requirements.txt": ("dependency-security", "supply-chain"),
     "pyproject.toml": ("dependency-security", "supply-chain", "configuration"),
-    "Dockerfile": ("container-security", "configuration", "secrets"),
+    "dockerfile": ("container-security", "configuration", "secrets"),
     "docker-compose": ("container-security", "configuration"),
     ".tf": ("infrastructure-as-code", "cloud-security", "configuration"),
     "supabase": ("supabase", "database-security", "rls", "auth", "authorization"),

@@ -163,6 +163,16 @@ def test_resolver_deterministic():
     assert first == second
 
 
+def test_resolver_dockerfile_trigger_resolves_container_security():
+    # POST-T020 (a): TRIGGER_TABLE key was capitalised while resolve()
+    # lowercases signals first, so Dockerfile never matched. Regression:
+    # every Dockerfile casing must resolve the container-security skill.
+    reg = load_builtin_registry()
+    for candidate in ("Dockerfile", "dockerfile", "DOCKERFILE", "deploy/Dockerfile"):
+        ids = {r["skill_id"] for r in SkillResolver(reg).resolve(files=[candidate], objective="review")}
+        assert "container-security" in ids, candidate
+
+
 # ---------------- isolation / contracts ----------------
 
 def test_no_core_policy_imports_in_skills():

@@ -205,9 +205,9 @@ def test_mcp_real_stdio_smoke_from_installed_package(venv_mcp):
             by_id[body["id"]] = body
     # initialize negotiates the server identity
     assert by_id[1]["result"]["serverInfo"] == {"name": "emo-cyber-agent", "version": VERSION}
-    # six tools, exactly the documented surface
+    # seven tools, exactly the documented surface (+cyber_threat_intel post-0.1.0)
     tools = [t["name"] for t in by_id[2]["result"]["tools"]]
-    assert tools == ["cyber_audit", "cyber_review", "cyber_verify", "cyber_report", "cyber_status", "cyber_extensions"]
+    assert tools == ["cyber_audit", "cyber_review", "cyber_verify", "cyber_report", "cyber_status", "cyber_extensions", "cyber_threat_intel"]
     # status call succeeds: inner content payload carries status ok (no protocol error)
     assert "error" not in by_id[3]
     status_payload = json.loads(by_id[3]["result"]["content"][0]["text"])

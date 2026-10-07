@@ -65,8 +65,12 @@ def test_honest_status_labels():
     allowed = {s.value for s in SupportStatus}
     for host_id, entry in HOST_MATRIX.items():
         assert entry.support_status.value in allowed
-    for host_id in ("opencode", "pi", "hermes", "jan", "anythingllm"):
+    for host_id in ("opencode", "pi", "hermes", "jan"):
         assert HOST_MATRIX[host_id].support_status == SupportStatus.NOT_TESTED
+    # anythingllm earned live status 2026-10-07 (G1 addendum part 3);
+    # evidence text must say so (no silent upgrades).
+    assert HOST_MATRIX["anythingllm"].support_status == SupportStatus.ENVIRONMENT_TESTED
+    assert "2026-10-07" in HOST_MATRIX["anythingllm"].support_evidence
     baseline = HOST_MATRIX["generic-mcp"]
     assert baseline.support_status == SupportStatus.CONTRACT_TESTED
     assert baseline.support_evidence.strip()

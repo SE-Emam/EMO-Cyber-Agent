@@ -57,7 +57,7 @@ class ToolAdvertisement(BaseModel):
         return cls.model_validate(data)
 
 
-# Canonical tool table — DATA mirror of the six cyber_* MCP tools.
+# Canonical tool table — DATA mirror of the seven cyber_* MCP tools.
 # capabilities: negotiation-level tokens the tool exercises (metadata only).
 # safe_default: False tools are advertised in the full set but withheld
 # from per-task default subsets.
@@ -96,6 +96,12 @@ _TOOL_TABLE: tuple[ToolAdvertisement, ...] = (
         name="cyber_extensions",
         description="Inspect the extension catalog as data (list/describe/resolve/check). Read-only metadata view.",
         capabilities=("evidence.read",),
+        safe_default=False,
+    ),
+    ToolAdvertisement(
+        name="cyber_threat_intel",
+        description="Run read-only threat-intel triage over caller-supplied data (leak-check/triage/map-technique/exposure-check/coverage). Parse/triage/match/map only; never fetches.",
+        capabilities=("evidence.read", "threatintel.read"),
         safe_default=False,
     ),
 )
@@ -198,7 +204,7 @@ def build_advertisement(
 ) -> ServerAdvertisement:
     """Build a deterministic advertisement.
 
-    - ``task_kind=None`` + ``only=None`` → full six-tool set.
+    - ``task_kind=None`` + ``only=None`` → full seven-tool set.
     - ``task_kind`` set → filtered per-task subset (unknown kind rejected).
     - ``only`` set → narrowing allow-list (unknown tool rejected).
     - both set → intersection (narrowing-only, never widens the task subset).

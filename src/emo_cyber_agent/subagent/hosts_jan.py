@@ -52,7 +52,7 @@ SAFE_DEFAULT_TOOLS: tuple[str, ...] = (
     "cyber_report",
     "cyber_status",
 )
-OPT_IN_TOOLS: tuple[str, ...] = ("cyber_extensions",)
+OPT_IN_TOOLS: tuple[str, ...] = ("cyber_extensions", "cyber_threat_intel")
 
 TOOL_NAME_MAPPING: dict[str, str] = {
     "cyber_audit": "cyber_audit",
@@ -61,6 +61,7 @@ TOOL_NAME_MAPPING: dict[str, str] = {
     "cyber_report": "cyber_report",
     "cyber_status": "cyber_status",
     "cyber_extensions": "cyber_extensions",
+    "cyber_threat_intel": "cyber_threat_intel",
 }
 
 CAPABILITY_MAPPING: dict[str, tuple[str, ...]] = {
@@ -70,6 +71,7 @@ CAPABILITY_MAPPING: dict[str, tuple[str, ...]] = {
     "cyber_report": ("report.generate", "evidence.read"),
     "cyber_status": (),
     "cyber_extensions": ("evidence.read",),
+    "cyber_threat_intel": ("evidence.read", "threatintel.read"),
 }
 
 SHARED_CONFIG_NOTE = (
@@ -157,7 +159,7 @@ TROUBLESHOOTING: tuple[TroubleshootingEntry, ...] = (
     TroubleshootingEntry(
         issue="tool-not-visible",
         symptom="cyber_* tools do not appear in Jan, or cyber_extensions is unexpectedly present/absent.",
-        fix="Confirm default exposure is the 5 safe tools only; cyber_extensions is opt-in. Check the host tool namespace view and re-list via tools/list.",
+        fix="Confirm default exposure is the 5 safe tools only; cyber_extensions and cyber_threat_intel are opt-in. Check the host tool namespace view and re-list via tools/list.",
     ),
     TroubleshootingEntry(
         issue="over-permissioned-tools",
@@ -294,7 +296,7 @@ def get_tool_mapping() -> dict[str, str]:
 
 
 def get_safe_default_tools() -> tuple[str, ...]:
-    """Return the 5 safe tools exposed by default (cyber_extensions opt-in)."""
+    """Return the 5 safe tools exposed by default (cyber_extensions + cyber_threat_intel opt-in)."""
     return SAFE_DEFAULT_TOOLS
 
 

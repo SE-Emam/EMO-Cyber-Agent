@@ -20,7 +20,11 @@ Exception: host binary presence via `--version` is `Environment-tested`
 
 - Snippets from `hosts_hermes` (data only) `Supported`:
   - stdio `get_stdio_config()`: `{"mcpServers": {"emo-cyber-agent":
-    {"command": "cyber-agent", "args": ["mcp"]}}}`.
+    {"command": "cyber-agent", "args": ["mcp"]}}}` (camelCase input form).
+    Live persistence note: Hermes `v0.21.4` persists the same entry under
+    snake_case `mcp_servers` in `config.yaml` `Environment-tested` (source
+    `reports/development/POST-T020-G1-hermes.md`; see
+    `HERMES_PERSISTED_CONFIG_KEY_NOTE`).
   - HTTP `get_http_config()`: `{"mcpServers": {"emo-cyber-agent":
     {"url": "http://localhost:8000/mcp", "transport": "streamable-http"}}}`;
     the URL is a placeholder — the server must be started separately with an
@@ -31,9 +35,9 @@ Exception: host binary presence via `--version` is `Environment-tested`
   `SESSION_BEHAVIOR="server-managed"` `Supported`; live Hermes honor
   `Not-tested`. Names pass through as-is under the Hermes tool namespace
   `Supported` (`HERMES_TOOL_NAMESPACE_NOTE`, identity mapping).
-- Default exposure 5 safe tools; `cyber_extensions` opt-in, excluded from
-  every recommended allowlist `Supported` (`SAFE_DEFAULT_TOOLS`,
-  `OPT_IN_TOOLS`).
+- Default exposure 5 safe tools; `cyber_extensions` and `cyber_threat_intel`
+  opt-in, excluded from every recommended allowlist `Supported`
+  (`SAFE_DEFAULT_TOOLS`, `OPT_IN_TOOLS`).
 - Per-task allowlists (`get_task_allowlist`, `get_per_task_allowlists`)
   `Supported`: `security-review`→5 safe tools; `verify-only`→
   `cyber_verify, cyber_status`; `report-only`→`cyber_report, cyber_status`;
@@ -91,7 +95,7 @@ From `hosts_hermes.TROUBLESHOOTING` (data only; behavior `Not-tested`):
 | issue | symptom | fix |
 |---|---|---|
 | `server-not-found` | Hermes reports server missing / start fails. | Verify `cyber-agent` on `PATH` (`cyber-agent --help`); check stdio snippet from `get_stdio_config()`. |
-| `tool-not-visible` | `cyber_*` missing or `cyber_extensions` unexpected. | Default is 5 safe tools, opt-in for extensions; re-list via `tools/list`. |
+| `tool-not-visible` | `cyber_*` missing or `cyber_extensions` unexpected. | Default is 5 safe tools, opt-in for extensions and threat-intel; re-list via `tools/list`. |
 | `over-exposed-tools` | More tools visible than the task needs. | Apply `get_task_allowlist(task)` via host-side filtering; never expose all by default; re-list. |
 | `protocol-version-mismatch` | `initialize` fails / unsupported version. | `negotiate_protocol_version()`; latest common or abort. |
 | `http-connection-refused` | HTTP URL unreachable. | Confirm server serves HTTP at the registered URL; reload Hermes. |
@@ -105,9 +109,9 @@ From `hosts_hermes.TROUBLESHOOTING` (data only; behavior `Not-tested`):
 - Core invariants (metadata never authority, `READY` ≠ trusted, progress
   advisory-only, trust-boundary depth 3 + narrowing + quarantine on
   cross-boundary) `Supported`; Hermes-path enforcement `Not-tested`.
-- Never expose all tools by default; `cyber_extensions` stays excluded unless
-  explicitly opted in via config edit + reload + re-list `Supported`
-  (adapter guidance).
+- Never expose all tools by default; `cyber_extensions` and
+  `cyber_threat_intel` stay excluded unless explicitly opted in via config
+  edit + reload + re-list `Supported` (adapter guidance).
 
 ## Version Compatibility
 
@@ -117,4 +121,7 @@ From `hosts_hermes.TROUBLESHOOTING` (data only; behavior `Not-tested`):
   version bounds `Supported`. `evaluate_compat` pure/deterministic semantics
   as in opencode.md `Supported`.
 - No Hermes version pinned or asserted compatible `Not-tested`; only binary
-  presence `Environment-tested` (presence only).
+  presence `Environment-tested` (presence only). Live observation (not a
+  compat assertion): Hermes `v0.21.4` observed `Environment-tested` (source
+  `reports/development/POST-T020-G1-hermes.md` — stdio registration,
+  6/6 tool discovery, per-server filtering proven at the CLI layer).

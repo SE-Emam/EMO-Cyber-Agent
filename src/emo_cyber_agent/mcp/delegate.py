@@ -181,18 +181,191 @@ def call_extensions(args: dict[str, Any]) -> dict[str, Any]:
     return ok_result("cyber_extensions", "", body, {})
 
 
+def call_threat_intel(args: dict[str, Any]) -> dict[str, Any]:
+    """Read-only deterministic threat-intel triage over caller-supplied data.
+
+    Action-routed parse/triage/match/map only; never fetches, never
+    executes, never touches the network. All reasoning lives in
+    ``threat_intel`` modules; this adapter translates, projects, and
+    redacts."""
+    action = str(args.get("action", ""))
+    if action == "leak-check":
+        return _threat_leak_check(args)
+    if action == "triage":
+        return _threat_triage(args)
+    if action == "map-technique":
+        return _threat_map_technique(args)
+    if action == "exposure-check":
+        return _threat_exposure_check(args)
+    if action == "coverage":
+        return _threat_coverage(args)
+    return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"unknown action: {action[:40]}")
+
+
+def _threat_leak_check(args: dict[str, Any]) -> dict[str, Any]:
+    from emo_cyber_agent.threat_intel.leak_monitor import (
+        parse_hibp_response,
+        parse_threatfox_response,
+        sha256_hex,
+        triage,
+    )
+
+    identifier = args.get("identifier", "")
+    if not isinstance(identifier, str) or not identifier.strip():
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "identifier must be a non-empty string")
+    scope_hints = args.get("scope_hints", [])
+    if scope_hints is None:
+        scope_hints = []
+    if not isinstance(scope_hints, list):
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "scope_hints must be a list")
+    for hint in scope_hints:
+        if not isinstance(hint, str):
+            return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "scope_hints entries must be strings")
+    hibp_payload = args.get("hibp_payload", None)
+    threatfox_payload = args.get("threatfox_payload", None)
+    digest = sha256_hex(identifier.strip())
+    findings: list[Any] = []
+    try:
+        if hibp_payload is not None:
+            findings.extend(parse_hibp_response(hibp_payload))
+        if threatfox_payload is not None:
+            findings.extend(parse_threatfox_response(threatfox_payload))
+    except ValueError as e:
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"invalid leak payload: {e}")
+    except Exception:
+        return error_result("cyber_threat_intel", "", "INTERNAL_ERROR", "leak parsing failed")
+    scope = {digest.lower()}
+    for hint in scope_hints:
+        text = (hint or "").strip().lower()
+        if text:
+            scope.add(text)
+    verdicts = [{"finding_id": f.finding_id, "source": f.source, "verdict": triage(f, scope)} for f in findings]
+    body = {
+        "action": "leak-check",
+        "identifier_digest": digest,
+        "findings": [f.to_dict() for f in findings],
+        "verdicts": verdicts,
+        "scope_size": len(scope),
+    }
+    return ok_result("cyber_threat_intel", "", body, {})
+
+
+def _threat_triage(args: dict[str, Any]) -> dict[str, Any]:
+    from emo_cyber_agent.threat_intel.feed_triage import match, prioritize
+
+    iocs = args.get("iocs", [])
+    findings = args.get("findings", [])
+    kev = args.get("kev", [])
+    epss = args.get("epss", {})
+    if iocs is None:
+        iocs = []
+    if findings is None:
+        findings = []
+    if kev is None:
+        kev = []
+    if epss is None:
+        epss = {}
+    if not isinstance(iocs, list) or not isinstance(findings, list):
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "iocs and findings must be lists")
+    if not isinstance(kev, list) or not isinstance(epss, dict):
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "kev must be a list and epss must be an object")
+    if len(iocs) > 200 or len(findings) > 200:
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "iocs/findings must hold at most 200 items")
+    verdicts: list[dict[str, Any]] = []
+    try:
+        for entry in iocs:
+            verdicts.append(match(entry, findings).to_dict())
+    except Exception as e:
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"invalid ioc: {e}")
+    try:
+        ordered = prioritize(findings, set(kev), dict(epss))
+    except Exception as e:
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"invalid triage data: {e}")
+    body = {"action": "triage", "verdicts": verdicts, "prioritized_findings": list(ordered)}
+    return ok_result("cyber_threat_intel", "", body, {})
+
+
+def _threat_map_technique(args: dict[str, Any]) -> dict[str, Any]:
+    from emo_cyber_agent.threat_intel.technique_mapper import TABLE_VERSION, map_finding
+
+    category = args.get("category", "")
+    cwe = args.get("cwe", "")
+    keywords = args.get("keywords", [])
+    if category is not None and not isinstance(category, str):
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "category must be a string")
+    if cwe is not None and not isinstance(cwe, str):
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "cwe must be a string")
+    if keywords is None:
+        keywords = []
+    if not isinstance(keywords, list):
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "keywords must be a list")
+    try:
+        hits = map_finding(category=category or "", cwe=cwe or "", keywords=keywords)
+    except Exception:
+        return error_result("cyber_threat_intel", "", "INTERNAL_ERROR", "technique mapping failed")
+    body = {"action": "map-technique", "hits": [h.to_dict() for h in hits], "table_version": TABLE_VERSION}
+    return ok_result("cyber_threat_intel", "", body, {})
+
+
+def _threat_exposure_check(args: dict[str, Any]) -> dict[str, Any]:
+    from emo_cyber_agent.threat_intel.kali_detectors import TABLE_VERSION, detect_exposure
+
+    tool = args.get("tool", "")
+    if not isinstance(tool, str) or not tool.strip():
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "tool must be a non-empty string")
+    facts = args.get("facts", {})
+    if facts is None:
+        facts = {}
+    if not isinstance(facts, dict):
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "facts must be an object")
+    normalized = {str(k).strip().lower(): v for k, v in facts.items()}
+    # ``secrets`` is a forbidden MCP input token, so callers convey
+    # secret-bearing evidence as ``sensitive_material``; map it here.
+    if "sensitive_material" in normalized:
+        normalized["secrets"] = normalized.pop("sensitive_material")
+    try:
+        report = detect_exposure(tool.strip().lower(), normalized)
+    except ValueError as e:
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"invalid exposure request: {e}")
+    except Exception:
+        return error_result("cyber_threat_intel", "", "INTERNAL_ERROR", "exposure reasoning failed")
+    body = {"action": "exposure-check", **report.to_dict(), "table_version": TABLE_VERSION}
+    return ok_result("cyber_threat_intel", "", body, {})
+
+
+def _threat_coverage(args: dict[str, Any]) -> dict[str, Any]:
+    from emo_cyber_agent.threat_intel.kali_detectors import TABLE_VERSION, coverage
+
+    tools = args.get("tools", [])
+    signals = args.get("signals", [])
+    if tools is None:
+        tools = []
+    if signals is None:
+        signals = []
+    if not isinstance(tools, list) or not isinstance(signals, list):
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "tools and signals must be lists")
+    try:
+        report = coverage(list(tools), list(signals))
+    except ValueError as e:
+        return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"invalid coverage request: {e}")
+    except Exception:
+        return error_result("cyber_threat_intel", "", "INTERNAL_ERROR", "coverage computation failed")
+    body = {"action": "coverage", **report.to_dict(), "table_version": TABLE_VERSION}
+    return ok_result("cyber_threat_intel", "", body, {})
+
+
 def call_status(args: dict[str, Any]) -> dict[str, Any]:
     auditor = _auditor()
     data = asyncio.run(auditor.doctor())
     return ok_result(
         "cyber_status",
         _redact(str(args.get("audit_id", "")))[:120],
-        {"status": data.get("status", ""), "version": data.get("version", ""), "policy_engine": data.get("policy_engine", ""), "capabilities": ["cyber_audit", "cyber_review", "cyber_verify", "cyber_report", "cyber_status", "cyber_extensions"]},
+        {"status": data.get("status", ""), "version": data.get("version", ""), "policy_engine": data.get("policy_engine", ""), "capabilities": ["cyber_audit", "cyber_review", "cyber_verify", "cyber_report", "cyber_status", "cyber_extensions", "cyber_threat_intel"]},
         {},
     )
 
 
-_HANDLERS = {"cyber_audit": call_audit, "cyber_review": call_review, "cyber_verify": call_verify, "cyber_report": call_report, "cyber_status": call_status, "cyber_extensions": call_extensions}
+_HANDLERS = {"cyber_audit": call_audit, "cyber_review": call_review, "cyber_verify": call_verify, "cyber_report": call_report, "cyber_status": call_status, "cyber_extensions": call_extensions, "cyber_threat_intel": call_threat_intel}
 
 
 def dispatch(tool_name: str, arguments: Any) -> dict[str, Any]:

@@ -20,7 +20,7 @@ the generic-MCP baseline is `Contract-tested`, and out-of-scope items are
 ## Configure
 
 - `tool-not-visible` (all hosts): default exposure is the 5 safe tools;
-  `cyber_extensions` is opt-in — confirm exposure, check the host tool
+  `cyber_extensions` and `cyber_threat_intel` are opt-in — confirm exposure, check the host tool
   namespace view, re-list via `tools/list` `Supported` guidance /
   `Not-tested` host behavior.
 - `over-exposed-tools` (hermes): apply `get_task_allowlist(task)` via
@@ -37,7 +37,7 @@ the generic-MCP baseline is `Contract-tested`, and out-of-scope items are
   `Supported` guidance / `Not-tested` behavior.
 - `agent-not-listing-tools` (anythingllm): attach the server entry to the
   right workspace/agent, reload the workspace, re-list; default is 5 safe
-  tools `Supported` guidance / `Not-tested` behavior.
+  tools (`cyber_extensions` and `cyber_threat_intel` opt-in) `Supported` guidance / `Not-tested` behavior.
 - Exposure changes always need config edit + host reload + re-list
   `Supported` guidance / `Not-tested` behavior.
 

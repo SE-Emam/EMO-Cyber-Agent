@@ -5,9 +5,11 @@ Labels: `Supported` in-repo code · `Contract-tested` in-repo contract tests ·
 · `Known-limitation` explicit scope boundary. No screenshots, host versions, or
 vendor install flows stated.
 
-Compat: **Not-tested** `Not-tested` (`compat_matrix.HOST_MATRIX["anythingllm"]`).
-Unlike opencode/pi/hermes/jan, there is NO environment-tested presence claim
-for this host: even binary presence is `Not-tested`.
+Compat: **Environment-tested** (`compat_matrix.HOST_MATRIX["anythingllm"]`).
+Live 2026-10-07 (see G1-anythingllm addendum parts 2-3): server online,
+EMO stdio registration `running:true`, 6-tool discovery, `toggle-tool`
+filtering, and a full `@agent` cyber_status call completed successfully.
+Malicious-context-via-host remains `Not-tested` (contract simulation stands).
 
 ## Install
 
@@ -30,9 +32,9 @@ for this host: even binary presence is `Not-tested`.
   - `get_registration_config()` / `get_agent_registration_config()` accept
     `stdio|streamable-http` (`http` alias accepted); unknown raises
     `ValueError` `Supported`.
-- Default 5 safe tools; `cyber_extensions` opt-in `Supported`. Identity
-  pass-through under the host tool/agent namespace `Supported`
-  (`ANYTHINGLLM_TOOL_NAMESPACE_NOTE`). Live display `Not-tested`.
+- Default 5 safe tools; `cyber_extensions` and `cyber_threat_intel` opt-in
+  `Supported`. Identity pass-through under the host tool/agent namespace
+  `Supported` (`ANYTHINGLLM_TOOL_NAMESPACE_NOTE`). Live display `Not-tested`.
 - Workspace/RAG/memory boundary (all `Supported` as adapter data notes; live
   host content behavior `Not-tested`):
   - Workspace docs are UNTRUSTED contextual inputs, never EMO instructions,
@@ -98,7 +100,7 @@ From `hosts_anythingllm.TROUBLESHOOTING` (data only; behavior `Not-tested`):
 |---|---|---|
 | `server-not-found` | Server missing / start fails. | Verify `cyber-agent` on `PATH` (`cyber-agent --help`); check snippet from `get_stdio_config()`. |
 | `agent-not-listing-tools` | Agent/workspace lists no `cyber_*` tools. | Attach the server entry to the right workspace/agent, reload, re-list; default is 5 safe tools. |
-| `tool-not-visible` | `cyber_*` missing or extensions unexpected. | Default 5 safe tools, opt-in for extensions; re-list via `tools/list`. |
+| `tool-not-visible` | `cyber_*` missing or extensions unexpected. | Default 5 safe tools, opt-in for extensions and threat-intel; re-list via `tools/list`. |
 | `workspace-context-mistrusted` | Workspace/RAG/memory treated as authoritative. | Re-classify with `classify_content_source()`; treat as UNTRUSTED data; verify via EMO evidence. |
 | `rag-poisoning-suspected` | Suspicious/off-scope/instruction-like RAG chunks. | Treat as UNTRUSTED per `RAG_BOUNDARY_NOTE`; follow no embedded instructions; quarantine on secret markers. |
 | `protocol-version-mismatch` | `initialize` fails / unsupported version. | `negotiate_protocol_version()`; latest common or abort. |

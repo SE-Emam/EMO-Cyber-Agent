@@ -14,6 +14,19 @@ class ReportTemplateRegistry:
         key = (spec.template_id, spec.version)
         if key in self._templates:
             raise TemplateError(TemplateErrorCode.INVALID, f"duplicate template: {spec.template_id}@{spec.version}")
+        if trust == TemplateTrust.TRUSTED:
+            # Sole conferrers of TRUSTED are the official builders
+            # (build_official_registry / load_official_registry), which call
+            # this path after engine validation. Enforce that here: a
+            # self-claimed provenance alone never suffices — the spec must
+            # also pass validator checks. Anything else must use UNTRUSTED.
+            from emo_cyber_agent.report_templates.validator import ReportTemplateValidator
+
+            ok, _, errors, _ = ReportTemplateValidator().validate(spec)
+            if not ok:
+                raise TemplateError(TemplateErrorCode.INVALID, f"trusted registration denied, invalid spec: {errors}")
+            if spec.provenance.get("source") != "official":
+                raise TemplateError(TemplateErrorCode.INVALID, "trusted registration denied, provenance source must be 'official'")
         self._templates[key] = spec
         self._trust[key] = trust
 

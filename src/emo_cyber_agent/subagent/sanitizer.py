@@ -33,6 +33,34 @@ _ANSI_RE = re.compile(
     r"|\x1b[@-_][0-9A-Za-z]*"
 )
 
+# Confusable folding (G11-M2): small explicit Cyrillic/Greek→Latin lookalike
+# map applied in normalize() BEFORE detection. LIMITS: this is an explicit
+# map, not full UTS#39 — it covers the single-script homoglyphs that evade
+# NFKC for the hostile alphabet (notably Cyrillic і U+0456 in `dіsregard`).
+# Mixed-script or unlisted confusables may still evade; defense-in-depth is
+# the delegation screen sharing this same normalize().
+_CONFUSABLE_MAP: dict[str, str] = {
+    "\u0430": "a", "\u0410": "A", "\u03b1": "a", "\u0391": "A",  # a
+    "\u0432": "v", "\u0412": "V", "\u03b2": "b", "\u0392": "B",  # b/v
+    "\u0441": "c", "\u0421": "C",  # c
+    "\u0435": "e", "\u0415": "E", "\u03b5": "e", "\u0395": "E",  # e
+    "\u04bb": "h", "\u03b7": "h", "\u0397": "H", "\u043d": "h", "\u041d": "H",  # h
+    "\u0456": "i", "\u0406": "I", "\u03b9": "i", "\u0399": "I",  # i (PoC: U+0456)
+    "\u0458": "j", "\u0408": "J",  # j
+    "\u043a": "k", "\u041a": "K", "\u03ba": "k", "\u039a": "K",  # k
+    "\u043c": "m", "\u041c": "M", "\u03bc": "m", "\u039c": "M",  # m
+    "\u043e": "o", "\u041e": "O", "\u03bf": "o", "\u039f": "O",  # o
+    "\u0440": "p", "\u0420": "P", "\u03c1": "p", "\u03a1": "P",  # p
+    "\u0455": "s", "\u0405": "S",  # s
+    "\u0442": "t", "\u0422": "T", "\u03c4": "t", "\u03a4": "T",  # t
+    "\u0438": "u", "\u0418": "U", "\u03c5": "u", "\u03a5": "U",  # u
+    "\u03bd": "v", "\u039d": "V",  # v
+    "\u0445": "x", "\u0425": "X", "\u03c7": "x", "\u03a7": "X",  # x
+    "\u0443": "y", "\u0423": "Y",  # y
+    "\u0437": "z", "\u0417": "Z",  # z
+}
+
+
 # Filler words tolerated between a hostile verb and its object (H1).
 # Shared with delegation.py — keep the two screens consistent.
 # Separators include whitespace, hyphens and underscores so hyphen/underscore
@@ -49,8 +77,21 @@ AUTHORITY_PATTERNS: dict[str, tuple[re.Pattern[str], ...]] = {
         re.compile(r"ignore\s+(the\s+|all\s+)?polic\w*", re.IGNORECASE),
         re.compile(r"ignore\s+previous\s+instructions", re.IGNORECASE),
         re.compile(r"ignore\s+system\s+policy", re.IGNORECASE),
-        re.compile(r"disregard\s+previous", re.IGNORECASE),
-        re.compile(r"do\s+not\s+verify", re.IGNORECASE),
+        # G11-M1: generalized disregard family — `dis`/`regard` split-tolerant
+        # (covers `dis-regard`), hyphen/underscore/slash-tolerant gaps, optional
+        # the/all/any filler, polic|previous|prior|above|instruction object.
+        re.compile(
+            r"dis[\s\-_]*regard[\s\-_/]+"
+            r"(the[\s\-_/]+|all[\s\-_/]+|any[\s\-_/]+)?"
+            r"(polic\w*|previous|prior|above|instructions?\b)",
+            re.IGNORECASE,
+        ),
+        # G11-M1: do-not family — hyphen/concat-tolerant (`do-not-verify`,
+        # `DONOTVERIFY`, `do_not_validate`) with verify/validate/check verbs.
+        re.compile(
+            r"do[\s\-_]*not[\s\-_]*(verif\w*|validat\w*|check\w*)",
+            re.IGNORECASE,
+        ),
     ),
     "grant write": (
         re.compile(r"\bgrant(?:ed|ing|s)?\b.{0,40}\bwrite\b", re.IGNORECASE | re.DOTALL),
@@ -154,11 +195,15 @@ def validate_raw(raw: str) -> str:
 def normalize(raw: str) -> str:
     """Deterministic technical normalization (idempotent, pure).
 
-    Steps: NFKC → ANSI-escape removal → control-char stripping (keeps
-    ``\\n`` and ``\\t`` only). No truncation, no authority redaction.
+    Steps: NFKC → confusable fold (explicit Cyrillic/Greek→Latin map, not
+    full UTS#39 — see ``_CONFUSABLE_MAP`` limits) → ANSI-escape removal →
+    control-char stripping (keeps ``\\n`` and ``\\t`` only). No truncation,
+    no authority redaction.
     """
     text = validate_raw(raw)
     text = unicodedata.normalize("NFKC", text)
+    if _CONFUSABLE_MAP:
+        text = "".join(_CONFUSABLE_MAP.get(ch, ch) for ch in text)
     text = _ANSI_RE.sub("", text)
     cleaned: list[str] = []
     for ch in text:
@@ -222,9 +267,10 @@ def sanitize(raw: str, *, max_chars: int = MAX_INPUT_CHARS) -> SanitizedInput:
 
     # Track technical transformations for flags/hint.
     nfkc = unicodedata.normalize("NFKC", raw)
-    unicode_changed = nfkc != raw
-    no_ansi = _ANSI_RE.sub("", nfkc)
-    ansi_stripped = no_ansi != nfkc
+    folded = "".join(_CONFUSABLE_MAP.get(ch, ch) for ch in nfkc)
+    unicode_changed = (nfkc != raw) or (folded != nfkc)
+    no_ansi = _ANSI_RE.sub("", folded)
+    ansi_stripped = no_ansi != folded
     normalized = normalize(raw)
     controls_stripped = normalized != no_ansi
 

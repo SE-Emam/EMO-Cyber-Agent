@@ -121,7 +121,10 @@ def test_registry_duplicate_version_trust_cycles():
 def test_validator_mandatory_security_negatives():
     v = ReportTemplateValidator()
     ok, trust, errors, _ = v.validate(_spec())
-    assert ok and trust == TemplateTrust.TRUSTED
+    # POST-T020 R2: validator is advisory only and never confers TRUSTED
+    # (self-claimed provenance must not mint trust); TRUSTED is conferred
+    # only by the official builders via Registry.register(trust=TRUSTED).
+    assert ok and trust == TemplateTrust.UNTRUSTED
     ok2, _, errors2, _ = v.validate(_spec("nxt", finding_fields=["finding.title"], provenance={}))
     assert not ok2 and any("mandatory" in e for e in errors2)
     for bad in ["javascript:alert(1)", "<script>alert(1)</script>", "exec(malicious)"]:
@@ -134,6 +137,82 @@ def test_validator_mandatory_security_negatives():
     s3 = _spec("noredact", redact_secrets=False)
     okd, _, errsd, _ = v.validate(s3)
     assert not okd and "redaction-disabled-denied" in errsd
+
+
+def test_validator_rechecks_allowlist_after_model_copy():
+    # POST-T020 R1: pydantic constructor validators are bypassed by
+    # model_copy(update=...), so validate() must re-check allowlists.
+    from emo_cyber_agent.report_templates.spec import TemplateSection
+
+    v = ReportTemplateValidator()
+    hostile_fields = _spec().model_copy(update={"finding_fields": ("finding.title", "finding.nope")})
+    ok, _, errors, _ = v.validate(hostile_fields)
+    assert not ok and any("field-invalid" in e for e in errors)
+    evil_section = TemplateSection.model_construct(name="evil", fields=("finding.nope",), visibility=())
+    hostile_sections = _spec().model_copy(update={"sections": _spec().sections + (evil_section,)})
+    ok2, _, errors2, _ = v.validate(hostile_sections)
+    assert not ok2 and any("field-invalid" in e for e in errors2)
+    # report./meta. prefixes stay allowed
+    allowed = _spec().model_copy(update={"finding_fields": _spec().finding_fields + ("report.summary", "meta.note")})
+    oka, _, _, _ = v.validate(allowed)
+    assert oka
+
+
+def test_validator_never_confers_trusted_and_registry_enforces():
+    # POST-T020 R2: self-claimed provenance must not mint TRUSTED.
+    v = ReportTemplateValidator()
+    ok, trust, _, _ = v.validate(_spec("self-claim"))
+    assert ok and trust == TemplateTrust.UNTRUSTED
+    reg = ReportTemplateRegistry()
+    reg.register(_spec("ok-official"), trust=TemplateTrust.TRUSTED)
+    assert reg.trust_of("ok-official", "1.0.0") == TemplateTrust.TRUSTED
+    with pytest.raises(TemplateError):  # non-official provenance cannot take TRUSTED
+        reg.register(_spec("evil-no-claim", provenance={}), trust=TemplateTrust.TRUSTED)
+    with pytest.raises(TemplateError):  # invalid specs cannot take TRUSTED either
+        bad = _spec("bad-fields").model_copy(update={"finding_fields": ("finding.title", "finding.nope")})
+        reg.register(bad, trust=TemplateTrust.TRUSTED)
+
+
+# --- POST-T020 G11 (L1/L2) ---
+
+
+def test_g11_l2_dead_marker_and_spacing_variants_flagged():
+    # L2: `XMLHttpRequest` (mixed case) was dead against a lowered haystack;
+    # spacing variants (`require (`, `fetch (`, `eval (`) were missed.
+    v = ReportTemplateValidator()
+    assert "xmlhttprequest" in ReportTemplateValidator.UNSAFE_MARKERS
+    assert "XMLHttpRequest" not in ReportTemplateValidator.UNSAFE_MARKERS
+    for bad in (
+        "see XMLHttpRequest usage here",
+        "see xmlhttprequest usage here",
+        "call require (os) now",
+        "call fetch (url) now",
+        "call eval (x) now",
+        "call exec (x) now",
+    ):
+        s = _spec(f"g11-l2-{abs(hash(bad)) % 99999}", description=f"see {bad}")
+        okb, _, errsb, _ = v.validate(s)
+        assert not okb, bad
+        assert any("unsafe-directive" in e for e in errsb), (bad, errsb)
+
+
+@pytest.mark.skip(
+    reason=(
+        "G11-L1 DEFERRED: Registry.register(trust=TRUSTED) still accepts any "
+        "in-process caller/spec whose provenance dict self-claims "
+        "source=='official', and load_official_registry() confers TRUSTED on "
+        "any YAML file in the loaded directory that claims it — the string "
+        "check authenticates nothing. A real fix needs loader-context "
+        "authentication (pinned directory + digest pinning) or a private "
+        "TRUSTED-conferral path, which requires changing library.py/official.py "
+        "callers outside this fix's exclusive write scope "
+        "(registry.py+validator.py+tests only). Downgrading unilaterally in "
+        "registry.py would break the official builders; so this is "
+        "documented here as a counted skip, not hidden."
+    )
+)
+def test_g11_l1_trusted_requires_authenticated_provenance():
+    raise AssertionError("deferred: see skip reason")
 
 
 # ---------------- YAML + schema ----------------
@@ -168,7 +247,10 @@ def test_official_library_loads_20_trusted():
     for s in specs:
         ok, trust, _, _ = v.validate(s)
         assert ok, s.template_id
-        assert trust == TemplateTrust.TRUSTED
+        # POST-T020 R2: validator stays UNTRUSTED (advisory); stored trust
+        # is conferred by the loader via Registry.register(trust=TRUSTED).
+        assert trust == TemplateTrust.UNTRUSTED
+        assert reg.trust_of(s.template_id, s.version) == TemplateTrust.TRUSTED
         validate_against_schema(json.loads(json.dumps(s.model_dump(mode="json"))), schema)
     # deterministic digests
     d1 = {s.template_id: ResolvedReportTemplate.digest_of(s) for s in specs}

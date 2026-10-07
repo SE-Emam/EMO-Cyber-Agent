@@ -32,11 +32,13 @@ Exception: host binary presence via `--version` is `Environment-tested`
     `desktop|agent|agent-cli|cli|shared`, `transport` ∈ `stdio|streamable-http`
     (`http` alias accepted); Desktop and Agent/CLI share content; unknown
     raises `ValueError` `Supported`.
-- Default 5 safe tools; `cyber_extensions` opt-in and filtered out by default
-  `Supported`. Identity pass-through under Jan's tool namespace `Supported`
-  (`JAN_TOOL_NAMESPACE_NOTE`). Live Jan display `Not-tested`.
+- Default 5 safe tools; `cyber_extensions` and `cyber_threat_intel` opt-in
+  and filtered out by default `Supported`. Identity pass-through under Jan's
+  tool namespace `Supported` (`JAN_TOOL_NAMESPACE_NOTE`). Live Jan display
+  `Not-tested`.
 - Tool permissions (host-side metadata only): grant each `cyber_*` tool the
-  minimum the task needs; keep `cyber_extensions` denied unless opted in;
+  minimum the task needs; keep `cyber_extensions` and `cyber_threat_intel`
+  denied unless opted in;
   Jan-side grants never widen EMO enforcement `Supported`
   (`TOOL_PERMISSION_NOTE` guidance); live effect `Not-tested`.
 - Tool filtering: expose only the task's subset via host-side filtering,
@@ -95,7 +97,7 @@ From `hosts_jan.TROUBLESHOOTING` (data only; behavior `Not-tested`):
 |---|---|---|
 | `server-not-found` | Jan reports server missing / start fails. | Verify `cyber-agent` on `PATH` (`cyber-agent --help`); check shared stdio snippet. |
 | `shared-config-not-visible` | Works in Desktop but not Agent/CLI or vice versa. | Registration is per surface though the snippet is shared; apply in both configs, reload each, re-list. |
-| `tool-not-visible` | `cyber_*` missing or extensions unexpected. | Default 5 safe tools, opt-in for extensions; re-list via `tools/list`. |
+| `tool-not-visible` | `cyber_*` missing or extensions unexpected. | Default 5 safe tools, opt-in for extensions and threat-intel; re-list via `tools/list`. |
 | `over-permissioned-tools` | Broader grants than needed. | Tighten to smallest subset per permission/filtering notes; re-list. |
 | `approval-ui-confusion` | Operator assumes EMO follows a Jan approval prompt. | Approval UI is NOT the EMO boundary; verify via EMO evidence. |
 | `protocol-version-mismatch` | `initialize` fails / unsupported version. | `negotiate_protocol_version()`; latest common or abort. |

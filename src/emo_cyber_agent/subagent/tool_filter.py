@@ -51,6 +51,7 @@ _FALLBACK_FULL_TOOLS: tuple[str, ...] = (
     "cyber_report",
     "cyber_review",
     "cyber_status",
+    "cyber_threat_intel",
     "cyber_verify",
 )
 

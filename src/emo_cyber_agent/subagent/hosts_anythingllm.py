@@ -35,9 +35,12 @@ TRANSPORTS: tuple[str, ...] = ("stdio", "streamable-http")
 TOOL_NAMING = "kebab-case"
 SESSION_BEHAVIOR = "server-managed"
 
-SUPPORT_STATUS: SupportStatus = SupportStatus.NOT_TESTED
+SUPPORT_STATUS: SupportStatus = SupportStatus.ENVIRONMENT_TESTED
 SUPPORT_EVIDENCE = (
-    "No contract or environment test names this host; default Not-tested. "
+    "Live full loop proven 2026-10-07 (G1-anythingllm addendum parts 2-4): "
+    "server online, EMO registered running:true, 6-tool discovery, "
+    "toggle-tool filtering, @agent cyber_status + all 5 remaining tools "
+    "executed successfully. Malicious-context-via-host NOT-EXECUTED. "
     "See compat_matrix.HOST_MATRIX['anythingllm']."
 )
 
@@ -62,7 +65,7 @@ SAFE_DEFAULT_TOOLS: tuple[str, ...] = (
     "cyber_report",
     "cyber_status",
 )
-OPT_IN_TOOLS: tuple[str, ...] = ("cyber_extensions",)
+OPT_IN_TOOLS: tuple[str, ...] = ("cyber_extensions", "cyber_threat_intel")
 
 TOOL_NAME_MAPPING: dict[str, str] = {
     "cyber_audit": "cyber_audit",
@@ -71,6 +74,7 @@ TOOL_NAME_MAPPING: dict[str, str] = {
     "cyber_report": "cyber_report",
     "cyber_status": "cyber_status",
     "cyber_extensions": "cyber_extensions",
+    "cyber_threat_intel": "cyber_threat_intel",
 }
 
 CAPABILITY_MAPPING: dict[str, tuple[str, ...]] = {
@@ -80,6 +84,7 @@ CAPABILITY_MAPPING: dict[str, tuple[str, ...]] = {
     "cyber_report": ("report.generate", "evidence.read"),
     "cyber_status": (),
     "cyber_extensions": ("evidence.read",),
+    "cyber_threat_intel": ("evidence.read", "threatintel.read"),
 }
 
 # ---------------------------------------------------------------------------
@@ -189,7 +194,7 @@ TROUBLESHOOTING: tuple[TroubleshootingEntry, ...] = (
     TroubleshootingEntry(
         issue="tool-not-visible",
         symptom="cyber_* tools do not appear in AnythingLLM, or cyber_extensions is unexpectedly present/absent.",
-        fix="Confirm default exposure is the 5 safe tools only; cyber_extensions is opt-in. Check the host tool/agent namespace view and re-list via tools/list.",
+        fix="Confirm default exposure is the 5 safe tools only; cyber_extensions and cyber_threat_intel are opt-in. Check the host tool/agent namespace view and re-list via tools/list.",
     ),
     TroubleshootingEntry(
         issue="workspace-context-mistrusted",
@@ -309,7 +314,7 @@ def get_tool_mapping() -> dict[str, str]:
 
 
 def get_safe_default_tools() -> tuple[str, ...]:
-    """Return the 5 safe tools exposed by default (cyber_extensions opt-in)."""
+    """Return the 5 safe tools exposed by default (cyber_extensions + cyber_threat_intel opt-in)."""
     return SAFE_DEFAULT_TOOLS
 
 

@@ -23,6 +23,7 @@ EXPECTED_TOOLS = (
     "cyber_report",
     "cyber_review",
     "cyber_status",
+    "cyber_threat_intel",
     "cyber_verify",
 )
 
@@ -79,14 +80,14 @@ def test_initialize_handshake():
 # -- tools/list shape --------------------------------------------------------
 
 
-def test_tools_list_shape_six_tools_no_leak():
+def test_tools_list_shape_seven_tools_no_leak():
     server = create_server()
     resp = _send(server, {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}})
     tools = _result_payload(resp)["tools"]
     assert sorted(t["name"] for t in tools) == sorted(EXPECTED_TOOLS)
-    assert len(tools) == 6
+    assert len(tools) == 7
     assert tuple(sorted(TOOL_NAMES)) == tuple(sorted(EXPECTED_TOOLS))
-    # Contract mirror agrees on the 6-tool surface.
+    # Contract mirror agrees on the 7-tool surface.
     assert tuple(sorted(_discovery.list_tools())) == tuple(sorted(EXPECTED_TOOLS))
     blob = json.dumps(tools).lower()
     for leaked in ("semgrep", "trivy", "gitleaks", "osv", "github api", "supabase"):
@@ -252,12 +253,12 @@ def test_result_firewall_spot_check_no_secrets_or_paths():
     assert "/etc/" not in combined
 
 
-# -- tool filtering contract on the real 6-tool surface ----------------------------------
+# -- tool filtering contract on the real 7-tool surface ----------------------------------
 
 
 def test_tool_filtering_contract_deny_wins_on_real_surface():
     available = list(TOOL_NAMES)
-    assert len(available) == 6
+    assert len(available) == 7
 
     out = filter_tools(available, ["cyber_audit", "cyber_review", "cyber_status"], ["cyber_review"])
     assert out["allowed"] == ("cyber_audit", "cyber_status")

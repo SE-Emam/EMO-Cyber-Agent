@@ -25,10 +25,15 @@ Single exception: host binary presence via `--version` is `Environment-tested`
 ## Configure
 
 - Registration snippet (data only, from `hosts_opencode.get_registration_config()`)
-  `Supported`:
+  `Supported`, live shape observed against opencode `1.18.34`
+  `Environment-tested` (source
+  `reports/development/POST-T020-G1-opencode.md`):
   ```json
-  {"mcpServers": {"emo-cyber-agent": {"command": "cyber-agent", "args": ["mcp"]}}}
+  {"mcp": {"emo-cyber-agent": {"type": "local", "command": ["cyber-agent", "mcp"], "enabled": true}}}
   ```
+  Legacy note: the pre-T020 `mcpServers` + `{command: str, args: []}` form
+  is ignored by opencode `1.18.34` ("No MCP servers configured")
+  `Environment-tested` (same report, control check) — do not use it.
 - Constants: `MCP_SERVER_KEY="emo-cyber-agent"` `Supported`,
   `SERVER_COMMAND="cyber-agent"` `Supported`, `SERVER_ARGS=("mcp",)` `Supported`
   — source `src/emo_cyber_agent/subagent/hosts_opencode.py`.
@@ -37,12 +42,16 @@ Single exception: host binary presence via `--version` is `Environment-tested`
   That OpenCode honors them in practice is `Not-tested`.
 - Default exposure is exactly the 5 safe tools
   (`cyber_audit`, `cyber_review`, `cyber_verify`, `cyber_report`, `cyber_status`);
-  `cyber_extensions` is opt-in `Supported` (`SAFE_DEFAULT_TOOLS`,
-  `OPT_IN_TOOLS`). That OpenCode displays exactly this set is `Not-tested`.
-- Server-side tool names pass through as-is (identity mapping, no rename);
-  OpenCode invokes them under its own host tool namespace `Supported`
+  `cyber_extensions` and `cyber_threat_intel` are opt-in `Supported`
+  (`SAFE_DEFAULT_TOOLS`, `OPT_IN_TOOLS`). That OpenCode displays exactly
+  this set is `Not-tested`.
+- Server-side tool names pass through with an `emo-cyber-agent_<tool>`
+  host prefix (e.g. `emo-cyber-agent_cyber_status`), observed against
+  opencode `1.18.34` `Environment-tested` (source
+  `reports/development/POST-T020-G1-opencode.md`); server-side `cyber_*`
+  names are unchanged, the host adds the prefix at invocation `Supported`
   (`TOOL_NAME_MAPPING`, `OPENCODE_TOOL_NAMESPACE_NOTE`). End-to-end
-  visibility is `Not-tested`.
+  visibility beyond the observed `cyber_status` delegation is `Not-tested`.
 
 ## Start
 
@@ -132,9 +141,9 @@ From `hosts_opencode.TROUBLESHOOTING` (data only; host behavior `Not-tested`):
 
 | issue | symptom | fix |
 |---|---|---|
-| `server-not-found` | OpenCode reports the `emo-cyber-agent` MCP server is missing or the command fails to start. | Verify `cyber-agent` is installed and on `PATH` (`cyber-agent --help`); check the `mcpServers` registration snippet. |
+| `server-not-found` | OpenCode reports the `emo-cyber-agent` MCP server is missing or the command fails to start. | Verify `cyber-agent` is installed and on `PATH` (`cyber-agent --help`); check the `mcp` registration snippet from `get_registration_config()` (live shape for opencode `1.18.34`; the legacy `mcpServers` form registers zero servers). |
 | `protocol-version-mismatch` | `initialize` fails or the host reports an unsupported protocol version. | Re-run explicit negotiation via `negotiate_protocol_version()`; use the latest common version from discovery output; abort if none exists. |
-| `tool-not-visible` | `cyber_*` tools do not appear, or `cyber_extensions` is unexpectedly present/absent. | Confirm default exposure is the 5 safe tools only; `cyber_extensions` is opt-in. Check the host tool namespace view and re-list via `tools/list`. |
+| `tool-not-visible` | `cyber_*` tools do not appear, or `cyber_extensions` is unexpectedly present/absent. | Confirm default exposure is the 5 safe tools only; `cyber_extensions` and `cyber_threat_intel` are opt-in. Check the host tool namespace view and re-list via `tools/list`. |
 
 - Protocol helpers `is_protocol_supported()` / `negotiate_protocol_version()`
   test membership against live `discovery.PROTOCOL_VERSIONS` at call time
@@ -174,6 +183,11 @@ From `hosts_opencode.TROUBLESHOOTING` (data only; host behavior `Not-tested`):
   protocol → `INCOMPATIBLE`; otherwise host-window check via
   `hosts.check_compatibility` plus a `Not-tested` provisional note
   `Supported`.
-- No OpenCode version is pinned or asserted compatible here `Not-tested`.
-  The only environment observation is binary presence (`--version` exits),
-  not any version value or behavior `Environment-tested` (presence only).
+- Live observation (not a compat assertion): opencode `1.18.34` observed
+  `Environment-tested` (source
+  `reports/development/POST-T020-G1-opencode.md` — real `mcp list` shows
+  `emo-cyber-agent connected`, `cyber_status` delegated as
+  `emo-cyber-agent_cyber_status`). No OpenCode version is asserted
+  compatible here `Not-tested`. The only other environment observation is
+  binary presence (`--version` exits), not any behavior
+  `Environment-tested` (presence only).

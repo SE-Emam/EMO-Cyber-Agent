@@ -41,6 +41,16 @@ HERMES_TOOL_NAMESPACE_NOTE = (
 SERVER_COMMAND = "cyber-agent"
 SERVER_ARGS: tuple[str, ...] = ("mcp",)
 MCP_SERVER_KEY = "emo-cyber-agent"
+# Config-key spelling note (live-observed, Hermes v0.21.4, POST-T020 G1):
+# get_stdio_config() documents the camelCase ``mcpServers`` input form, but
+# Hermes persists the registration under snake_case ``mcp_servers`` in
+# config.yaml (same server/command/args content, different key spelling).
+HERMES_PERSISTED_CONFIG_KEY_NOTE = (
+    "Hermes v0.21.4 (observed) persists stdio registrations under "
+    "snake_case 'mcp_servers' in config.yaml; the adapter's "
+    "get_stdio_config() documents the camelCase 'mcpServers' input form "
+    "with the same server/command/args content."
+)
 # Placeholder URL for the Streamable HTTP variant (data only; the server
 # must be started separately with an HTTP transport before use).
 SERVER_URL = "http://localhost:8000/mcp"
@@ -52,7 +62,7 @@ SAFE_DEFAULT_TOOLS: tuple[str, ...] = (
     "cyber_report",
     "cyber_status",
 )
-OPT_IN_TOOLS: tuple[str, ...] = ("cyber_extensions",)
+OPT_IN_TOOLS: tuple[str, ...] = ("cyber_extensions", "cyber_threat_intel")
 
 TOOL_NAME_MAPPING: dict[str, str] = {
     "cyber_audit": "cyber_audit",
@@ -61,6 +71,7 @@ TOOL_NAME_MAPPING: dict[str, str] = {
     "cyber_report": "cyber_report",
     "cyber_status": "cyber_status",
     "cyber_extensions": "cyber_extensions",
+    "cyber_threat_intel": "cyber_threat_intel",
 }
 
 CAPABILITY_MAPPING: dict[str, tuple[str, ...]] = {
@@ -70,12 +81,13 @@ CAPABILITY_MAPPING: dict[str, tuple[str, ...]] = {
     "cyber_report": ("report.generate", "evidence.read"),
     "cyber_status": (),
     "cyber_extensions": ("evidence.read",),
+    "cyber_threat_intel": ("evidence.read", "threatintel.read"),
 }
 
 # Recommended per-task allowlists leveraging host-side filtering.
 # Never expose all tools by default: each Hermes server registration
-# should enable only the subset its task needs. ``cyber_extensions``
-# is opt-in and appears in no recommended allowlist.
+# should enable only the subset its task needs. ``cyber_extensions`` and
+# ``cyber_threat_intel`` are opt-in and appear in no recommended allowlist.
 TASK_ALLOWLISTS: dict[str, tuple[str, ...]] = {
     "security-review": (
         "cyber_audit",
@@ -100,8 +112,8 @@ FILTERING_GUIDANCE = (
     "allowlist limited to TASK_ALLOWLISTS[task]; never expose all tools by "
     "default. Apply the allowlist with host-side filtering (the Hermes "
     "server/tool filter config), then confirm the visible set via "
-    "tools/list. cyber_extensions stays opt-in and is excluded from every "
-    "recommended allowlist; adding it requires an explicit config edit plus "
+    "tools/list. cyber_extensions and cyber_threat_intel stay opt-in and are excluded from every "
+    "recommended allowlist; adding either requires an explicit config edit plus "
     "a host reload and re-list. Unknown task kinds must abort, not fall "
     "back to the full tool set."
 )
@@ -152,11 +164,11 @@ TROUBLESHOOTING: tuple[TroubleshootingEntry, ...] = (
     TroubleshootingEntry(
         issue="tool-not-visible",
         symptom="cyber_* tools do not appear in Hermes, or cyber_extensions is unexpectedly present/absent.",
-        fix="Confirm default exposure is the 5 safe tools only; cyber_extensions is opt-in. Check the host tool namespace view and re-list via tools/list.",
+        fix="Confirm default exposure is the 5 safe tools only; cyber_extensions and cyber_threat_intel are opt-in. Check the host tool namespace view and re-list via tools/list.",
     ),
     TroubleshootingEntry(
         issue="over-exposed-tools",
-        symptom="More tools are visible in Hermes than the task needs (e.g. the full six-tool set for a status-only task).",
+        symptom="More tools are visible in Hermes than the task needs (e.g. the full seven-tool set for a status-only task).",
         fix="Apply the per-task allowlist from get_task_allowlist(task) via host-side filtering so only the recommended subset is exposed; never expose all by default. Re-list via tools/list to confirm.",
     ),
     TroubleshootingEntry(
@@ -178,7 +190,12 @@ TROUBLESHOOTING: tuple[TroubleshootingEntry, ...] = (
 
 
 def get_stdio_config() -> dict[str, Any]:
-    """Return the Hermes stdio registration snippet as data."""
+    """Return the Hermes stdio registration snippet as data.
+
+    Documents the camelCase ``mcpServers`` input form; Hermes v0.21.4
+    (observed, POST-T020 G1) persists the same entry under snake_case
+    ``mcp_servers`` — see ``HERMES_PERSISTED_CONFIG_KEY_NOTE``.
+    """
     return {
         "mcpServers": {
             MCP_SERVER_KEY: {
@@ -221,7 +238,7 @@ def get_tool_mapping() -> dict[str, str]:
 
 
 def get_safe_default_tools() -> tuple[str, ...]:
-    """Return the 5 safe tools exposed by default (cyber_extensions opt-in)."""
+    """Return the 5 safe tools exposed by default (cyber_extensions + cyber_threat_intel opt-in)."""
     return SAFE_DEFAULT_TOOLS
 
 

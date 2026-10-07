@@ -173,7 +173,7 @@ class TestGenericMcpChain:
         advertisement = _discovery.build_advertisement()
         names = sorted(t.name for t in advertisement.tools)
         assert names == sorted(TOOL_NAMES)
-        assert len(names) == 6
+        assert len(names) == 7
         assert advertisement.server_name == "emo-cyber-agent"
 
     def test_health(self):
@@ -427,12 +427,19 @@ def test_vendor_contract(host_id):
     """Contract-only: registration config valid + compat decision + negotiation."""
     adapter = VENDOR_ADAPTERS[host_id]
     config = adapter.get_registration_config()
-    assert "mcpServers" in config
-    servers = config["mcpServers"]
+    # Registration shapes differ per host (live-verified opencode uses `mcp`,
+    # others use `mcpServers`); accept either, then validate the server entry.
+    assert "mcpServers" in config or "mcp" in config, host_id
+    servers = config.get("mcpServers", config.get("mcp"))
     assert len(servers) >= 1
     entry = next(iter(servers.values()))
-    assert entry.get("command")
-    assert isinstance(entry.get("args", []), list)
+    # opencode form: {"type": "local", "command": [...]}; others: {"command": str, "args": [...]}
+    command = entry.get("command")
+    assert command, host_id
+    if isinstance(command, list):
+        assert command[0] == "cyber-agent", host_id
+    else:
+        assert isinstance(entry.get("args", []), list), host_id
 
     decision = compat_matrix.evaluate_compat(host_id, "1.0.0", VENDOR_PROTOCOL)
     assert decision.verdict.value in USABLE_VERDICTS

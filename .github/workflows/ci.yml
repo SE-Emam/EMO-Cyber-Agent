@@ -1,0 +1,163 @@
+# POST-T020 G8 — CI matrix (tiers 1-2). Tier 3 (release qualification) is owned by release.yml, not here.
+name: ci
+
+"on":
+  push:
+    branches: [main]
+    tags-ignore: ["v*"] # tags (v*) are owned by release.yml; ci must not double-run release work
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref; keeps PR signal fresh and runner usage bounded.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: no secrets used in this workflow; read-only checkout is sufficient.
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Tier 1 (fast): Linux + minimum (3.11) + latest (3.14). Gates PR/push.
+  # Fast subset + version-consistency check. Any failure blocks merge.
+  # ---------------------------------------------------------------------------
+  fast:
+    name: tier1-fast (ubuntu, py ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v4 # pinned major; reproducible, no floating branch
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5 # pinned major
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package (editable, dev extras for pytest)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Version-consistency check (pyproject == import == CLI)
+        run: |
+          python - <<'EOF'
+          import tomllib, importlib.metadata
+          declared = tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]
+          installed = importlib.metadata.version("emo-cyber")
+          print(f"pyproject={declared} installed={installed}")
+          assert installed == declared, f"version mismatch: installed={installed} declared={declared}"
+          EOF
+          cyber-agent --version
+
+      - name: Fast subset (subagent + progress + recovery + cli + mcp)
+        run: |
+          python -m pytest tests/unit/subagent tests/unit/progress tests/unit/recovery tests/unit/test_cli.py tests/unit/test_mcp.py -q --tb=short -p no:cacheprovider
+
+  # ---------------------------------------------------------------------------
+  # Tier 2a (compatibility, gating): Linux + macOS x Python 3.12/3.13.
+  # Install + import + CLI --version + MCP tools/list smoke + subagent contracts.
+  # Any failure blocks merge.
+  # ---------------------------------------------------------------------------
+  compat:
+    name: tier2-compat (${{ matrix.os }}, py ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4 # pinned major
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5 # pinned major
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package (editable, dev extras for pytest)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Import check
+        run: python -c "import emo_cyber_agent; print('import OK', emo_cyber_agent.__version__)"
+
+      - name: CLI --version smoke
+        run: cyber-agent --version
+
+      - name: MCP tools/list smoke (in-process JSON-RPC, no stdio plumbing)
+        run: |
+          python - <<'EOF'
+          from emo_cyber_agent.mcp.server import create_server
+          s = create_server()
+          resp = s.handle_message({"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}})
+          assert "result" in resp, resp
+          names = sorted(t["name"] for t in resp["result"]["tools"])
+          print("mcp tools:", names)
+          assert len(names) >= 6, f"expected >=6 tools, got {names}"
+          EOF
+
+      - name: Subagent contract tests
+        run: |
+          python -m pytest tests/unit/subagent/test_contracts.py -q --tb=short -p no:cacheprovider
+
+  # ---------------------------------------------------------------------------
+  # Tier 2b (compatibility, RECORDED non-blocking): Windows, single 3.12 job.
+  # continue-on-error is INTENTIONAL and VISIBLE here — NOT a hidden skip:
+  #   Windows is NEEDS-RUNTIME-PROOF per G7 (platform-vocabulary defect candidate:
+  #   ExtensionCompatibility default "win32" vs host_profile() "windows"; no
+  #   Windows runtime has ever been exercised). Failures are RECORDED in the
+  #   job log/annotations, not hidden; the job still runs and still reports.
+  #   If it fails: fix the product (or the workflow) and document in the G8
+  #   report thread — do not silence it further. No `continue-on-error` exists
+  #   on any other job: ubuntu/macos fully gate.
+  # ---------------------------------------------------------------------------
+  windows:
+    name: tier2-windows (windows-latest, py 3.12, recorded non-blocking)
+    runs-on: windows-latest
+    continue-on-error: true # NEEDS-RUNTIME-PROOF: recorded, not hidden; see comment above
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4 # pinned major
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5 # pinned major
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package (editable, dev extras for pytest)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Import check
+        run: python -c "import emo_cyber_agent; print('import OK', emo_cyber_agent.__version__)"
+
+      - name: CLI --version smoke
+        run: cyber-agent --version
+
+      - name: MCP tools/list smoke (in-process JSON-RPC, no stdio plumbing)
+        run: |
+          python - <<'EOF'
+          from emo_cyber_agent.mcp.server import create_server
+          s = create_server()
+          resp = s.handle_message({"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}})
+          assert "result" in resp, resp
+          names = sorted(t["name"] for t in resp["result"]["tools"])
+          print("mcp tools:", names)
+          assert len(names) >= 6, f"expected >=6 tools, got {names}"
+          EOF
+
+      - name: Subagent contract tests
+        run: |
+          python -m pytest tests/unit/subagent/test_contracts.py -q --tb=short -p no:cacheprovider

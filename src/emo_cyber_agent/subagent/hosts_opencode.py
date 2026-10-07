@@ -31,10 +31,16 @@ SUPPORT_EVIDENCE = (
 )
 
 # OpenCode addresses MCP tools under its own tool namespace; server-side
-# cyber_* names are passed through as-is (identity mapping, no rename).
+# cyber_* names are preserved after a "<server>_<tool>" prefix.
+# Live-observed (opencode 1.18.34, POST-T020 G1): the host invokes tools as
+# ``emo-cyber-agent_<tool>`` (e.g. ``emo-cyber-agent_cyber_status``) — NOT
+# bare ``cyber_*``. Server-side cyber_* names are unchanged; the host adds
+# the ``emo-cyber-agent_`` prefix at invocation.
 OPENCODE_TOOL_NAMESPACE_NOTE = (
     "OpenCode invokes MCP tools under its host tool namespace; "
-    "cyber_* server tool names are exposed as-is with no rename."
+    "server-side cyber_* names are preserved with an "
+    "'emo-cyber-agent_<tool>' prefix (observed: opencode 1.18.34 calls "
+    "e.g. emo-cyber-agent_cyber_status)."
 )
 
 SERVER_COMMAND = "cyber-agent"
@@ -48,7 +54,7 @@ SAFE_DEFAULT_TOOLS: tuple[str, ...] = (
     "cyber_report",
     "cyber_status",
 )
-OPT_IN_TOOLS: tuple[str, ...] = ("cyber_extensions",)
+OPT_IN_TOOLS: tuple[str, ...] = ("cyber_extensions", "cyber_threat_intel")
 
 TOOL_NAME_MAPPING: dict[str, str] = {
     "cyber_audit": "cyber_audit",
@@ -57,6 +63,7 @@ TOOL_NAME_MAPPING: dict[str, str] = {
     "cyber_report": "cyber_report",
     "cyber_status": "cyber_status",
     "cyber_extensions": "cyber_extensions",
+    "cyber_threat_intel": "cyber_threat_intel",
 }
 
 CAPABILITY_MAPPING: dict[str, tuple[str, ...]] = {
@@ -66,6 +73,7 @@ CAPABILITY_MAPPING: dict[str, tuple[str, ...]] = {
     "cyber_report": ("report.generate", "evidence.read"),
     "cyber_status": (),
     "cyber_extensions": ("evidence.read",),
+    "cyber_threat_intel": ("evidence.read", "threatintel.read"),
 }
 
 PROTOCOL_NEGOTIATION_NOTE = (
@@ -98,7 +106,7 @@ TROUBLESHOOTING: tuple[TroubleshootingEntry, ...] = (
     TroubleshootingEntry(
         issue="server-not-found",
         symptom="OpenCode reports the emo-cyber-agent MCP server is missing or the command fails to start.",
-        fix="Verify 'cyber-agent' is installed and on PATH ('cyber-agent --help'); check the mcpServers registration snippet.",
+        fix="Verify 'cyber-agent' is installed and on PATH ('cyber-agent --help'); check the mcp registration snippet from get_registration_config().",
     ),
     TroubleshootingEntry(
         issue="protocol-version-mismatch",
@@ -108,18 +116,26 @@ TROUBLESHOOTING: tuple[TroubleshootingEntry, ...] = (
     TroubleshootingEntry(
         issue="tool-not-visible",
         symptom="cyber_* tools do not appear in OpenCode, or cyber_extensions is unexpectedly present/absent.",
-        fix="Confirm default exposure is the 5 safe tools only; cyber_extensions is opt-in. Check the host tool namespace view and re-list via tools/list.",
+        fix="Confirm default exposure is the 5 safe tools only; cyber_extensions and cyber_threat_intel are opt-in. Check the host tool namespace view and re-list via tools/list.",
     ),
 )
 
 
 def get_registration_config() -> dict[str, Any]:
-    """Return the OpenCode mcpServers stdio registration snippet as data."""
+    """Return the OpenCode mcp stdio registration snippet as data.
+
+    Live shape observed against opencode 1.18.34 (POST-T020 G1):
+    ``{"mcp": {"<name>": {"type": "local", "command": [...], "enabled": true}}}``.
+    Legacy note: the pre-T020 ``mcpServers`` + ``{command: str, args: []}``
+    form is ignored by opencode 1.18.34 ("No MCP servers configured") and
+    is NOT emitted here.
+    """
     return {
-        "mcpServers": {
+        "mcp": {
             MCP_SERVER_KEY: {
-                "command": SERVER_COMMAND,
-                "args": list(SERVER_ARGS),
+                "type": "local",
+                "command": [SERVER_COMMAND, *SERVER_ARGS],
+                "enabled": True,
             }
         }
     }
@@ -131,7 +147,7 @@ def get_tool_mapping() -> dict[str, str]:
 
 
 def get_safe_default_tools() -> tuple[str, ...]:
-    """Return the 5 safe tools exposed by default (cyber_extensions opt-in)."""
+    """Return the 5 safe tools exposed by default (cyber_extensions + cyber_threat_intel opt-in)."""
     return SAFE_DEFAULT_TOOLS
 
 

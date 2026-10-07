@@ -19,7 +19,7 @@ or versions stated; per-host rendering differences are `Not-tested`.
 - Effective grant is always `requested ∩ allowed − denied` and within
   `outer_scope` (narrowing-only) `Supported` (`capabilities` +
   `delegation.py`).
-- Discovery advertisement behind delegation: full six-tool set by default;
+- Discovery advertisement behind delegation: full seven-tool set by default;
   `task_kind="security-review"` selects the 5 safe tools; `only=[...]`
   narrows further (unknown tool rejected; empty result raises); both set =
   intersection `Supported` (`discovery.build_advertisement`).

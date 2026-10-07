@@ -1,9 +1,10 @@
 """MCP high-level tool surface — ECA-T013.
 
-Six specialist tools: five Core audit tools plus a read-only extension
-catalog view. No internal registry, scanner, repository, or database
-tool is exposed. Descriptions state the actual read-only contract —
-never write/delete/execute capabilities.
+Seven specialist tools: five Core audit tools plus a read-only extension
+catalog view plus a read-only threat-intel triage view. No internal
+registry, scanner, repository, or database tool is exposed. Descriptions
+state the actual read-only contract — never write/delete/execute
+capabilities.
 """
 
 from __future__ import annotations
@@ -107,6 +108,33 @@ TOOLS: list[dict[str, Any]] = [
                 "action": _str(1, 20, ["list", "describe", "resolve", "check"]),
                 "extension_id": _str(0, 80),
                 "provide": _str(0, 120),
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "cyber_threat_intel",
+        "description": "Run read-only, deterministic threat-intel triage over caller-supplied data: leak payload parsing, IoC matching, ATT&CK mapping, exposure reasoning, coverage gaps. Parse/triage/match/map only; never fetches, never executes, never touches the network.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["action"],
+            "properties": {
+                "action": _str(1, 20, ["leak-check", "triage", "map-technique", "exposure-check", "coverage"]),
+                "identifier": _str(0, 320),
+                "scope_hints": {"type": "array", "items": _str(0, 128), "maxItems": MAX_ITEMS},
+                "hibp_payload": {},
+                "threatfox_payload": {},
+                "iocs": {"type": "array", "maxItems": MAX_ITEMS},
+                "findings": {"type": "array", "maxItems": MAX_ITEMS},
+                "kev": {"type": "array", "items": _str(0, 120), "maxItems": MAX_ITEMS},
+                "epss": {"type": "object"},
+                "category": _str(0, 120),
+                "cwe": _str(0, 20),
+                "keywords": {"type": "array", "items": _str(0, 80), "maxItems": 50},
+                "tool": _str(0, 80),
+                "facts": {"type": "object"},
+                "tools": {"type": "array", "items": _str(0, 80), "maxItems": 50},
+                "signals": {"type": "array", "items": _str(0, 120), "maxItems": MAX_ITEMS},
             },
             "additionalProperties": False,
         },
