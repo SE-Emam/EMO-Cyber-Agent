@@ -71,7 +71,7 @@ def test_version_consistency_across_contracts():
     from emo_cyber_agent.mcp import protocol as mcp_proto
     from emo_cyber_agent.mcp.tools import TOOLS
 
-    assert pkg.__version__ == VERSION == "0.1.0"
+    assert pkg.__version__ == VERSION == "0.2.0"
     assert EMO_VERSION == pkg.__version__
     assert mcp_proto.SERVER_VERSION == pkg.__version__
     assert len(TOOLS) == 7  # +cyber_threat_intel post-0.1.0 (tag v0.1.0 pins 6)

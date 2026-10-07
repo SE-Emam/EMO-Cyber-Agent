@@ -116,7 +116,7 @@ def test_audit_review_status_through_core():
     review = _payload(client.call("cyber_review", {"target": "src/app.py"}))
     assert review["status"] == "ok"
     status = _payload(client.call("cyber_status", {}))
-    assert status["result"]["version"] == "0.1.0"
+    assert status["result"]["version"] == "0.2.0"
     assert "cyber_audit" in status["result"]["capabilities"]
 
 

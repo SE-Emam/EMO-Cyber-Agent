@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 — Threat-intel + HTTP transport (POST-T018/POST-T020)
+
+- New `threat_intel` package: leak monitor, feed triage, ATT&CK mapper,
+  Kali detector pack (defensive knowledge only); new opt-in MCP tool
+  `cyber_threat_intel` (7-tool surface).
+- Streamable HTTP transport (`mcp/http_server.py`, stdlib-only).
+- Checklists, official report templates, benchmark corpus expansion.
+- Requires Python >=3.11. See POST-T020 acceptance assessment.
+
 ## 0.1.0 — Final Release (ECA-T016)
 
 Release gate: `reports/development/ECA-T016-release-security-assessment.md`

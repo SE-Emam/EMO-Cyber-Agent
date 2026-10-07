@@ -82,7 +82,7 @@ def test_import_has_no_side_effects_from_installed_package(venv, tmp_path):
     assert body["threads_delta"] == 0, body
     assert body["daemons"] == 0, body
     assert body["leftover"] == [], f"import created files: {body['leftover']}"
-    assert body["version"] == "0.1.0"
+    assert body["version"] == "0.2.0"
 
 
 def test_manifest_hash_matches_dist_identity():

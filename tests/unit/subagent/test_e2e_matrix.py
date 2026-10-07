@@ -166,7 +166,7 @@ class TestGenericMcpChain:
         assert response["id"] == 1
         info = response["result"]["serverInfo"]
         assert info["name"] == "emo-cyber-agent"
-        assert info["version"] == "0.1.0"
+        assert info["version"] == "0.2.0"
         assert "2025-06-18" in response["result"].get("protocolVersion", "2025-06-18")
 
     def test_discover_advertisement(self):
