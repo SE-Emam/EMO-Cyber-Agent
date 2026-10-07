@@ -17,6 +17,12 @@ concurrency:
 permissions:
   contents: read
 
+# Bash on all runners (Windows defaults to PowerShell, which cannot parse
+# heredocs used by the smoke steps).
+defaults:
+  run:
+    shell: bash
+
 jobs:
   # ---------------------------------------------------------------------------
   # Tier 1 (fast): Linux + minimum (3.11) + latest (3.14). Gates PR/push.

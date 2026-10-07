@@ -308,9 +308,15 @@ def evaluate_chain(
     )
 
 
+def _is_known_code(prefix: str) -> bool:
+    # `prefix in TrustBoundaryCode` raises TypeError on Python 3.11 for
+    # non-member strings (allowed since 3.12); compare values explicitly.
+    return any(prefix == member.value for member in TrustBoundaryCode)
+
+
 def _raise_for(decision: DelegationSecurityDecision, code: TrustBoundaryCode, message: str) -> None:
     prefix = message.split(":", 1)[0].strip() if ":" in message else message
-    boundary = TrustBoundaryCode(prefix) if prefix in TrustBoundaryCode else code
+    boundary = TrustBoundaryCode(prefix) if _is_known_code(prefix) else code
     raise TrustBoundaryError(boundary, message)
 
 
