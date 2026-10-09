@@ -126,7 +126,11 @@ jobs:
               pypi) "$VPY" -m pip install "emo-cyber==0.2.0" ;;
             esac
             for SCRIPT in verify_artifact cli_matrix mcp_stdio http_battery security_matrix package_resources; do
-              "$VPY" "scripts/runtime-parity/$SCRIPT.py" --origin "$ORIGIN" --json-out "results/${ORIGIN}-${SCRIPT}-py${{ matrix.python-version }}-Linux.json"
+              if [ "$SCRIPT" = "verify_artifact" ]; then
+                "$VPY" "scripts/runtime-parity/$SCRIPT.py" --origin "$ORIGIN" --json-out "results/${ORIGIN}-${SCRIPT}-py${{ matrix.python-version }}-Linux.json" --manifest parity-artifacts/parity-manifest.json --artifacts-dir parity-artifacts
+              else
+                "$VPY" "scripts/runtime-parity/$SCRIPT.py" --origin "$ORIGIN" --json-out "results/${ORIGIN}-${SCRIPT}-py${{ matrix.python-version }}-Linux.json"
+              fi
             done
           done
           ls -la results/
@@ -194,7 +198,11 @@ jobs:
               pypi) "$VPY" -m pip install "emo-cyber==0.2.0" ;;
             esac
             for SCRIPT in verify_artifact cli_matrix mcp_stdio http_battery security_matrix package_resources; do
-              "$VPY" "scripts/runtime-parity/$SCRIPT.py" --origin "$ORIGIN" --json-out "results/${ORIGIN}-${SCRIPT}-py${{ matrix.python-version }}-Windows.json"
+              if [ "$SCRIPT" = "verify_artifact" ]; then
+                "$VPY" "scripts/runtime-parity/$SCRIPT.py" --origin "$ORIGIN" --json-out "results/${ORIGIN}-${SCRIPT}-py${{ matrix.python-version }}-Windows.json" --manifest parity-artifacts/parity-manifest.json --artifacts-dir parity-artifacts
+              else
+                "$VPY" "scripts/runtime-parity/$SCRIPT.py" --origin "$ORIGIN" --json-out "results/${ORIGIN}-${SCRIPT}-py${{ matrix.python-version }}-Windows.json"
+              fi
             done
           done
           ls -la results/
