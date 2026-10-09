@@ -57,10 +57,33 @@ def main() -> int:
 
         p = _run(["audit", "..%2f..%2fetc%2fpasswd", "--format", "json"], work)
         blob = p.stdout + p.stderr
-        record("sec.encoded_traversal.rejected_or_neutered", p.returncode != 0 or ".." not in blob, f"exit={p.returncode}")
+        # Contract cli/main.py:340: "Findings never affect the exit code" — audit
+        # target is an opaque label, exit 0 + created envelope is CORRECT.
+        # Fail-closed = neutered: must not read/emit /etc/passwd content.
+        neutered = (p.returncode == 0 and ("created" in blob or '"ok"' in blob)
+                    and "root:" not in blob and "/etc/passwd" not in blob)
+        record("sec.encoded_traversal.rejected_or_neutered", neutered, f"exit={p.returncode}")
 
-        p = _run(["audit", "app.py\x00.json", "--format", "json"], work)
-        record("sec.null_byte.rejected", p.returncode != 0 or "\x00" not in (p.stdout + p.stderr), f"exit={p.returncode}")
+        try:
+            p = _run(["audit", "app.py\x00.json", "--format", "json"], work)
+            record("sec.null_byte.rejected", p.returncode != 0 or "\x00" not in (p.stdout + p.stderr), f"exit={p.returncode}")
+        except ValueError:
+            # POSIX forbids NUL in argv: subprocess raises client-side before
+            # exec, so the product is never reached via argv. Verify the
+            # product layer itself denies NUL in-process (fail-closed).
+            try:
+                from emo_cyber_agent.core.execution import ExecutionError, confine_path
+                from emo_cyber_agent.core.repository import RepositoryError, normalize_path
+                denied = 0
+                for fn in (lambda: confine_path(str(work), "app.py\x00.json"),
+                           lambda: normalize_path("app.py\x00.json")):
+                    try:
+                        fn()
+                    except (ExecutionError, RepositoryError, ValueError):
+                        denied += 1
+                record("sec.null_byte.rejected", denied == 2, "argv NUL client-denied; product denies in-process")
+            except Exception as exc2:
+                record("sec.null_byte.rejected", False, f"in-process check failed: {exc2}")
 
         p = _run(["audit", str(work / "app.py"), "--format", "json"], work)
         record("sec.absolute_path.normalized", p.returncode in (0, 1, 2) and CANARY not in p.stdout, f"exit={p.returncode}")
@@ -96,7 +119,7 @@ def main() -> int:
 
         code = ("from emo_cyber_agent.core.progress import *;" if False else
                 "import emo_cyber_agent, inspect;"
-                "mods=[m for m in ('emo_cyber_agent.core.progress','emo_cyber_agent.core.recovery')];"
+                "mods=[m for m in ('emo_cyber_agent.progress','emo_cyber_agent.recovery')];"
                 "ok=True;"
                 "import importlib;"
                 "[importlib.import_module(m) for m in mods];"
