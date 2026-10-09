@@ -1,4 +1,4 @@
-![EMO-Cyber-Agent banner](assets/banner.png)
+![EMO-Cyber-Agent banner](assets/banner.jpeg)
 
 [![CI](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/ci.yml)
 [![Runtime Parity](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/runtime-parity.yml/badge.svg)](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/runtime-parity.yml)
