@@ -1,0 +1,208 @@
+name: runtime-parity
+
+# Standalone runtime-parity workflow. Dispatch-only; no push/schedule triggers.
+# Does NOT reference the old limited Windows smoke job as evidence.
+"on":
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit SHA to test (defaults to HEAD at dispatch)"
+        required: false
+        default: ""
+        type: string
+
+# Least privilege: read-only checkout is sufficient. No publishing anywhere,
+# so no PyPI credentials and no id-token:write.
+permissions:
+  contents: read
+
+# Bash on all runners (Windows defaults to PowerShell, which cannot parse
+# heredocs). Mirrors the existing ci.yml convention.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: build (ubuntu-24.04, single wheel+sdist build)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build wheel+sdist (ONE build)
+        run: |
+          python -m pip install --upgrade pip build
+          rm -rf dist/
+          python -m build
+          ls -la dist/
+
+      - name: Checksums + parity-manifest.json
+        run: |
+          sha256sum dist/*
+          python - <<'EOF'
+          import hashlib, json, subprocess
+          from pathlib import Path
+          sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          artifacts = []
+          for p in sorted(Path("dist").iterdir()):
+              if p.suffix in (".whl", ".gz") or p.name.endswith((".whl", ".tar.gz")):
+                  artifacts.append({
+                      "filename": p.name,
+                      "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
+                      "size_bytes": p.stat().st_size,
+                  })
+          assert len(artifacts) == 2, f"expected wheel+sdist, got {[a['filename'] for a in artifacts]}"
+          Path("dist/parity-manifest.json").write_text(json.dumps({"commit_sha": sha, "artifacts": artifacts}, indent=2) + "\n")
+          print(open("dist/parity-manifest.json").read())
+          EOF
+
+      - name: Upload build artifacts + manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  linux:
+    name: parity-linux (ubuntu-24.04, py ${{ matrix.python-version }})
+    runs-on: ubuntu-24.04
+    needs: [build]
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: parity-dist
+          path: parity-artifacts/
+
+      - name: Verify sha256 against manifest (fail closed)
+        run: |
+          python - <<'EOF'
+          import hashlib, json
+          from pathlib import Path
+          manifest = json.loads(Path("parity-artifacts/parity-manifest.json").read_text())
+          assert set(manifest) == {"commit_sha", "artifacts"}, manifest.keys()
+          for entry in manifest["artifacts"]:
+              assert set(entry) == {"filename", "sha256", "size_bytes"}, entry.keys()
+              p = Path("parity-artifacts") / entry["filename"]
+              assert "/" not in entry["filename"] and p.is_file(), f"missing artifact: {entry['filename']}"
+              digest = hashlib.sha256(p.read_bytes()).hexdigest()
+              assert digest == entry["sha256"], f"sha256 MISMATCH for {entry['filename']}"
+              assert p.stat().st_size == entry["size_bytes"], f"size MISMATCH for {entry['filename']}"
+              print(f"OK {entry['filename']} {digest}")
+          print(f"manifest commit_sha={manifest['commit_sha']}")
+          EOF
+
+      - name: Three venvs (HEAD wheel, HEAD sdist, PyPI 0.2.0) + harness matrix
+        run: |
+          mkdir -p results
+          for ORIGIN in wheel sdist pypi; do
+            VENV=".venv-$ORIGIN"
+            python -m venv "$VENV"
+            if [ -x "$VENV/Scripts/python.exe" ]; then VPY="$VENV/Scripts/python"; else VPY="$VENV/bin/python"; fi
+            "$VPY" -m pip install --upgrade pip
+            case "$ORIGIN" in
+              wheel) "$VPY" -m pip install ./parity-artifacts/*.whl ;;
+              sdist) "$VPY" -m pip install ./parity-artifacts/*.tar.gz ;;
+              pypi) "$VPY" -m pip install "emo-cyber==0.2.0" ;;
+            esac
+            for SCRIPT in verify_artifact cli_matrix mcp_stdio http_battery security_matrix package_resources; do
+              "$VPY" "scripts/runtime-parity/$SCRIPT.py" --origin "$ORIGIN" --json-out "results/${ORIGIN}-${SCRIPT}-py${{ matrix.python-version }}-Linux.json"
+            done
+          done
+          ls -la results/
+
+      - name: Upload parity JSON results
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-results-linux-py${{ matrix.python-version }}
+          path: results/*.json
+          if-no-files-found: error
+          retention-days: 7
+
+  windows:
+    name: parity-windows (windows-2025, py ${{ matrix.python-version }})
+    runs-on: windows-2025
+    needs: [build]
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: parity-dist
+          path: parity-artifacts/
+
+      - name: Verify sha256 against manifest (fail closed)
+        run: |
+          python - <<'EOF'
+          import hashlib, json
+          from pathlib import Path
+          manifest = json.loads(Path("parity-artifacts/parity-manifest.json").read_text())
+          assert set(manifest) == {"commit_sha", "artifacts"}, manifest.keys()
+          for entry in manifest["artifacts"]:
+              assert set(entry) == {"filename", "sha256", "size_bytes"}, entry.keys()
+              p = Path("parity-artifacts") / entry["filename"]
+              assert "/" not in entry["filename"] and p.is_file(), f"missing artifact: {entry['filename']}"
+              digest = hashlib.sha256(p.read_bytes()).hexdigest()
+              assert digest == entry["sha256"], f"sha256 MISMATCH for {entry['filename']}"
+              assert p.stat().st_size == entry["size_bytes"], f"size MISMATCH for {entry['filename']}"
+              print(f"OK {entry['filename']} {digest}")
+          print(f"manifest commit_sha={manifest['commit_sha']}")
+          EOF
+
+      - name: Three venvs (HEAD wheel, HEAD sdist, PyPI 0.2.0) + harness matrix
+        run: |
+          mkdir -p results
+          for ORIGIN in wheel sdist pypi; do
+            VENV=".venv-$ORIGIN"
+            python -m venv "$VENV"
+            if [ -x "$VENV/Scripts/python.exe" ]; then VPY="$VENV/Scripts/python"; else VPY="$VENV/bin/python"; fi
+            "$VPY" -m pip install --upgrade pip
+            case "$ORIGIN" in
+              wheel) "$VPY" -m pip install ./parity-artifacts/*.whl ;;
+              sdist) "$VPY" -m pip install ./parity-artifacts/*.tar.gz ;;
+              pypi) "$VPY" -m pip install "emo-cyber==0.2.0" ;;
+            esac
+            for SCRIPT in verify_artifact cli_matrix mcp_stdio http_battery security_matrix package_resources; do
+              "$VPY" "scripts/runtime-parity/$SCRIPT.py" --origin "$ORIGIN" --json-out "results/${ORIGIN}-${SCRIPT}-py${{ matrix.python-version }}-Windows.json"
+            done
+          done
+          ls -la results/
+
+      - name: Upload parity JSON results
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-results-windows-py${{ matrix.python-version }}
+          path: results/*.json
+          if-no-files-found: error
+          retention-days: 7
