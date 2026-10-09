@@ -86,7 +86,7 @@ def main() -> int:
         line = srv.stdout.readline()
         info = json.loads(line)
         base = info["url"].rstrip("/")
-        url = base + "/mcp"
+        url = base if base.endswith("/mcp") else base + "/mcp"
         record("http.server.starts_localhost", base.startswith("http://127.0.0.1:"), base)
         time.sleep(0.5)
 
