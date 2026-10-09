@@ -89,7 +89,6 @@ include = [
   "templates",
   "examples",
   "scripts",
-  "reports",
   "LICENSE",
   "README.md",
   "CHANGELOG.md",

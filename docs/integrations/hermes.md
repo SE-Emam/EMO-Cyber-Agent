@@ -22,8 +22,8 @@ Exception: host binary presence via `--version` is `Environment-tested`
   - stdio `get_stdio_config()`: `{"mcpServers": {"emo-cyber-agent":
     {"command": "cyber-agent", "args": ["mcp"]}}}` (camelCase input form).
     Live persistence note: Hermes `v0.21.4` persists the same entry under
-    snake_case `mcp_servers` in `config.yaml` `Environment-tested` (source
-    `reports/development/POST-T020-G1-hermes.md`; see
+    snake_case `mcp_servers` in     `config.yaml` `Environment-tested` (evidence:
+    `docs/evidence/POST-T021-final-review.md` §§2, 8; see
     `HERMES_PERSISTED_CONFIG_KEY_NOTE`).
   - HTTP `get_http_config()`: `{"mcpServers": {"emo-cyber-agent":
     {"url": "http://localhost:8000/mcp", "transport": "streamable-http"}}}`;
@@ -122,6 +122,6 @@ From `hosts_hermes.TROUBLESHOOTING` (data only; behavior `Not-tested`):
   as in opencode.md `Supported`.
 - No Hermes version pinned or asserted compatible `Not-tested`; only binary
   presence `Environment-tested` (presence only). Live observation (not a
-  compat assertion): Hermes `v0.21.4` observed `Environment-tested` (source
-  `reports/development/POST-T020-G1-hermes.md` — stdio registration,
+  compat assertion): Hermes `v0.21.4` observed `Environment-tested` (evidence:
+  `docs/evidence/POST-T021-final-review.md` §§2, 8 — stdio registration,
   6/6 tool discovery, per-server filtering proven at the CLI layer).

@@ -111,7 +111,7 @@ def test_sdist_is_a_complete_source_distribution():
     with tarfile.open(SDIST) as t:
         names = t.getnames()
     prefixes = {n.split("/")[1] for n in names if n.count("/") >= 1 and len(n.split("/")) > 1}
-    for required in ("src", "docs", "tests", "templates", "examples", "scripts", "reports"):
+    for required in ("src", "docs", "tests", "templates", "examples", "scripts"):
         assert required in prefixes, f"sdist missing {required}/"
     for required in ("LICENSE", "README.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "pyproject.toml", "Makefile"):
         assert any(n.endswith(required) for n in names), f"sdist missing {required}"

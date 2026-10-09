@@ -23,7 +23,7 @@
 
 ## 0.1.0 — Final Release (ECA-T016)
 
-Release gate: `reports/development/ECA-T016-release-security-assessment.md`
+Release gate: `docs/evidence/ECA-T016-release-security-assessment.md`
 (decision PASS; manifest `release/release-manifest.json`).
 
 - MCP stdio adapter (6 high-level tools) and universal CLI (8 commands,
@@ -53,7 +53,8 @@ capabilities — by design, permanently.
 
 ## 0.1.0-rc1 — Release Candidate 1
 
-Delivered through ECA-T001…ECA-T016 (reports in `reports/development/`):
+Delivered through ECA-T001…ECA-T016 (per-task implementation record archived
+outside the public tree; release gate record in `docs/evidence/`):
 
 - Domain Core + state machine; PolicyEngine (default-deny) + ToolRegistry.
 - Repository + Supabase read-only integrations (scope-bound, redacted).

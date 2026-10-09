@@ -26,8 +26,8 @@ Single exception: host binary presence via `--version` is `Environment-tested`
 
 - Registration snippet (data only, from `hosts_opencode.get_registration_config()`)
   `Supported`, live shape observed against opencode `1.18.34`
-  `Environment-tested` (source
-  `reports/development/POST-T020-G1-opencode.md`):
+  `Environment-tested` (evidence:
+  `docs/evidence/POST-T021-final-review.md` §§2, 8):
   ```json
   {"mcp": {"emo-cyber-agent": {"type": "local", "command": ["cyber-agent", "mcp"], "enabled": true}}}
   ```
@@ -47,8 +47,8 @@ Single exception: host binary presence via `--version` is `Environment-tested`
   this set is `Not-tested`.
 - Server-side tool names pass through with an `emo-cyber-agent_<tool>`
   host prefix (e.g. `emo-cyber-agent_cyber_status`), observed against
-  opencode `1.18.34` `Environment-tested` (source
-  `reports/development/POST-T020-G1-opencode.md`); server-side `cyber_*`
+  opencode `1.18.34` `Environment-tested` (evidence:
+  `docs/evidence/POST-T021-final-review.md` §§2, 8); server-side `cyber_*`
   names are unchanged, the host adds the prefix at invocation `Supported`
   (`TOOL_NAME_MAPPING`, `OPENCODE_TOOL_NAMESPACE_NOTE`). End-to-end
   visibility beyond the observed `cyber_status` delegation is `Not-tested`.
@@ -184,8 +184,8 @@ From `hosts_opencode.TROUBLESHOOTING` (data only; host behavior `Not-tested`):
   `hosts.check_compatibility` plus a `Not-tested` provisional note
   `Supported`.
 - Live observation (not a compat assertion): opencode `1.18.34` observed
-  `Environment-tested` (source
-  `reports/development/POST-T020-G1-opencode.md` — real `mcp list` shows
+  `Environment-tested` (evidence:
+  `docs/evidence/POST-T021-final-review.md` §§2, 8 — real `mcp list` shows
   `emo-cyber-agent connected`, `cyber_status` delegated as
   `emo-cyber-agent_cyber_status`). No OpenCode version is asserted
   compatible here `Not-tested`. The only other environment observation is
