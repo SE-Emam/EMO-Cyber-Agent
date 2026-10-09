@@ -85,7 +85,12 @@ def main() -> int:
                 "match" if got.lower() == want.lower() else "MISMATCH (fail closed)",
             )
         # Extra-file check is advisory but recorded (wheels/sdists are the pinned set).
-        actual = {p.name for p in artifacts_dir.iterdir() if p.is_file()}
+        # Exclude the manifest itself: it ships inside --artifacts-dir but is not a pinned artifact.
+        try:
+            manifest_resolved = manifest.resolve()
+        except Exception:
+            manifest_resolved = manifest.absolute()
+        actual = {p.name for p in artifacts_dir.iterdir() if p.is_file() and p.resolve() != manifest_resolved}
         extras = sorted(actual - set(expected))
         record("artifacts.no_unpinned_extras", not extras, "none" if not extras else f"extras: {extras}")
     else:
