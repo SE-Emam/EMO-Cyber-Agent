@@ -1,5 +1,8 @@
 ![EMO-Cyber-Agent banner](assets/banner.png)
 
+[![CI](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/ci.yml)
+[![Runtime Parity](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/runtime-parity.yml/badge.svg)](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/runtime-parity.yml)
+
 # EMO-Cyber-Agent
 
 A portable, model-agnostic, governed cybersecurity subagent
@@ -153,6 +156,25 @@ compatible host. Full per-host guides live in `docs/integrations/`.
 Levels: Supported = config + mapping shipped; Contract Tested = in-repo
 contract tests; Environment Tested = live binary exercised (where available);
 otherwise Not Tested — see `docs/integrations/` per host.
+
+## Platform parity (evidence-first)
+
+Live runtime proof, not CI-smoke claims. Full per-platform reports live in
+`reports/development/POST-T021-*` (method: real runners, real installs,
+real CLI/MCP/HTTP/security batteries — green run
+[#37866150660](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/runs/37866150660)):
+
+| Platform | Status | Evidence |
+|---|---|---|
+| Linux (ubuntu-24.04, Python 3.11 + 3.14) | **Runtime PASS** — 234/234 checks ×2 combos (wheel + sdist + PyPI origins) | [run](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/runs/37866150660) · `POST-T021-linux-parity.md` |
+| Windows (windows-2025, Python 3.11 + 3.14) | **Runtime PASS** — 234/234 ×2 combos (live PowerShell session NOT-EXECUTED, documented gap) | [run](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/runs/37866150660) · `POST-T021-windows-parity.md` |
+| Android emulator (API 34, ARM64) via Termux | **PASS** — PyPI install + CLI/MCP/HTTP/security/E2E + independent review (verified working, not an officially supported platform) | `POST-T021-android-assessment.md` |
+| macOS (arm64) | **PASS** — full suite 2720 passed / 0 failed + live CLI/MCP checks | `POST-T021-regression.md` |
+
+Honestly open (never inflated to PASS): Pi/Jan native delegation and
+AnythingLLM adversarial-via-host are `ENVIRONMENT-BLOCKED` with reproducible
+reasons; test-key rotation is `LOW / OPEN` (operator step). See
+`POST-T021-gap-matrix.md` and `POST-T021-G2-platform-parity-review.md`.
 
 ## Limitations
 
