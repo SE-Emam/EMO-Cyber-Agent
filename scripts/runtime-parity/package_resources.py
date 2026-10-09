@@ -37,9 +37,9 @@ for mod, fn, label in [
     ("emo_cyber_agent.playbooks.library", "load_official_registry", "playbooks"),
     ("emo_cyber_agent.report_templates.library", "load_official_registry", "templates"),
     ("emo_cyber_agent.tools.packs.catalog", "load_official_tool_packs", "toolpacks"),
-    ("emo_cyber_agent.threat_intel.triage", None, "threat_intel"),
+    ("emo_cyber_agent.threat_intel.feed_triage", None, "threat_intel"),
     ("emo_cyber_agent.subagent.session", "SubagentSession", "subagent"),
-    ("emo_cyber_agent.core.checklists", None, "checklists"),
+    ("emo_cyber_agent.checklists", None, "checklists"),
 ]:
     try:
         m = __import__(mod, fromlist=["*"])
@@ -50,9 +50,9 @@ for mod, fn, label in [
     except Exception as e:
         probe(f"data.{label}", False, f"{type(e).__name__}: {e}")
 try:
-    from emo_cyber_agent.core.resources import official_catalog_path
-    schemas = list((Path(official_catalog_path()).rglob("*.json"))[:5])
-    probe("data.schemas.present", len(schemas) > 0, f"{len(schemas)} json files")
+    from importlib import resources as _ir
+    _schemas = [p for p in _ir.files("emo_cyber_agent.data.schemas").iterdir() if p.name.endswith(".json")]
+    probe("data.schemas.present", len(_schemas) >= 30, f"{len(_schemas)} json schemas")
 except Exception as e:
     probe("data.schemas.present", False, f"{type(e).__name__}: {e}")
 try:
