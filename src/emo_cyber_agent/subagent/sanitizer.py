@@ -197,8 +197,11 @@ def normalize(raw: str) -> str:
 
     Steps: NFKC → confusable fold (explicit Cyrillic/Greek→Latin map, not
     full UTS#39 — see ``_CONFUSABLE_MAP`` limits) → ANSI-escape removal →
-    control-char stripping (keeps ``\\n`` and ``\\t`` only). No truncation,
-    no authority redaction.
+    control-char stripping (keeps ``\\n`` and ``\\t`` only; any other
+    control/format char emits a single ``" "`` separator — collapsing runs
+    and suppressing it next to whitespace or string edges so ``\\r``/``\\x0b``/
+    ``\\x0c`` can no longer fuse tokens, while ``\\r\\n`` still folds to
+    ``\\n``). No truncation, no authority redaction.
     """
     text = validate_raw(raw)
     text = unicodedata.normalize("NFKC", text)
@@ -206,11 +209,22 @@ def normalize(raw: str) -> str:
         text = "".join(_CONFUSABLE_MAP.get(ch, ch) for ch in text)
     text = _ANSI_RE.sub("", text)
     cleaned: list[str] = []
-    for ch in text:
+    n = len(text)
+    for i, ch in enumerate(text):
         if ch in _ALLOWED_CONTROLS:
             cleaned.append(ch)
             continue
         if unicodedata.category(ch).startswith("C"):
+            # Separator only where deletion would fuse two content chars.
+            prev = cleaned[-1] if cleaned else ""
+            nxt = text[i + 1] if i + 1 < n else ""
+            if prev in ("", " ", "\n", "\t"):
+                continue
+            if nxt in ("", " ", "\n", "\t"):
+                continue
+            if nxt and unicodedata.category(nxt).startswith("C") and nxt not in _ALLOWED_CONTROLS:
+                continue
+            cleaned.append(" ")
             continue
         cleaned.append(ch)
     return "".join(cleaned)
