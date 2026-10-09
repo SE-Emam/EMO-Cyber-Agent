@@ -2,146 +2,110 @@
 
 [![CI](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/ci.yml)
 [![Runtime Parity](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/runtime-parity.yml/badge.svg)](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/runtime-parity.yml)
+[![PyPI](https://img.shields.io/pypi/v/emo-cyber.svg)](https://pypi.org/project/emo-cyber/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 # EMO-Cyber-Agent
 
-A portable, model-agnostic, governed cybersecurity subagent
-for code, applications, agents, prompts, MCP, and cloud security.
+**A portable, model-agnostic, governed cybersecurity subagent for code,
+applications, agents, prompts, MCP, and cloud security.**
 
-EMO-Cyber-Agent is designed to be installed once as a Python package and then invoked through:
+Install it once as a Python package, then hand it security work from any
+agent host, CI pipeline, or terminal. It audits read-only, backs every
+material claim with evidence, and verifies before it confirms — it never
+edits your code, never invents findings, and never confuses a model's
+guess with a security verdict.
 
-- MCP for agent hosts such as coding assistants and IDE agents.
-- CLI for humans, CI/CD, and agents that can execute commands.
-- Python API for embedding and automation.
+## Why governed security for agents
 
-The project is intentionally **model-agnostic**. Model weights, GPU/runtime deployment, and provider-specific infrastructure are out of scope for this repository. The core product is the security methodology, agent control loop, tool contracts, evidence model, policy enforcement, and stable interfaces.
+AI coding agents ship code fast — and every generated diff, prompt,
+dependency, and tool call is a new attack surface. Generic assistants
+will happily opine about security, but their answers are ungrounded,
+unverifiable, and bound to no policy. EMO-Cyber-Agent exists for the
+gap in between: a specialist subagent that owns the security workflow,
+runs deterministic checks around probabilistic reasoning, and returns
+findings your pipeline can actually act on.
 
-## Design goals
+## What it does
 
-1. Portable across agent hosts.
-2. Read-only by default.
-3. Evidence-first findings: every material claim must point to evidence.
-4. Security-specialist behavior: the host agent delegates security work; EMO owns the security workflow.
-5. Deterministic tools around probabilistic reasoning.
-6. Verification before escalation when safe and permitted.
-7. Strict separation between untrusted repository content and agent instructions.
-8. Stable JSON schemas so MCP, CLI, and Python API return the same result model.
-9. Pluggable tool adapters and model providers.
-10. No required dependency on a particular LLM, cloud, IDE, or repository platform.
+- **Scoped security audits** of a project tree (`quick`, `standard`, `deep`),
+  with focus areas (`auth`, `secrets`, `deps`, …).
+- **Focused reviews** of a target, **verification planning** for a
+  candidate finding (plans, never exploits), and **evidence-linked reports**
+  in JSON, JSONL, or Markdown.
+- **Threat-intel lookups** (leak monitor, feed triage, ATT&CK mapping —
+  defensive knowledge only, no network calls, no execution) via MCP.
+- **Stable JSON contracts** across CLI, MCP, and the Python API, so results
+  are machine-checkable in CI.
 
-## Non-goals
+## What it does not do
 
-- Building a general-purpose coding agent.
-- Bundling model weights.
-- Automatic production changes by default.
-- Replacing SAST, SCA, secret scanners, DAST, runtime security, or human security review.
-- Exploit development or offensive operation against systems without explicit authorization.
+- No auto-remediation and no production changes by default.
+- No exploit development and no offensive operations.
+- Not a replacement for SAST, SCA, secret scanners, DAST, runtime
+  security, or human security review.
+- No scores-as-verdicts: findings carry evidence and provenance, not ratings.
 
-## Repository map
+## Why it is different
+
+1. **Model-agnostic.** No weights, no provider lock-in. The product is the
+   methodology, control loop, tool contracts, and evidence model — bring
+   any model or run it model-free in CI.
+2. **Policy-enforced, not prompt-suggested.** A default-deny `PolicyEngine`
+   in Core decides; CLI and MCP are thin adapters that cannot widen
+   capabilities, whatever a prompt or tool description claims.
+3. **Evidence-first.** No material finding without evidence; tool outputs
+   are data, never instructions; repository content is untrusted by default.
+4. **Verification before confirmation.** Candidates become plans with
+   methods, locators, and rationale — confirmation requires evidence.
+5. **Read-only by default.** Destructive actions need an explicit
+   permission transition; progress is advisory-only and recovery is
+   bounded and fail-closed.
+
+## Architecture
 
 ```text
-EMO-Cyber-Agent/
-├── docs/                         # Specs, architecture, integrations, evidence
-├── src/emo_cyber_agent/          # Product source (Core + CLI/MCP adapters)
-├── tests/                        # Unit/contract/security/evaluation suites
-├── examples/                     # Integration examples
-├── scripts/                      # Developer and release utilities
-├── templates/                    # Official report/skill/task/playbook packs
-├── release/                      # Release manifests and checksums
-├── .github/workflows/            # CI, runtime-parity, and release pipelines
-├── pyproject.toml
-└── Makefile
+Host / CI / You ──▶ CLI · MCP (stdio + Streamable HTTP) · Python API
+                          │  thin adapters, no authority
+                          ▼
+                   Core: Policy → Tools → Evidence → Reasoning
+                              → Verification → Findings → Reporting
 ```
 
-## Development status
+Core owns every security decision. Deterministic tool adapters (argv-only,
+confined, secret-free execution) surround the reasoning loop; the evidence
+graph correlates deterministically; the finding lifecycle gates promotion.
+Details: `docs/02-architecture.md`, `docs/03-security-methodology.md`.
 
-Core engine (domain, policy, tools, evidence, reasoning, verification,
-findings, reporting) plus MCP and CLI adapters are implemented and tested
-according to `docs/16-implementation-plan.md`. Release history and gate
-records live in `CHANGELOG.md` and `docs/evidence/`.
-
-## Installation
+## Quick start
 
 ```bash
-pip install emo-cyber
+pip install emo-cyber            # requires Python >= 3.11
 cyber-agent --help
-```
-
-Optional isolation:
-
-```bash
-pipx install emo-cyber
+cyber-agent doctor               # presence checks; never prints secrets
+cyber-agent audit . --format json > result.json
 ```
 
 From source (developers):
 
 ```bash
-pip install -e '.[all]'   # package + MCP/HTTP/dev extras
+pip install -e '.[all]'
 ```
 
-## Quickstart
+## MCP and integrations
 
-```bash
-cyber-agent audit . --format json > result.json
-cyber-agent report --findings findings.json --audit-id <id> --format markdown
-cyber-agent mcp   # stdio server for MCP hosts (OpenCode, Hermes, pi, Cline, VS Code, …)
-```
-
-## Commands
-
-```text
-cyber-agent doctor                                  # operational presence checks (no secrets printed)
-cyber-agent audit <target> [--mode quick|standard|deep] [--focus a,b] [--format human|json]
-cyber-agent review <target> [--focus a,b] [--format human|json]
-cyber-agent verify --candidate cand.json --method <m> --kind <k> --locator <loc> --rationale <r> --audit-id <id>
-cyber-agent status <audit_id>                       # read-only; unknown audits report NOT_FOUND
-cyber-agent report --findings findings.json --audit-id <id> --format json|jsonl|markdown
-cyber-agent mcp                                     # MCP stdio server (thin adapter over Core)
-```
-
-Only implemented options exist — there are no `--shell`, `--exec`,
-`--grant`, `--sudo`, `--allow-write`, or `--bypass-policy` flags, and no
-`--github-token`-style secret flags (use environment/secret providers).
-
-## Output formats and exit codes
-
-- `--format json` emits machine-readable JSON on stdout; diagnostics go to
-  stderr, so `cyber-agent audit . --format json > result.json` stays clean.
-- Findings never change the exit code; command status and security results
-  are separate concerns.
-
-```text
-0 SUCCESS · 1 AUDIT/DOMAIN FAILURE · 2 INVALID INPUT · 3 POLICY DENIED ·
-4 SECURITY BLOCKED · 5 PROVIDER/TOOL UNAVAILABLE · 6 VERIFICATION
-INCONCLUSIVE · 7 INTERNAL ERROR · 130 interrupted (POSIX standard)
-```
-
-## CI example
-
-```bash
-cyber-agent audit . --format json > result.json
-python -c "import json; print(json.load(open('result.json'))['result']['status'])"
-```
-
-## Security model
-
-Read-only by default; repository content is untrusted data; no material
-finding without evidence; no destructive action without an explicit
-permission transition; MCP and CLI are thin adapters — Core decides,
-tools prove, verification confirms, reporting projects.
-
-Progress is advisory-only (never authorizes actions). Recovery is bounded
-and fail-closed (`POLICY_DENIED` / `INTEGRITY_FAILURE` never retry).
-Host-supplied context is untrusted until scope-bound by Core/Policy.
-
-## Host integration
-
-Register EMO once as an MCP server, then delegate security work from any
-compatible host. Full per-host guides live in `docs/integrations/`.
+Register once as an MCP server, then delegate from any compatible host:
 
 ```json
 { "mcpServers": { "emo-cyber-agent": { "command": "cyber-agent", "args": ["mcp"] } } }
 ```
+
+Seven tools (the last opt-in): `cyber_audit`, `cyber_review`,
+`cyber_verify`, `cyber_report`, `cyber_status`, `cyber_extensions`,
+`cyber_threat_intel`. Transports: stdio plus Streamable HTTP
+(localhost by default, with Host/Origin/session validation).
+Per-host guides: `docs/integrations/` (OpenCode, Pi, Hermes, Jan,
+AnythingLLM, generic MCP, delegation rules, security model).
 
 | Host | Status |
 |---|---|
@@ -155,6 +119,42 @@ compatible host. Full per-host guides live in `docs/integrations/`.
 Levels: Supported = config + mapping shipped; Contract Tested = in-repo
 contract tests; Environment Tested = live binary exercised (where available);
 otherwise Not Tested — see `docs/integrations/` per host.
+
+## Example workflow: an authorized audit, end to end
+
+```bash
+# 1. Check operational presence (no secrets printed).
+cyber-agent doctor
+
+# 2. Run a scoped, read-only audit; findings never change the exit code.
+cyber-agent audit ./my-service --mode standard --format json > audit.json
+python -c "import json; print(json.load(open('audit.json'))['result']['status'])"
+
+# 3. Request a verification plan for a candidate (input is never authorization).
+cyber-agent verify --candidate cand.json --method static-review \
+  --kind sast --locator src/auth/login.py:42 --rationale "unverified input reaches query" \
+  --audit-id <id-from-audit.json>
+
+# 4. Render the evidence-backed report for humans or the pipeline.
+cyber-agent report --findings findings.json --audit-id <id> --format markdown
+```
+
+Exit codes stay machine-readable and separate from findings:
+`0` success · `1` audit/domain failure · `2` invalid input ·
+`3` policy denied · `4` security blocked · `5` provider/tool unavailable ·
+`6` verification inconclusive · `7` internal error.
+
+## Commands
+
+```text
+cyber-agent doctor | audit | review | verify | status | report | extensions | mcp
+```
+
+`audit` takes `--mode quick|standard|deep`, `--focus a,b`,
+`--format human|json`, and `--output PATH`. Only implemented options
+exist — there are no `--shell`, `--exec`, `--grant`, `--sudo`,
+`--allow-write`, or `--bypass-policy` flags, and no secret-valued flags
+(use environment or secret providers).
 
 ## Platform parity (evidence-first)
 
@@ -198,7 +198,7 @@ verification precedes confirmation — see `docs/03-security-methodology.md`.
 - Specs and contracts: `docs/` (`02-architecture.md`, `05-mcp-interface.md`,
   `06-cli-interface.md`, `07-python-api.md`, `08-tool-contracts.md`).
 - Host guides: `docs/integrations/` (OpenCode, Pi, Hermes, Jan, AnythingLLM,
-  generic MCP, delegation, security model).
+  generic MCP, delegation rules, security model).
 - Threat model and guardrails: `docs/13-threat-model.md`,
   `docs/14-safety-guardrails.md`, `docs/policies/`.
 - Release provenance: `CHANGELOG.md` and `docs/evidence/`.
@@ -208,3 +208,7 @@ verification precedes confirmation — see `docs/03-security-methodology.md`.
 
 Do not open a public issue for a suspected vulnerability. Report it
 privately as described in `SECURITY.md`.
+
+## License
+
+Apache-2.0 — see `LICENSE`.

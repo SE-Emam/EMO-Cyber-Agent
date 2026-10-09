@@ -3,16 +3,16 @@
   "artifacts": {
     "sdist": {
       "name": "emo_cyber-0.2.1.tar.gz",
-      "sha256": "3095bad820f72f42b97d896e3a7c20da2a9cc44cd6a4b199dcd62754b05ce537",
-      "size": 930645
+      "sha256": "c937eaacd9942508cc708b182b4048f5345fd4b044b94035c67d8573064bf61b",
+      "size": 931125
     },
     "wheel": {
       "name": "emo_cyber-0.2.1-py3-none-any.whl",
-      "sha256": "6edcc64a5d638ef45ec9970d1c5632476b3f0387ec587e2b9fb34b79b1749c36",
-      "size": 755483
+      "sha256": "38b0d7e5e65c507e13e332596860ba46ea61fa6ec9baceba7e7a98ba64d8a0f7",
+      "size": 755726
     }
   },
-  "build_timestamp": "2026-10-09T03:47:22.127839+00:00",
+  "build_timestamp": "2026-10-09T04:10:04.692855+00:00",
   "build_tool": {
     "backend": "hatchling",
     "backend_version": "unknown",
@@ -106,7 +106,7 @@
     }
   },
   "evaluation_gate": "PASS",
-  "git_revision": "72e83683df59e0368720fcf3b18817ede4b7f233",
+  "git_revision": "6d8a9033ffa08c8867a5b7ea09409c29e2bbda73",
   "invariant_gate": "PASS",
   "platform": "Darwin-arm64",
   "project": "emo-cyber",
@@ -120,8 +120,8 @@
   "schema_result": "36/36",
   "schema_version": "1.0",
   "security_gate": "PASS",
-  "source_tree_digest": "545e086c68dbe7d52be61d00290fbe8a21b4027880bb7ea4f07b1bc0d3162190",
+  "source_tree_digest": "125e85400c5076b37ceffa79378c120bb29e83ee7293a7f207a82d746b855506",
   "test_count": 2681,
-  "test_result": "2675 passed, 6 skipped, 0 failed (local unit suite, hygiene pass)",
+  "test_result": "2675 passed, 6 skipped, 0 failed (local unit suite, marketing pass)",
   "version": "0.2.1"
 }
