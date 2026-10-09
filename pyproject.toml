@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "emo-cyber"
-version = "0.2.0"
+version = "0.2.1"
 description = "Portable, model-agnostic cybersecurity sub-agent exposed via MCP, CLI, and Python API."
 readme = "README.md"
 requires-python = ">=3.11"

@@ -22,7 +22,7 @@ from emo_cyber_agent.core.findings import SecurityFinding, is_reportable
 
 REPORT_VERSION = "1.0"
 REPORT_SCHEMA_VERSION = "1.0"
-EMO_VERSION = "0.2.0"
+EMO_VERSION = "0.2.1"
 
 _SEVERITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
 

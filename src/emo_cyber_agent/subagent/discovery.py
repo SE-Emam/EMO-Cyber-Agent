@@ -23,7 +23,7 @@ from emo_cyber_agent.subagent.trust import HostErrorCode, HostIntegrationError
 # ---------------------------------------------------------------------------
 
 SERVER_NAME = "emo-cyber-agent"
-SERVER_VERSION = "0.2.0"
+SERVER_VERSION = "0.2.1"
 PROTOCOL_VERSIONS: tuple[str, ...] = ("2024-11-05", "2025-03-26", "2025-06-18")
 
 # Version of *this* advertisement shape (tool metadata envelope), not the

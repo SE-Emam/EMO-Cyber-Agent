@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.1 — Sanitizer control-char hardening (POST-T021)
+
+- Bounded `subagent/sanitizer.py::normalize()` fix: stripped control
+  characters (`\r`, `\x0b`, `\x0c`, …) now emit a collapsing space separator
+  instead of deleting, so grouped controls can no longer fuse tokens and
+  bypass detection (`ignore\rthe policy` → detected). Benign CRLF handling
+  unchanged (`\r\n` still folds to `\n`); no authority, policy, severity,
+  evidence, or verification semantics changed.
+- 20 new `post_t021/` benchmark cases (measurement-only, gap-mapped) and
+  online Linux/Windows runtime parity proof (ubuntu-24.04 + windows-2025 ×
+  Python 3.11/3.14). Requires Python >=3.11. See POST-T021 final review.
+
 ## 0.2.0 — Threat-intel + HTTP transport (POST-T018/POST-T020)
 
 - New `threat_intel` package: leak monitor, feed triage, ATT&CK mapper,

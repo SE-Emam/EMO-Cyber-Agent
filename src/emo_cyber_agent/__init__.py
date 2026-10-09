@@ -7,7 +7,7 @@ Public API tiers (see ECA-T016 release notes):
 - INTERNAL (no compatibility promise): everything else under submodules.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 from .core.reporting import ReportService, generate_report
 from .core.service import SecurityAuditor
