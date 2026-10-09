@@ -5,7 +5,7 @@ invariants, schemas) and the release-specific artifact checks, then
 normalizes every result into release evidence. This module contains no
 security predicates of its own: every correctness or security decision
 stays with its owner suite (see the test ownership map in
-reports/development/ECA-T016-release-security-assessment.md).
+docs/evidence/ECA-T016-release-security-assessment.md).
 
 Usage:
     python scripts/release/gates.py                # run every gate

@@ -161,15 +161,28 @@ def test_license_changelog_security_docs_present():
 
 
 def test_development_report_inventory_complete():
-    dev = ROOT / "reports" / "development"
-    assert (dev / "00-project-reconnaissance.md").exists()
-    for n in range(1, 17):
-        matches = list(dev.glob(f"ECA-T{n:03d}*.md"))
-        if n == 15:
-            matches = matches or list((ROOT / "reports" / "security").glob("ECA-T015*.md"))
-        assert matches, f"missing report for ECA-T{n:03d}"
-    sec = ROOT / "reports" / "security"
-    assert (sec / "00-security-baseline.md").exists()
+    """Release-provenance inventory lives in docs/evidence/ (curated).
+
+    The per-task development diary (ECA-T* series) was retired from the
+    public tree by explicit repository-hygiene decision (archived outside
+    the checkout); what the release process requires is the gate/evidence
+    record set below — one canonical location, no diary.
+    """
+    evidence = ROOT / "docs" / "evidence"
+    for name in (
+        "ECA-T016-release-security-assessment.md",
+        "POST-T020-acceptance-assessment.md",
+        "POST-T021-final-review.md",
+        "POST-T021-targeted-closure-assessment.md",
+        "POST-T021-prerelease-assessment.md",
+        "POST-T021-release-execution.md",
+        "POST-T021-linux-parity.md",
+        "POST-T021-windows-parity.md",
+        "POST-T021-android-assessment.md",
+        "POST-T021-regression.md",
+        "POST-T021-invariants.md",
+    ):
+        assert (evidence / name).is_file(), f"missing release evidence: {name}"
 
 
 def test_packaged_schemas_match_source_schemas():
