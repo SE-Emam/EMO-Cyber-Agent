@@ -11,3 +11,4 @@ build/
 .ruff_cache/
 .DS_Store
 *.log
+parity-artifacts/
