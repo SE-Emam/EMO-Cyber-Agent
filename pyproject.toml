@@ -114,3 +114,6 @@ strict = true
 asyncio_mode = "auto"
 addopts = "-q"
 pythonpath = ["src"]
+markers = [
+  "contract_only: contract-level host coverage that skips unavailable host binaries",
+]

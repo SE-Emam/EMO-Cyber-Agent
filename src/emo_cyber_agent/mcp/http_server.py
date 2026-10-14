@@ -96,6 +96,18 @@ DEFAULT_SESSION_TTL_SECONDS = 3600
 SESSION_MISMATCH_STATUS = 440
 
 
+class _QuietThreadingHTTPServer(ThreadingHTTPServer):
+    """Threaded server that ignores expected client disconnect tracebacks."""
+
+    def handle_error(self, request: Any, client_address: Any) -> None:
+        import sys
+
+        error = sys.exc_info()[1]
+        if isinstance(error, (ConnectionError, TimeoutError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def _normalize_host(host_header: str) -> str:
     """Lowercased hostname without port; brackets stripped for IPv6."""
     value = (host_header or "").strip().lower()
@@ -241,7 +253,7 @@ class HttpMcpServer:
     def start(self, bind: str = "127.0.0.1", port: int = 0, *, allow_remote: bool = False) -> HttpMcpServer:
         _require_local_bind(bind, allow_remote=allow_remote)
         handler = _make_handler(self)
-        httpd = ThreadingHTTPServer((bind, port), handler)
+        httpd = _QuietThreadingHTTPServer((bind, port), handler)
         httpd.daemon_threads = True
         httpd.request_queue_size = 64
         httpd.timeout = self._request_timeout

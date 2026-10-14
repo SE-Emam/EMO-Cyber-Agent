@@ -1,50 +1,48 @@
 # Local Gitleaks Integration Audit
 
-**Status:** Bounded task complete; repository release readiness is not established.  
-**Scope:** Local Gitleaks evidence collection, its execution and policy boundary, domain/schema contracts, and the Python files changed for this integration.  
-**Constraints:** Offline only; no dependencies installed; no commits created.
+**Status:** Complete; repository quality and release gates pass.
+**Scope:** Local Gitleaks evidence collection, execution and policy boundary, domain/schema contracts, release artifacts, Docker execution, and the Python fixes recorded below.
+**Repository:** `EMO-Cyber-Agent` only.
+**Last verified:** 2026-10-14.
 
 ## Result
 
-The local Gitleaks integration runs against a repository target and returns redacted scanner observations with invocation provenance. The result remains `partial`; scanner observations are not promoted to EMO findings or assigned severities. Missing tools, caller-policy denial, timeout/execution errors, malformed or truncated output, and absent trusted scanner policies fail closed as partial results with a failure recorded.
+The local Gitleaks integration runs against a repository target and returns redacted scanner observations with invocation provenance. Scanner observations remain `partial` until promoted by the owning analysis pipeline; missing tools, caller-policy denial, timeout/execution errors, malformed or truncated output, and absent trusted scanner policies fail closed with a recorded failure.
 
-The subprocess boundary uses argv arrays, `shell=False`, a minimal environment, bounded stdout/stderr capture, and process-group termination on POSIX timeouts. The Gitleaks adapter explicitly requests full redaction, ignores repository-provided ignore/config policy, and uses packaged project-owned policy files. The API and schema changes reject unsupported audit modes and permission profiles and require findings to reference evidence.
+The subprocess boundary uses argv arrays, `shell=False`, a minimal environment, bounded stdout/stderr capture, and process-group termination on POSIX timeouts. The Gitleaks adapter requests full redaction, ignores repository-provided ignore/config policy, and uses packaged project-owned policy files. The API and schema changes reject unsupported audit modes and permission profiles and require findings to reference evidence.
 
-## Verification evidence
+## Current verification evidence
 
-- Live local API smoke scan of `.` with installed Gitleaks 8.30.1 completed: `partial`, no tool failures, 62 redacted evidence observations. No secret values were printed. The partial status is expected because full control coverage and finding analysis are not implemented.
-- Focused offline tests: **132 passed, 2 skipped** across scanner, CLI, toolchain, hardening, and tool-pack security suites.
-- Changed/new Python files: Ruff passed; strict mypy passed for all six changed production modules.
-- Schema validator: all 36 listed schemas passed.
-- `git diff --check`: passed.
+- `PYTHONWARNINGS=error::RuntimeWarning PATH="$PWD/.venv/bin:$PATH" make check` passed with Ruff clean, strict mypy clean for 253 source files, **2738 passed, 6 skipped**, and all 36 schemas valid. The check was run with local-socket permission enabled so HTTP transport tests executed.
+- Docker test image verification passed: mypy for 253 source files, the complete unit suite, and schema validation. Runtime hardening passed under UID/GID 10001 with a read-only root filesystem, dropped capabilities, disabled networking, and writable `/tmp` tmpfs.
+- Release artifacts rebuilt: `dist/emo_cyber-0.2.1-py3-none-any.whl` and `dist/emo_cyber-0.2.1.tar.gz`; `release/release-manifest.json` and `release/SHA256SUMS` regenerated.
+- Complete release gates passed with `release_status: PASS`: security **1266 passed, 3 skipped**, evaluation **116 passed**, package **13 passed**, installation **6 passed**, interface parity/smoke **6 passed**, artifact integrity **10 passed**, invariants **1 passed**, and schemas **36/36**.
+- No secret values or access tokens were written to repository files or output.
 
-## Remaining gates
+## Evidence boundaries
 
-- `make check` does **not** pass. The latest full Ruff recapture reports **740 diagnostics** across `src`, `tests`, and `scripts`. The six integration production modules and originally changed/new test paths passed their scoped Ruff checks; ongoing remediation is recorded below. Remaining global findings are spread across legacy code, primarily broad exception handling, assertions against `Exception`, import ordering, UTC datetime usage, and unused imports.
-- Full mypy reports **151 errors in 51 files** (253 source files checked). The six changed production modules pass independently. Existing errors include registry type annotations, untyped calls, missing third-party stubs, and mismatched request/enum types outside the scoped modules.
-- A broader offline unit run completed with two failures in `tests/unit/test_e2e_post_t020.py::test_s13_http_transport_call` and `::test_s14_http_auth_failure_fail_closed`: both fail when the environment denies binding a localhost socket (`PermissionError: [Errno 1] Operation not permitted`). These are environment-gated live HTTP tests, not failures in the Gitleaks integration. The test run also emitted two existing unawaited-coroutine warnings in progress tests.
-- Release smoke tests that create fresh environments could not seed from PyPI because network/DNS access was unavailable. They remain unverified; no retry or dependency download was attempted.
-- Wheel/sdist and clean-install checks remain unverified because the local build tooling is unavailable and installation would require fetching packages.
+A sandboxed attempt to run the full suite without socket permission produced only environment-level loopback bind failures; it was not used as the release result. The authorized rerun passed all HTTP tests. The generated `release/gate-results.json` records the machine-readable PASS decision.
 
 ## Handoff
 
-The scanner integration and its scoped checks are complete. This report does not certify EMO-Cyber as release-ready. The repository-wide lint/typecheck debt and environment-dependent HTTP/release checks must be cleared or run in an authorized environment before claiming that `make check` or release gates pass.
+EMO-Cyber-Agent is ready for delivery from the tested working tree. The remediation history below is retained for auditability; later verification entries supersede earlier interim gate counts.
+
 
 ## Quality-gate remediation log
 
 ### Batch 1 — unused unpacked values (RUF059)
 
-**Affected files:** `tests/unit/test_correlation.py`, `tests/unit/test_verification.py`.  
-**Planned edit:** Rename only intentionally unused unpacked return values with leading underscores; preserve tuple positions and test behavior.  
-**Before-edit baseline:** `.venv/bin/ruff check src tests scripts --select RUF059 --output-format concise` reported 37 findings total; these files account for seven. Focused baseline `.venv/bin/pytest -o addopts= -q tests/unit/test_correlation.py tests/unit/test_verification.py` passed **62 tests**.  
+**Affected files:** `tests/unit/test_correlation.py`, `tests/unit/test_verification.py`.
+**Planned edit:** Rename only intentionally unused unpacked return values with leading underscores; preserve tuple positions and test behavior.
+**Before-edit baseline:** `.venv/bin/ruff check src tests scripts --select RUF059 --output-format concise` reported 37 findings total; these files account for seven. Focused baseline `.venv/bin/pytest -o addopts= -q tests/unit/test_correlation.py tests/unit/test_verification.py` passed **62 tests**.
 **After-edit evidence:** Ruff on those files with `--select RUF059` passed; the same focused tests passed **62 tests**. The first verification run exposed three accidentally renamed values that the assertions consumed; those names were restored before the successful final run. Final edits only underscore unused tuple bindings.
 
 **Review:** The read-only diagnostic review grouped RUF059 as safe when the value is truly unused; it did not flag these test bindings as intentional API assertions. Manual inspection confirmed no removed assertion dependency after the final passing test run.
 
 ### Batch 2 — release artifact verifier syntax
 
-**Affected file:** `scripts/release/verify_artifacts.py`.  
-**Planned edit:** Replace the invalid shell-style `mkdir -p` line reported at line 182 with equivalent Python directory creation; preserve the script's behavior and avoid shell execution.  
+**Affected file:** `scripts/release/verify_artifacts.py`.
+**Planned edit:** Replace the invalid shell-style `mkdir -p` line reported at line 182 with equivalent Python directory creation; preserve the script's behavior and avoid shell execution.
 **Before-edit baseline:** `.venv/bin/python -m py_compile scripts/release/verify_artifacts.py` failed with `SyntaxError` at line 182. There is no test targeting this script directly. A trial run of artifact and manifest release tests had six passes and seven failures because the expected `dist/emo_cyber-0.2.1` wheel/sdist are absent; these are artifact-dependent release checks, not a suitable focused test for this syntax change.
 **After-edit evidence:** Python compilation passed after changing the line to `markdown_path.parent.mkdir(parents=True, exist_ok=True)`. Focused manifest identity tests passed **2/2**. Full Ruff on the script still reports 32 other findings; they are tracked separately for a bounded lint batch. The read-only reviewer independently identified this malformed line as a true blocker and recommended the same bounded repair.
 
@@ -54,9 +52,9 @@ The scanner integration and its scoped checks are complete. This report does not
 
 ### Batch 3 — release verifier repository root
 
-**Affected files:** `scripts/release/verify_artifacts.py`, `scripts/release/verify_artifacts_final.py`, and new `tests/unit/test_release_script_roots.py`.  
-**Change:** Both scripts now set `REPO_ROOT = SCRIPT_DIR.parent.parent`. The regression test copies each script and synthetic wheel/sdist into a temporary repository, invokes it from an unrelated cwd, and checks the JSON and Markdown reports are created under the temporary repository, with no nested output under `scripts/release`.  
-**Verification:** `py_compile` passed for both scripts and the test. The root regression and two manifest identity tests passed **3/3**. No repository dist/report outputs were created.  
+**Affected files:** `scripts/release/verify_artifacts.py`, `scripts/release/verify_artifacts_final.py`, and new `tests/unit/test_release_script_roots.py`.
+**Change:** Both scripts now set `REPO_ROOT = SCRIPT_DIR.parent.parent`. The regression test copies each script and synthetic wheel/sdist into a temporary repository, invokes it from an unrelated cwd, and checks the JSON and Markdown reports are created under the temporary repository, with no nested output under `scripts/release`.
+**Verification:** `py_compile` passed for both scripts and the test. The root regression and two manifest identity tests passed **3/3**. No repository dist/report outputs were created.
 **Independent review:** Passed; the reviewer identified both root assignments as incorrect and confirmed the correction/test strategy.
 
 ### Batch 4 — Ruff I001 in release verifiers
@@ -85,15 +83,15 @@ Latest full Ruff recapture after Batch 8: **768 diagnostics** (including 77 I001
 
 ### Batch 9 — I001 in evaluation modules
 
-**Affected files:** `src/emo_cyber_agent/evaluation/__init__.py`, `datasets.py`, `ground_truth.py`, `oracle.py`, and `sut.py`.  
-**Planned edit:** Apply only Ruff’s I001 fix in these five files, inspect import-only diffs, then run the evaluation runner, e2e, and SUT tests.  
+**Affected files:** `src/emo_cyber_agent/evaluation/__init__.py`, `datasets.py`, `ground_truth.py`, `oracle.py`, and `sut.py`.
+**Planned edit:** Apply only Ruff’s I001 fix in these five files, inspect import-only diffs, then run the evaluation runner, e2e, and SUT tests.
 **Before-edit baseline:** `ruff check src --select I001` currently reports 37 source blocks; these files account for five. `test_evaluation_runner.py`, `test_evaluation_e2e.py`, and `test_evaluation_sut.py` passed **43 tests**.
 **After-edit evidence:** Ruff’s I001-only autofix resolved five import blocks; scoped I001 passed. Diff inspection shows import-order/wrapping only, including one group-order adjustment in `evaluation/sut.py`; no values or logic changed. The pre-edit and post-edit evaluation suites passed **43/43**.
 
 ### Batch 10 — I001 in extension modules
 
-**Affected files:** `src/emo_cyber_agent/extensions/__init__.py`, `catalog.py`, `compatibility.py`, `loader.py`, `registry.py`, and `validator.py`.  
-**Planned edit:** Apply only Ruff I001 in these six modules, inspect diffs, and run extension/security focused tests.  
+**Affected files:** `src/emo_cyber_agent/extensions/__init__.py`, `catalog.py`, `compatibility.py`, `loader.py`, `registry.py`, and `validator.py`.
+**Planned edit:** Apply only Ruff I001 in these six modules, inspect diffs, and run extension/security focused tests.
 **Before-edit baseline:** Source Ruff I001 flagged six import blocks in these modules. The extension registry, provenance, security, adversarial, compatibility, core extensions, and discovery suites passed **178 tests**.
 **Change:** Ruff's I001-only autofix changed import ordering/grouping in the six modules. Manual diff inspection confirmed import blocks only; no executable statements changed.
 **After-edit evidence:** Scoped Ruff I001 across `src/emo_cyber_agent/extensions` passed; the seven focused extension suites passed **178/178**.
@@ -644,10 +642,14 @@ Runtime hardening verification also passed: the container reported UID/GID `1000
 
 ### Final quality and release closure (2026-10-14)
 
-Completed the remaining repository-wide quality debt and release corrections. Ruff now reports zero diagnostics across `src`, `tests`, and `scripts`; strict mypy passes all 253 source files; Python compilation and `git diff --check` pass; schema validation passes all 36 schemas. The full unit suite passes with 2687 tests passed and 6 skipped.
+Completed the remaining repository-wide quality debt and release corrections. Ruff now reports zero diagnostics across `src`, `tests`, and `scripts`; strict mypy passes all 253 source files; Python compilation and `git diff --check` pass; schema validation passes all 36 schemas. The full project suite passes with 2738 tests passed and 6 skipped.
 
 The installed-package catalog resolver was corrected to derive official task and playbook paths from `official_catalog_path()`, which fixes wheel-only loading of official skill packs. Release artifacts were rebuilt from the current tree and `release/release-manifest.json` plus `release/SHA256SUMS` were regenerated.
 
 Docker verification passes after rebuild: `make docker-test` and `make docker-unit` complete with Ruff, mypy, the full unit suite, and schema validation. The hardened runtime `cyber-agent doctor` exits successfully under UID/GID 10001, read-only root filesystem, dropped capabilities, and disabled networking.
 
-The release suite passes in an elevated network-enabled environment after artifact regeneration. This includes clean virtual-environment installation, console and MCP entry points, packaged resources, manifest/hash integrity, and release smoke tests. Only non-blocking pytest warnings remain for the existing `contract_only` marker and two unawaited coroutine warnings in progress tests.
+The release suite passes in an elevated network-enabled environment after artifact regeneration. This includes clean virtual-environment installation, console and MCP entry points, packaged resources, manifest/hash integrity, and release smoke tests. The `contract_only` marker is registered and the coroutine lifecycle warnings are resolved; no RuntimeWarning is emitted under the strict warning gate.
+
+### Latest verification closure — 2026-10-14
+
+The final working tree fixes close the remaining runtime quality warnings: pytest now registers the `contract_only` marker, CLI audit/review closes awaitables when the async runner aborts, and the MCP HTTP server suppresses only expected client disconnect/timeout tracebacks while preserving unexpected error reporting. Ruff, strict mypy, Docker checks, schema validation, the full test suite, and all release gates pass as recorded above.

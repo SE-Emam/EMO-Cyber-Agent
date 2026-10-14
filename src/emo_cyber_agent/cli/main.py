@@ -111,6 +111,23 @@ def _emit(text: str, output: str | None) -> None:
         typer.echo(text)
 
 
+def _run_async(awaitable: Any) -> Any:
+    """Run an awaitable and close it if the runner aborts before awaiting it.
+
+    This keeps cancellation and test-time runner failures from leaking an
+    unawaited coroutine warning while preserving the original exception.
+    """
+    import asyncio
+
+    try:
+        return asyncio.run(awaitable)
+    except BaseException:
+        close = getattr(awaitable, "close", None)
+        if callable(close):
+            close()
+        raise
+
+
 class _CliFailure(Exception):
     def __init__(self, code: int, message: str):
         super().__init__(message)
@@ -345,7 +362,6 @@ def audit(
     output: str | None = typer.Option(None, "--output", help="Write result to path instead of stdout"),
 ) -> None:
     """Run a scoped, read-only security audit via Core. Findings never affect the exit code."""
-    import asyncio
     import json as _js
 
     from emo_cyber_agent.core.service import FoundationSecurityAuditor
@@ -359,7 +375,7 @@ def audit(
             raise _fail_silent("target is required")
         auditor = FoundationSecurityAuditor()
         try:
-            result = asyncio.run(auditor.audit(target=target.strip(), mode=mode, permission_profile="read_only", focus=[f.strip() for f in (focus or "").split(",") if f.strip()]))
+            result = _run_async(auditor.audit(target=target.strip(), mode=mode, permission_profile="read_only", focus=[f.strip() for f in (focus or "").split(",") if f.strip()]))
         except UNEXPECTED_EXCEPTION as e:
             raise _map_core_error(e)
         data = result.model_dump(mode="json")
@@ -379,7 +395,6 @@ def review(
     output: str | None = typer.Option(None, "--output", help="Write result to path instead of stdout"),
 ) -> None:
     """Run a focused, read-only security review via Core."""
-    import asyncio
     import json as _js
 
     from emo_cyber_agent.core.service import FoundationSecurityAuditor
@@ -391,7 +406,7 @@ def review(
             raise _fail_silent("target is required")
         auditor = FoundationSecurityAuditor()
         try:
-            result = asyncio.run(auditor.review(target=target.strip(), focus=[f.strip() for f in (focus or "").split(",") if f.strip()]))
+            result = _run_async(auditor.review(target=target.strip(), focus=[f.strip() for f in (focus or "").split(",") if f.strip()]))
         except UNEXPECTED_EXCEPTION as e:
             raise _map_core_error(e)
         data = result.model_dump(mode="json")
