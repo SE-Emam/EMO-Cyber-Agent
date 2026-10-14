@@ -11,9 +11,16 @@ UNEXPECTED_EXCEPTION: type[Exception] = Exception
 
 import os
 import shutil
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from emo_cyber_agent.core.contracts import PolicyEngine, SecurityAuditor
+from emo_cyber_agent.core.control_catalog import (
+    CATALOG_CONTROLS,
+    CATALOG_NOTES,
+    build_secret_exposure_finding,
+    catalog_summary,
+)
 from emo_cyber_agent.domain.models import (
     AuditJob,
     AuditMode,
@@ -21,6 +28,7 @@ from emo_cyber_agent.domain.models import (
     AuditResultStatus,
     Coverage,
     EvidenceItem,
+    Finding,
     PermissionProfile,
 )
 
@@ -106,9 +114,12 @@ class FoundationSecurityAuditor(SecurityAuditor):
     ) -> AuditResult:
         """Run a full or scoped security audit.
 
-        Collect local Gitleaks observations through the strict tool boundary.
-        This is evidence collection only: results remain partial until the
-        finding classification and full coverage workflow is implemented.
+        Collect local Gitleaks observations through the strict tool boundary,
+        then classify them under control catalog ``emo-controls-v1``: every
+        scanner observation becomes a suspected high-severity finding linked
+        to its evidence. The audit is ``completed`` only when every catalog
+        control evaluated successfully; any gap stays ``partial`` (fail
+        closed). ``review`` and ``verify`` remain partial stubs.
         """
         job = AuditJob(
             target=target,
@@ -119,6 +130,8 @@ class FoundationSecurityAuditor(SecurityAuditor):
         scanner_runs: list[dict[str, Any]] = []
         evidence: list[dict[str, Any]] = []
         failures: list[str] = []
+        evaluated_controls: list[str] = []
+        classified_findings: list[Finding] = []
         coverage_notes = [
             "partial-evidence-collection-only",
             "semgrep-not-run-until-offline-rule-configuration-is-verified",
@@ -219,7 +232,7 @@ class FoundationSecurityAuditor(SecurityAuditor):
                                     parse=adapter.parse,
                                     timeout_s=120,
                                 )
-                            for observation in parsed["observations"]:
+                            for index, observation in enumerate(parsed["observations"]):
                                 fields = observation_to_evidence_fields(
                                     observation,
                                     audit_id=job.id,
@@ -243,6 +256,17 @@ class FoundationSecurityAuditor(SecurityAuditor):
                                     },
                                 )
                                 evidence.append(evidence_item.model_dump(mode="json"))
+                                if invocation.status.value == "completed":
+                                    classified_findings.append(
+                                        build_secret_exposure_finding(
+                                            observation_rule=observation.rule_id,
+                                            locator=fields["locator"],
+                                            content_digest=fields["content_digest"],
+                                            evidence_item=evidence_item,
+                                            audit_id=job.id,
+                                            index=index,
+                                        )
+                                    )
                             scanner_runs.append({
                                 "tool": "gitleaks",
                                 "version": native_version,
@@ -251,6 +275,8 @@ class FoundationSecurityAuditor(SecurityAuditor):
                                 "observation_count": parsed["count"],
                                 "result_digest": parsed["result_digest"],
                             })
+                            if invocation.status.value == "completed":
+                                evaluated_controls.append("C-001")
                         except ExecutionError:
                             failures.append("gitleaks: scan failed, was denied, or output was incomplete")
                             scanner_runs.append({"tool": "gitleaks", "status": "failed", "observation_count": 0})
@@ -259,6 +285,38 @@ class FoundationSecurityAuditor(SecurityAuditor):
             # into reports; it may contain secrets or hostile content.
             failures.append(f"local scanner collection failed: {type(exc).__name__}")
             scanner_runs.append({"tool": "gitleaks", "status": "failed", "observation_count": 0})
+
+        catalog_complete = (
+            not failures
+            and sorted(evaluated_controls) == sorted(CATALOG_CONTROLS)
+        )
+        if catalog_complete:
+            result = AuditResult(
+                audit_id=job.id,
+                status=AuditResultStatus.COMPLETED,
+                target=target,
+                mode=AuditMode(mode),
+                permission_profile=PermissionProfile(permission_profile),
+                coverage=Coverage(
+                    controls_total=len(CATALOG_CONTROLS),
+                    controls_evaluated=len(evaluated_controls),
+                    controls_not_evaluated=0,
+                    notes=list(CATALOG_NOTES),
+                ),
+                findings=classified_findings,
+                tool_failures=failures,
+                limitations=[
+                    "Findings are suspected single-scanner observations under control catalog emo-controls-v1 (C-001 secret-exposure via Gitleaks); verification is required before confirmation.",
+                    "Semgrep, Trivy, and OSV-Scanner are out of catalog v1 scope; absence of findings covers C-001 only.",
+                ],
+                metadata={
+                    "scanner_runs": scanner_runs,
+                    "evidence": evidence,
+                    "control_catalog": catalog_summary(),
+                },
+                completed_at=datetime.now(UTC).isoformat(),
+            )
+            return result
 
         result = AuditResult(
             audit_id=job.id,
@@ -336,7 +394,7 @@ class FoundationSecurityAuditor(SecurityAuditor):
         """Return runtime capability status without exposing credentials."""
         return {
             "status": "foundation",
-            "version": "0.2.2",
+            "version": "0.3.0",
             "policy_engine": type(self._policy_engine).__name__,
             "domain_models_available": True,
             "capabilities": ["audit", "review", "verify", "doctor"],

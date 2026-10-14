@@ -40,9 +40,12 @@ def test_audit_runs_local_gitleaks_and_returns_redacted_evidence(tmp_path):
 
     result = asyncio.run(auditor.audit(str(tmp_path)))
 
-    assert result.status == "partial"
-    assert result.completed_at is None
-    assert result.coverage.controls_evaluated == 0
+    assert result.status == "completed"
+    assert result.completed_at is not None
+    assert result.coverage.controls_total == 1
+    assert result.coverage.controls_evaluated == 1
+    assert result.coverage.controls_not_evaluated == 0
+    assert "control-catalog-emo-controls-v1" in result.coverage.notes
     run = result.metadata["scanner_runs"][0]
     assert run["tool"] == "gitleaks" and run["version"] == "8.30.1"
     assert run["status"] == "completed" and run["observation_count"] == 1
@@ -50,7 +53,14 @@ def test_audit_runs_local_gitleaks_and_returns_redacted_evidence(tmp_path):
     evidence_json = json.dumps(result.metadata["evidence"])
     assert "SUPERSECRETVALUE999" not in evidence_json
     assert "ghp_REALTOKEN123" not in evidence_json
-    assert result.findings == []  # observations do not get severity guessed into findings
+    assert len(result.findings) == 1  # one observation -> one suspected finding
+    finding = result.findings[0]
+    assert finding.severity == "high" and finding.status == "suspected"
+    assert finding.confidence == 0.75
+    assert finding.evidence_ids and finding.id
+    findings_json = json.dumps([f.model_dump(mode="json") for f in result.findings])
+    assert "SUPERSECRETVALUE999" not in findings_json
+    assert "ghp_REALTOKEN123" not in findings_json
     assert len(port.requests) == 2
     assert port.requests[1].argv[0] == os.path.realpath("/opt/homebrew/bin/gitleaks")
     assert "--redact=100" in port.requests[1].argv

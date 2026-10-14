@@ -26,9 +26,16 @@ async def main():
     assert issubclass(FoundationSecurityAuditor, SecurityAuditor)
     auditor = FoundationSecurityAuditor()
     result = await auditor.audit(target='PROBE_TARGET', mode='quick', permission_profile='read_only')
-    assert result.status == 'partial', result.status
-    assert result.completed_at is None
-    assert result.coverage.controls_evaluated == 0
+    # Terminal state follows scanner availability in the install venv
+    # (completed with gitleaks, partial without); either must be coherent.
+    assert str(result.status) in ('completed', 'partial'), result.status
+    if str(result.status) == 'completed':
+        assert result.completed_at is not None
+        assert result.coverage.controls_total == 1
+        assert result.coverage.controls_evaluated == 1
+    else:
+        assert result.completed_at is None
+        assert result.coverage.controls_evaluated == 0
     assert result.limitations
     doctor = await auditor.doctor()
     assert isinstance(doctor, dict) and doctor, 'doctor must return a mapping'

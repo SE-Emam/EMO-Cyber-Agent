@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0 — Audit completion engine (control catalog v1)
+
+- New versioned control catalog `emo-controls-v1` (`core/control_catalog.py`):
+  `C-001 secret-exposure` runs Gitleaks over the target; every observation
+  becomes a `suspected` `high`-severity finding (CWE-798) linked to its
+  redacted evidence, confidence `0.75` (single scanner, uncorroborated).
+- `audit` now returns `completed` with `completed_at`, `coverage` 1/1, and
+  classified findings when every catalog control evaluates; any gap
+  (unavailable/denied/failed scanner, truncated output, policy denial)
+  stays `partial` with the previous fail-closed behavior unchanged.
+- `review` and `verify` remain partial stubs. Semgrep, Trivy, and
+  OSV-Scanner are out of catalog v1 scope and recorded as such.
+- Verified: ruff clean, mypy strict clean, full suite green, 36/36 schemas.
+
 ## 0.2.2 — Runtime quality warnings closure
 
 - Closed unawaited-coroutine warning via `_run_async()` in

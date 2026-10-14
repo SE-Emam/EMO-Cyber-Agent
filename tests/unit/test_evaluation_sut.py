@@ -374,7 +374,10 @@ def test_cli_adapter_runs_audit_in_process():
     assert result.outputs["command"] == "audit"
     assert result.outputs["exit_code"] == 0
     assert result.outputs["permission_profile"] == "read_only"
-    assert result.outputs["status"] == "partial"
+    # Audit completion depends on local scanner availability (completed with
+    # gitleaks, partial without); the adapter must surface either terminal
+    # state coherently, never invent one.
+    assert result.outputs["status"] in ("completed", "partial")
     assert result.outputs["mode"] == "standard"
 
 
@@ -433,7 +436,9 @@ def test_mcp_adapter_calls_cyber_audit_in_process():
     assert result.outputs["interface"] == "mcp"
     assert result.outputs["tool"] == "cyber_audit"
     assert result.outputs["permission_profile"] == "read_only"
-    assert result.outputs["status"] == "partial"
+    # See test_cli_adapter_runs_audit_in_process: terminal state follows the
+    # environment's scanner availability.
+    assert result.outputs["status"] in ("completed", "partial")
 
 
 # ------------------------------------------------------------------ projection
