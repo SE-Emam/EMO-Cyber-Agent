@@ -1,0 +1,148 @@
+{
+  "blocked_by": [],
+  "evaluated_at": "2026-10-14T00:43:55.841634+00:00",
+  "gates": {
+    "artifact-integrity": {
+      "details": {
+        "output_tail": "10 passed in 3.44s",
+        "suites": [
+          "tests/release/test_release_integrity.py",
+          "tests/release/test_release_manifest.py"
+        ]
+      },
+      "gate": "artifact-integrity",
+      "status": "PASS",
+      "summary": "10 passed in 3.44s"
+    },
+    "evaluation": {
+      "details": {
+        "output_tail": "116 passed in 2.19s",
+        "suites": [
+          "tests/unit/test_evaluation_spec.py",
+          "tests/unit/test_evaluation_datasets.py",
+          "tests/unit/test_evaluation_sut.py",
+          "tests/unit/test_evaluation_oracles_metrics_gates.py",
+          "tests/unit/test_evaluation_runner.py",
+          "tests/unit/test_evaluation_e2e.py"
+        ]
+      },
+      "gate": "evaluation",
+      "status": "PASS",
+      "summary": "116 passed in 2.19s"
+    },
+    "install": {
+      "details": {
+        "output_tail": "6 passed in 12.97s",
+        "suites": [
+          "tests/release/test_installation.py"
+        ]
+      },
+      "gate": "install",
+      "status": "PASS",
+      "summary": "6 passed in 12.97s"
+    },
+    "interface-parity": {
+      "details": {
+        "output_tail": "6 passed in 9.59s",
+        "suites": [
+          "tests/release/test_release_smoke.py"
+        ]
+      },
+      "gate": "interface-parity",
+      "status": "PASS",
+      "summary": "6 passed in 9.59s"
+    },
+    "invariants": {
+      "details": {
+        "output_tail": "1 passed in 0.13s",
+        "suites": [
+          "tests/unit/test_hardening.py::test_invariant_regression_matrix"
+        ]
+      },
+      "gate": "invariants",
+      "status": "PASS",
+      "summary": "1 passed in 0.13s"
+    },
+    "package": {
+      "details": {
+        "output_tail": "13 passed in 1.34s",
+        "suites": [
+          "tests/release/test_build.py",
+          "tests/release/test_artifacts.py"
+        ]
+      },
+      "gate": "package",
+      "status": "PASS",
+      "summary": "13 passed in 1.34s"
+    },
+    "schemas": {
+      "details": {
+        "count": 36
+      },
+      "gate": "schemas",
+      "status": "PASS",
+      "summary": "36/36 schemas valid"
+    },
+    "security": {
+      "details": {
+        "output_tail": "1266 passed, 3 skipped in 32.58s",
+        "suites": [
+          "tests/unit/test_hardening.py",
+          "tests/unit/test_toolchain.py",
+          "tests/unit/test_repository.py",
+          "tests/unit/test_correlation.py",
+          "tests/unit/test_findings.py",
+          "tests/unit/test_reasoning.py",
+          "tests/unit/test_mcp_security.py",
+          "tests/unit/test_agent_security.py",
+          "tests/unit/test_agent_security_adversarial.py",
+          "tests/unit/test_agent_security_isolation.py",
+          "tests/unit/test_attack_surface.py",
+          "tests/unit/test_verification.py",
+          "tests/unit/test_verification_adapters.py",
+          "tests/unit/test_verification_adversarial.py",
+          "tests/unit/test_verification_regression.py",
+          "tests/unit/test_verification_security.py",
+          "tests/unit/test_verification_adapter_contract.py",
+          "tests/unit/test_verification_strategies.py",
+          "tests/unit/test_security_knowledge.py",
+          "tests/unit/test_security_knowledge_adversarial.py",
+          "tests/unit/test_security_knowledge_isolation.py",
+          "tests/unit/test_security_knowledge_regression.py",
+          "tests/unit/test_extensions.py",
+          "tests/unit/test_extension_adversarial.py",
+          "tests/unit/test_extension_compatibility.py",
+          "tests/unit/test_extension_discovery.py",
+          "tests/unit/test_extension_provenance.py",
+          "tests/unit/test_extension_registry.py",
+          "tests/unit/test_extension_security.py",
+          "tests/unit/test_evaluation_spec.py",
+          "tests/unit/test_evaluation_datasets.py",
+          "tests/unit/test_evaluation_sut.py",
+          "tests/unit/test_evaluation_oracles_metrics_gates.py",
+          "tests/unit/test_evaluation_runner.py",
+          "tests/unit/test_evaluation_e2e.py",
+          "tests/unit/test_skills.py",
+          "tests/unit/test_security_skill_packs.py",
+          "tests/unit/test_tasks.py",
+          "tests/unit/test_playbooks.py",
+          "tests/unit/test_report_templates.py",
+          "tests/unit/test_tool_packs.py",
+          "tests/unit/test_tool_pack_security.py",
+          "tests/unit/test_threat_modeling.py",
+          "tests/unit/test_threat_security.py",
+          "tests/unit/test_change_analysis.py",
+          "tests/unit/test_change_security.py",
+          "tests/unit/test_code_intelligence.py",
+          "tests/unit/test_reporting.py"
+        ]
+      },
+      "gate": "security",
+      "status": "PASS",
+      "summary": "1266 passed, 3 skipped in 32.58s"
+    }
+  },
+  "package": "emo-cyber-agent",
+  "release_status": "PASS",
+  "version": "0.2.1"
+}
