@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.2 — Runtime quality warnings closure
+
+- Closed unawaited-coroutine warning via `_run_async()` in
+  `src/emo_cyber_agent/cli/main.py` (close-on-abort, original exception
+  preserved; applied to `audit` and `review`).
+- Suppressed expected HTTP disconnect tracebacks via
+  `_QuietThreadingHTTPServer` in `src/emo_cyber_agent/mcp/http_server.py`
+  (ignores `ConnectionError`/`TimeoutError` only).
+- Registered pytest marker `contract_only` in `pyproject.toml`.
+- Verified: ruff clean, mypy 253 files clean, 2738 passed / 6 skipped,
+  36/36 schemas, release gates 8/8 PASS. No API, policy, severity,
+  evidence, or verification semantics changed.
+
 ## 0.2.1 — Sanitizer control-char hardening (POST-T021)
 
 - Bounded `subagent/sanitizer.py::normalize()` fix: stripped control

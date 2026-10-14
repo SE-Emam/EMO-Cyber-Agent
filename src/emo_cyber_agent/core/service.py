@@ -336,7 +336,7 @@ class FoundationSecurityAuditor(SecurityAuditor):
         """Return runtime capability status without exposing credentials."""
         return {
             "status": "foundation",
-            "version": "0.2.1",
+            "version": "0.2.2",
             "policy_engine": type(self._policy_engine).__name__,
             "domain_models_available": True,
             "capabilities": ["audit", "review", "verify", "doctor"],
