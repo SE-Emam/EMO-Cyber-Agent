@@ -29,9 +29,10 @@ Determinism: ``now`` is caller-supplied; nothing reads clocks or randomness.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Callable, Mapping
+from typing import Any
 
 from emo_cyber_agent.recovery.actions import RecoveryAction
 from emo_cyber_agent.recovery.classification import (
@@ -39,8 +40,6 @@ from emo_cyber_agent.recovery.classification import (
     classify_or_unknown,
 )
 from emo_cyber_agent.recovery.manager import (
-    OUTCOME_BUDGET_EXHAUSTED,
-    OUTCOME_FAILED_CLOSED,
     OUTCOME_QUARANTINED,
     OUTCOME_RECOVERED,
     RecoveryManager,

@@ -26,7 +26,10 @@ class ReportTemplateValidator:
     )
 
     def validate(self, spec: ReportTemplateSpec) -> tuple[bool, TemplateTrust, tuple[str, ...], tuple[str, ...]]:
-        from emo_cyber_agent.report_templates.spec import ALLOWED_FINDING_FIELDS, MANDATORY_FINDING_FIELDS
+        from emo_cyber_agent.report_templates.spec import (
+            ALLOWED_FINDING_FIELDS,
+            MANDATORY_FINDING_FIELDS,
+        )
 
         errors: list[str] = []
         warnings: list[str] = []

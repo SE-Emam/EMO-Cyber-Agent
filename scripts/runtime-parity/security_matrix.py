@@ -8,6 +8,9 @@ spot checks. Stdlib only, cross-platform.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import argparse
 import json
 import os
@@ -36,7 +39,7 @@ def _run(args: list[str], cwd: Path, env: dict | None = None) -> subprocess.Comp
     base = dict(os.environ, EMO_TEST_SECRET_CANARY=CANARY)
     if env:
         base.update(env)
-    return subprocess.run([*_prefix(), *args], capture_output=True, text=True,
+    return subprocess.run([*_prefix(), *args], check=False, capture_output=True, text=True,
                           timeout=TIMEOUT, cwd=str(cwd), env=base)
 
 
@@ -82,7 +85,7 @@ def main() -> int:
                     except (ExecutionError, RepositoryError, ValueError):
                         denied += 1
                 record("sec.null_byte.rejected", denied == 2, "argv NUL client-denied; product denies in-process")
-            except Exception as exc2:
+            except UNEXPECTED_EXCEPTION as exc2:
                 record("sec.null_byte.rejected", False, f"in-process check failed: {exc2}")
 
         p = _run(["audit", str(work / "app.py"), "--format", "json"], work)
@@ -104,7 +107,7 @@ def main() -> int:
             flat = json.dumps(body)
             record("sec.env.allowlist", CANARY not in flat and CANARY not in p.stderr, "canary absent from doctor")
             record("sec.doctor.presence_only", "CONFIGURED" in flat or "MISSING" in flat, "presence tokens only")
-        except Exception as exc:
+        except UNEXPECTED_EXCEPTION as exc:
             record("sec.env.allowlist", False, f"unparseable: {exc}")
             record("sec.doctor.presence_only", False, f"unparseable: {exc}")
 
@@ -124,14 +127,14 @@ def main() -> int:
                 "import importlib;"
                 "[importlib.import_module(m) for m in mods];"
                 "print('progress_recovery_import_ok')")
-        r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=TIMEOUT, cwd=str(work))
+        r = subprocess.run([sys.executable, "-c", code], check=False, capture_output=True, text=True, timeout=TIMEOUT, cwd=str(work))
         record("sec.progress_advisory.importable", "progress_recovery_import_ok" in r.stdout, f"exit={r.returncode}")
 
         code2 = ("from emo_cyber_agent.core.policy import StrictPolicyEngine;"
                  "e=StrictPolicyEngine();print('policy_ok')")
-        r = subprocess.run([sys.executable, "-c", code2], capture_output=True, text=True, timeout=TIMEOUT, cwd=str(work))
+        r = subprocess.run([sys.executable, "-c", code2], check=False, capture_output=True, text=True, timeout=TIMEOUT, cwd=str(work))
         record("sec.recovery_bounded.policy_intact", "policy_ok" in r.stdout and CANARY not in (r.stdout + r.stderr), f"exit={r.returncode}")
-    except Exception as exc:
+    except UNEXPECTED_EXCEPTION as exc:
         record("sec.harness", False, f"{type(exc).__name__}: {exc}")
     finally:
         shutil.rmtree(work, ignore_errors=True)

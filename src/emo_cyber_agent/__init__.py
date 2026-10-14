@@ -9,10 +9,10 @@ Public API tiers (see ECA-T016 release notes):
 
 __version__ = "0.2.1"
 
+from .core.contracts import SecurityAuditor
 from .core.reporting import ReportService, generate_report
-from .core.service import SecurityAuditor
 
-__all__ = ["SecurityAuditor", "ReportService", "generate_report", "__version__"]
+__all__ = ["ReportService", "SecurityAuditor", "__version__", "generate_report"]
 
 SUPPORTED_API = ("SecurityAuditor", "ReportService", "generate_report", "__version__")
 PROVISIONAL_API = (

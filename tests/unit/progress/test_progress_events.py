@@ -1,16 +1,16 @@
 """Test Progress Event functionality for EMO-Cyber-Agent."""
 
-import pytest
-from datetime import datetime
-from pathlib import Path
-
 # Add the parent directory to the path to import from emo_cyber_agent
 import sys
-import os
+from datetime import UTC, datetime
+from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "src"))
 
 from emo_cyber_agent.progress.events import ProgressEvent, ProgressEventType
+
 
 class TestProgressEvent:
     """Test Progress Event class functionality."""
@@ -303,7 +303,7 @@ class TestProgressEvent:
 
     def test_progress_event_custom_timestamp(self):
         """Test ProgressEvent with custom timestamp."""
-        custom_time = datetime(2025, 1, 1, 12, 0, 0)
+        custom_time = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
         event = ProgressEvent(
             run_id="run-123",
             audit_id="audit-456",

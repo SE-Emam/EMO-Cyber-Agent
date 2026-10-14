@@ -7,9 +7,12 @@ report states in words that aggregate scores cannot override a failed gate.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Iterable, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -19,11 +22,11 @@ from emo_cyber_agent.evaluation.runner import EvaluationRun
 from emo_cyber_agent.evaluation.spec import EVALUATION_VERSION, GateStatus, utc_now
 
 __all__ = [
+    "EvaluationArchive",
     "EvaluationReport",
     "build_report",
     "to_json",
     "to_markdown",
-    "EvaluationArchive",
 ]
 
 _MAX_LIMITATIONS = 24
@@ -206,7 +209,7 @@ class EvaluationArchive:
         try:
             run = EvaluationRun.model_validate_json(run_path.read_text(encoding="utf-8"))
             report = EvaluationReport.model_validate_json(report_path.read_text(encoding="utf-8"))
-        except Exception as exc:
+        except UNEXPECTED_EXCEPTION as exc:
             raise EvaluationError(
                 EvaluationErrorCode.REPORT_INVALID,
                 f"archived run unreadable: {run_id}: {exc}",

@@ -47,12 +47,13 @@ def _make_venv(path: Path, *, python: str | None = None, extras: str = "") -> Pa
     if python:
         cmd += ["--python", python]
     cmd += [str(path)]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+    proc = subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=600)
     if proc.returncode != 0:
         pytest.fail(f"venv creation failed:\n{proc.stdout[-1500:]}\n{proc.stderr[-1500:]}")
     target = f"{WHEEL}{extras}"
     proc = subprocess.run(
         [str(path / "bin" / "python"), "-m", "pip", "install", target],
+        check=False,
         capture_output=True,
         text=True,
         timeout=900,
@@ -95,6 +96,7 @@ def matrix_pythons(tmp_path_factory):
     for version in ("3.11", "3.12"):
         proc = subprocess.run(
             [_uv(), "python", "install", version],
+            check=False,
             capture_output=True,
             text=True,
             timeout=900,
@@ -126,6 +128,7 @@ def run_installed(
         env.update(env_extra)
     proc = subprocess.run(
         [str(python), *args],
+        check=False,
         capture_output=True,
         text=True,
         timeout=timeout,

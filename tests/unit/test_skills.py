@@ -3,17 +3,24 @@
 Schema, registry, resolver, validation pipeline, malicious skills,
 capability escalation, injection, versioning, isolation. No network.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import pytest
 
-from emo_cyber_agent.skills.builtin.catalog import BUILTIN_INDEX, BUILTIN_SKILLS, load_builtin_registry
+from emo_cyber_agent.skills.builtin.catalog import (
+    BUILTIN_INDEX,
+    BUILTIN_SKILLS,
+    load_builtin_registry,
+)
 from emo_cyber_agent.skills.registry import SkillRegistry
 from emo_cyber_agent.skills.resolver import SkillResolver
 from emo_cyber_agent.skills.spec import SkillSpec, SkillTrust
 
 
 def _spec(skill_id="demo-skill", **over):
-    base = dict(skill_id=skill_id, name="Demo", version="1.0.0", description="demo skill", domain="demo", triggers=("demo",), objectives=("fact",), inputs=("tree",), required_capabilities=("repository.read",), allowed_tools=("repository.read",), methodology=("inventory", "collect"), evidence_requirements=("file-evidence",), stop_conditions=("done",), output_contract="observations", dependencies=(), security_constraints=("read-only",))
+    base = {"skill_id": skill_id, "name": "Demo", "version": "1.0.0", "description": "demo skill", "domain": "demo", "triggers": ("demo",), "objectives": ("fact",), "inputs": ("tree",), "required_capabilities": ("repository.read",), "allowed_tools": ("repository.read",), "methodology": ("inventory", "collect"), "evidence_requirements": ("file-evidence",), "stop_conditions": ("done",), "output_contract": "observations", "dependencies": (), "security_constraints": ("read-only",)}
     base.update(over)
     return SkillSpec(**base)
 
@@ -23,9 +30,9 @@ def _spec(skill_id="demo-skill", **over):
 def test_spec_schema_and_versioning():
     s = _spec()
     assert s.version == "1.0.0"
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(skill_id="Bad_ID")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(skill_id="other", version="1.0")
 
 
@@ -176,12 +183,11 @@ def test_resolver_dockerfile_trigger_resolves_container_security():
 # ---------------- isolation / contracts ----------------
 
 def test_no_core_policy_imports_in_skills():
-    import emo_cyber_agent.skills.spec as spec
-    import emo_cyber_agent.skills.registry as registry
-    import emo_cyber_agent.skills.resolver as resolver
+    from emo_cyber_agent.skills import registry, resolver, spec
 
     for mod in (spec, registry, resolver):
-        body = open(mod.__file__).read().split('"""', 2)[-1]
+        with open(mod.__file__) as source_file:
+            body = source_file.read().split('"""', 2)[-1]
         for banned in ("PolicyEngine", "evaluate_policy", "subprocess", "os.system", "Finding(", "Severity("):
             assert banned not in body, (mod.__name__, banned)
 

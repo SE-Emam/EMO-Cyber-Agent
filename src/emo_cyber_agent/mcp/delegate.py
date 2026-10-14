@@ -17,13 +17,19 @@ Anything else → INTERNAL_ERROR. No stack traces, no secrets, ever.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import asyncio
 import json
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from emo_cyber_agent.mcp import protocol as _p
 from emo_cyber_agent.mcp.tools import InvalidInput, validate_arguments
+
+if TYPE_CHECKING:
+    from emo_cyber_agent.core.service import FoundationSecurityAuditor
 
 
 def _redact(text: str) -> str:
@@ -56,7 +62,7 @@ def error_result(tool: str, audit_id: str, code: str, message: str) -> dict[str,
     return {"content": [{"type": "text", "text": json.dumps({"status": "error", "tool": tool, "audit_id": audit_id, "code": code, "message": _redact(message)[:500]}, sort_keys=True)}], "isError": True}
 
 
-def _auditor():
+def _auditor() -> FoundationSecurityAuditor:
     from emo_cyber_agent.core.service import FoundationSecurityAuditor
 
     return FoundationSecurityAuditor()
@@ -89,7 +95,14 @@ def call_verify(args: dict[str, Any]) -> dict[str, Any]:
     from emo_cyber_agent.core.correlation import FindingCandidate
     from emo_cyber_agent.core.policy import StrictPolicyEngine
     from emo_cyber_agent.core.tool_registry import ToolRegistry
-    from emo_cyber_agent.core.verification import VerificationRequest, VerificationService, get_verification_tool_specs
+    from emo_cyber_agent.core.verification import (
+        VerificationExecutorPort,
+        VerificationPlan,
+        VerificationRawResult,
+        VerificationRequest,
+        VerificationService,
+        get_verification_tool_specs,
+    )
 
     audit_id = args["audit_id"]
     try:
@@ -113,10 +126,16 @@ def call_verify(args: dict[str, Any]) -> dict[str, Any]:
         registry.register(spec)
     from emo_cyber_agent.core.correlation import EvidenceStore
 
-    service = VerificationService(executor=_approved_only_executor(), policy=StrictPolicyEngine(), registry=registry, store=EvidenceStore(), scope_allows=lambda a, t: a == audit_id and t == args["target"]["locator"])
+    class _ApprovedOnlyExecutor(VerificationExecutorPort):
+        """Placeholder harness: verify-via-MCP returns plans, never executes."""
+
+        def run(self, plan: VerificationPlan) -> VerificationRawResult:
+            raise RuntimeError("execution is wired per audit session, not via MCP planning")
+
+    service = VerificationService(executor=_ApprovedOnlyExecutor(), policy=StrictPolicyEngine(), registry=registry, store=EvidenceStore(), scope_allows=lambda a, t: a == audit_id and t == args["target"]["locator"])
     try:
         plan = service.plan(candidate=candidate, request=request, audit_id=audit_id)
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         return _map_verification_error("cyber_verify", audit_id, e)
     return ok_result(
         "cyber_verify",
@@ -124,13 +143,6 @@ def call_verify(args: dict[str, Any]) -> dict[str, Any]:
         {"status": "planned", "plan_id": plan.plan_id, "method": request.method.value, "safety_level": plan.safety_level.value, "required_capabilities": list(plan.required_capabilities), "stopping_conditions": list(plan.stopping_conditions), "note": "plan only; execution requires an authorized audit session"},
         {"candidate_id": candidate.candidate_id, "audit_id": audit_id},
     )
-
-
-class _approved_only_executor:
-    """Placeholder harness: verify-via-MCP returns plans, never executes."""
-
-    def run(self, plan: Any) -> Any:
-        raise RuntimeError("execution is wired per audit session, not via MCP planning")
 
 
 def call_report(args: dict[str, Any]) -> dict[str, Any]:
@@ -147,7 +159,7 @@ def call_report(args: dict[str, Any]) -> dict[str, Any]:
     service = ReportService()
     try:
         report = service.generate(audit_id=audit_id, findings=items, include_non_reportable=bool(args.get("include_non_reportable", False)))
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         return _map_report_error(audit_id, e)
     fmt = args["format"]
     text = {"json": service.generate_json, "jsonl": service.generate_jsonl, "markdown": service.generate_markdown}[fmt](report)
@@ -176,7 +188,7 @@ def call_extensions(args: dict[str, Any]) -> dict[str, Any]:
         if code == "EXTENSION_QUERY_UNKNOWN":
             return error_result("cyber_extensions", "", _p.DOMAIN_INVALID, str(e))
         return error_result("cyber_extensions", "", _p.DOMAIN_INVALID, str(e))
-    except Exception:
+    except UNEXPECTED_EXCEPTION:
         return error_result("cyber_extensions", "", "INTERNAL_ERROR", "extension inspection failed")
     return ok_result("cyber_extensions", "", body, {})
 
@@ -232,7 +244,7 @@ def _threat_leak_check(args: dict[str, Any]) -> dict[str, Any]:
             findings.extend(parse_threatfox_response(threatfox_payload))
     except ValueError as e:
         return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"invalid leak payload: {e}")
-    except Exception:
+    except (AttributeError, KeyError, LookupError, OSError, RuntimeError, TypeError):
         return error_result("cyber_threat_intel", "", "INTERNAL_ERROR", "leak parsing failed")
     scope = {digest.lower()}
     for hint in scope_hints:
@@ -275,11 +287,11 @@ def _threat_triage(args: dict[str, Any]) -> dict[str, Any]:
     try:
         for entry in iocs:
             verdicts.append(match(entry, findings).to_dict())
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"invalid ioc: {e}")
     try:
         ordered = prioritize(findings, set(kev), dict(epss))
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"invalid triage data: {e}")
     body = {"action": "triage", "verdicts": verdicts, "prioritized_findings": list(ordered)}
     return ok_result("cyber_threat_intel", "", body, {})
@@ -301,7 +313,7 @@ def _threat_map_technique(args: dict[str, Any]) -> dict[str, Any]:
         return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, "keywords must be a list")
     try:
         hits = map_finding(category=category or "", cwe=cwe or "", keywords=keywords)
-    except Exception:
+    except (AttributeError, KeyError, LookupError, OSError, RuntimeError, TypeError):
         return error_result("cyber_threat_intel", "", "INTERNAL_ERROR", "technique mapping failed")
     body = {"action": "map-technique", "hits": [h.to_dict() for h in hits], "table_version": TABLE_VERSION}
     return ok_result("cyber_threat_intel", "", body, {})
@@ -327,7 +339,7 @@ def _threat_exposure_check(args: dict[str, Any]) -> dict[str, Any]:
         report = detect_exposure(tool.strip().lower(), normalized)
     except ValueError as e:
         return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"invalid exposure request: {e}")
-    except Exception:
+    except (AttributeError, KeyError, LookupError, OSError, RuntimeError, TypeError):
         return error_result("cyber_threat_intel", "", "INTERNAL_ERROR", "exposure reasoning failed")
     body = {"action": "exposure-check", **report.to_dict(), "table_version": TABLE_VERSION}
     return ok_result("cyber_threat_intel", "", body, {})
@@ -348,7 +360,7 @@ def _threat_coverage(args: dict[str, Any]) -> dict[str, Any]:
         report = coverage(list(tools), list(signals))
     except ValueError as e:
         return error_result("cyber_threat_intel", "", _p.DOMAIN_INVALID, f"invalid coverage request: {e}")
-    except Exception:
+    except (AttributeError, KeyError, LookupError, OSError, RuntimeError, TypeError):
         return error_result("cyber_threat_intel", "", "INTERNAL_ERROR", "coverage computation failed")
     body = {"action": "coverage", **report.to_dict(), "table_version": TABLE_VERSION}
     return ok_result("cyber_threat_intel", "", body, {})

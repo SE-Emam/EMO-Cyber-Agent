@@ -226,11 +226,11 @@ class ExtensionResolver:
 
         pinned = text in candidates or any(text == f"=={candidate}" for candidate in candidates)
         if pinned and candidates:
-            return sorted(candidates, key=version_key)[0]
+            return min(candidates, key=version_key)
 
         if policy is VersionPolicy.HIGHEST_COMPATIBLE:
             notes.append("policy:highest-compatible")
-            return sorted(candidates, key=version_key)[-1]
+            return max(candidates, key=version_key)
 
         conflicts.append(
             ExtensionConflict(

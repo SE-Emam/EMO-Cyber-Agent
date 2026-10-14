@@ -4,6 +4,9 @@ Spec, registry, validator, YAML loader, official library (20 templates),
 resolver, composition, template-aware renderer (core/reporting.py),
 task integration, security negatives. No execution, no network, no LLM.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import json
 from pathlib import Path
@@ -39,15 +42,15 @@ OFFICIAL_DIR = Path("templates/reports/official")
 
 
 def _spec(template_id="demo-report", **over):
-    base = dict(
-        template_id=template_id, name="Demo", version="1.0.0", type="security",
-        description="demo", sections=({"name": "summary", "fields": ["report.summary"]}, {"name": "findings", "fields": ["finding.title"]}),
-        finding_fields=["finding.finding_id", "finding.title", "finding.severity", "finding.confidence", "finding.status", "finding.evidence_ids", "finding.verification_ids", "finding.provenance"],
-        section_order=["summary", "findings", "limitations"], show_non_reportable=False,
-        evidence_presentation="references", verification_presentation="status",
-        limitations_sections=["limitations"], appendices=[], output_formats=["json", "jsonl", "markdown"],
-        provenance={"source": "official"},
-    )
+    base = {
+        "template_id": template_id, "name": "Demo", "version": "1.0.0", "type": "security",
+        "description": "demo", "sections": ({"name": "summary", "fields": ["report.summary"]}, {"name": "findings", "fields": ["finding.title"]}),
+        "finding_fields": ["finding.finding_id", "finding.title", "finding.severity", "finding.confidence", "finding.status", "finding.evidence_ids", "finding.verification_ids", "finding.provenance"],
+        "section_order": ["summary", "findings", "limitations"], "show_non_reportable": False,
+        "evidence_presentation": "references", "verification_presentation": "status",
+        "limitations_sections": ["limitations"], "appendices": [], "output_formats": ["json", "jsonl", "markdown"],
+        "provenance": {"source": "official"},
+    }
     base.update(over)
     return ReportTemplateSpec(**base)  # type: ignore[arg-type]
 
@@ -77,20 +80,20 @@ def _resolved(spec=None):
 def test_spec_ids_versions_fields():
     s = _spec()
     assert s.template_id == "demo-report"
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(template_id="Bad_ID")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(template_id="other", version="1.0")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(template_id="other", finding_fields=["finding.nope"])
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(template_id="other", output_formats=["pdf"])
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(template_id="other", sections=({"name": "x", "fields": ["finding.title"], "visibility": [{"show_if_field": "finding.title", "operator": "==", "value": "x"}]},))
 
 
 def test_operators_allowlist():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ReportTemplateSpec(template_id="ab1", name="N", version="1.0.0", sections=({"name": "s", "fields": [], "visibility": [{"show_if_field": "finding.severity", "operator": "contains", "value": "high"}]},), finding_fields=[], output_formats=["json"])
 
 
@@ -120,7 +123,7 @@ def test_registry_duplicate_version_trust_cycles():
 
 def test_validator_mandatory_security_negatives():
     v = ReportTemplateValidator()
-    ok, trust, errors, _ = v.validate(_spec())
+    ok, trust, _errors, _ = v.validate(_spec())
     # POST-T020 R2: validator is advisory only and never confers TRUSTED
     # (self-claimed provenance must not mint trust); TRUSTED is conferred
     # only by the official builders via Registry.register(trust=TRUSTED).
@@ -129,7 +132,7 @@ def test_validator_mandatory_security_negatives():
     assert not ok2 and any("mandatory" in e for e in errors2)
     for bad in ["javascript:alert(1)", "<script>alert(1)</script>", "exec(malicious)"]:
         s = _spec(f"bad-{abs(hash(bad)) % 99999}", description=f"see {bad}")
-        okb, _, errsb, _ = v.validate(s)
+        okb, _, _errsb, _ = v.validate(s)
         assert not okb, bad
     s2 = _spec("noprov", preserve_provenance=False)
     okc, _, errsc, _ = v.validate(s2)
@@ -285,7 +288,7 @@ def test_composition_add_only_and_weaken_denied():
     child = _spec("child-x", finding_fields=["finding.finding_id", "finding.title", "finding.severity", "finding.confidence", "finding.status", "finding.evidence_ids", "finding.verification_ids", "finding.provenance", "finding.remediation"], sections=({"name": "findings", "fields": ["finding.remediation"]},))
     composed = _compose(base, child)
     assert "finding.remediation" in composed.finding_fields
-    weak = _spec("weak-x", preserve_provenance=False, redact_secrets=True, deterministic=True)
+    _spec("weak-x", preserve_provenance=False, redact_secrets=True, deterministic=True)
     # bypass pydantic-level: construct via model_construct to simulate hostile child
     hostile = base.model_copy(update={"preserve_provenance": False})
     with pytest.raises(TemplateError) as e:
@@ -341,11 +344,11 @@ def test_renderer_visibility_redaction_nonreportable_format_gate():
     assert len(apply_report_template(rep3, _resolved(allow))["non_reportable"]) == 1
     # format gate
     json_only = _spec("json-only", output_formats=["json"])
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         to_markdown_with_template(rep, _resolved(json_only))
     # hostile flags denied at render
     hostile = _spec().model_copy(update={"preserve_provenance": False})
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         apply_report_template(rep, _resolved(hostile))
 
 
@@ -361,7 +364,6 @@ def test_renderer_no_scores_no_ranking():
 def test_task_template_wiring_override():
     from emo_cyber_agent.skills.builtin.catalog import load_builtin_registry
     from emo_cyber_agent.tasks.registry import TaskRegistry
-    from emo_cyber_agent.tasks.resolver import TaskResolver
     from emo_cyber_agent.tasks.service import TaskService
     from emo_cyber_agent.tasks.spec import TaskScope, TaskSpec
 

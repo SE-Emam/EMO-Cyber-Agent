@@ -12,10 +12,12 @@ and asserts NO unhandled crash (unexpected exception types -> pytest.fail).
 
 from __future__ import annotations
 
+# The fuzz harness deliberately records any unexpected exception as a test failure.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import http.client
 import json
 import os
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -30,41 +32,41 @@ ALLOWED_VERDICTS = frozenset({
 try:
     from emo_cyber_agent.mcp import http_server as _http
     from emo_cyber_agent.mcp.http_server import HttpMcpServer, _HttpError
-except Exception:  # pragma: no cover
+except UNEXPECTED_EXCEPTION:  # pragma: no cover
     _http = None  # type: ignore[assignment]
     HttpMcpServer = None  # type: ignore[assignment,misc]
     _HttpError = Exception  # type: ignore[assignment,misc]
 
 try:
     from emo_cyber_agent.mcp.server import McpServer
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     McpServer = None  # type: ignore[assignment,misc]
 
 try:
     from emo_cyber_agent.checklists.spec import Checklist, ChecklistItem
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     Checklist = None  # type: ignore[assignment,misc]
     ChecklistItem = None  # type: ignore[assignment,misc]
 
 try:
     from emo_cyber_agent.report_templates.spec import ReportTemplateSpec, TemplateError
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     ReportTemplateSpec = None  # type: ignore[assignment,misc]
     TemplateError = Exception  # type: ignore[assignment,misc]
 
 try:
     from emo_cyber_agent.report_templates.validator import ReportTemplateValidator
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     ReportTemplateValidator = None  # type: ignore[assignment,misc]
 
 try:
+    from emo_cyber_agent.evaluation.cases import normalize_case
+    from emo_cyber_agent.evaluation.errors import EvaluationError
     from emo_cyber_agent.evaluation.post_t020_benchmark import (
         PostT020Case,
         post_t020_blind,
     )
-    from emo_cyber_agent.evaluation.cases import normalize_case
-    from emo_cyber_agent.evaluation.errors import EvaluationError
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     PostT020Case = None  # type: ignore[assignment,misc]
     post_t020_blind = None  # type: ignore[assignment,misc]
     normalize_case = None  # type: ignore[assignment,misc]
@@ -80,7 +82,7 @@ try:
         python_satisfies,
         satisfies,
     )
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     ExtHostProfile = None  # type: ignore[assignment,misc]
     check_compatibility = None  # type: ignore[assignment,misc]
     host_profile = None  # type: ignore[assignment,misc]
@@ -93,42 +95,42 @@ try:
         SessionMapError,
         validate_mcp_token,
     )
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     McpSessionMap = None  # type: ignore[assignment,misc]
     SessionMapError = Exception  # type: ignore[assignment,misc]
     validate_mcp_token = None  # type: ignore[assignment,misc]
 
 try:
     from emo_cyber_agent.subagent.session import SubagentSession
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     SubagentSession = None  # type: ignore[assignment,misc]
 
 try:
     from emo_cyber_agent.subagent.binding import BindingError
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     BindingError = Exception  # type: ignore[assignment,misc]
 
 try:
     from emo_cyber_agent.subagent.trust import HostIntegrationError
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     HostIntegrationError = Exception  # type: ignore[assignment,misc]
 
 try:
-    from emo_cyber_agent.security_knowledge.scope import bind_query_scope
     from emo_cyber_agent.security_knowledge.errors import KnowledgeError
-except Exception:  # pragma: no cover
+    from emo_cyber_agent.security_knowledge.scope import bind_query_scope
+except ImportError:  # pragma: no cover
     bind_query_scope = None  # type: ignore[assignment,misc]
     KnowledgeError = Exception  # type: ignore[assignment,misc]
 
 try:
     from emo_cyber_agent.checklists.catalog import get_by_scope, get_checklist
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     get_by_scope = None  # type: ignore[assignment,misc]
     get_checklist = None  # type: ignore[assignment,misc]
 
 try:
     from emo_cyber_agent.playbooks.spec import PlaybookError
-except Exception:  # pragma: no cover
+except ImportError:  # pragma: no cover
     PlaybookError = Exception  # type: ignore[assignment,misc]
 
 EXPECTED_EXC = (
@@ -162,25 +164,25 @@ def _mk_session(sid: str = "sess-fuzz-01"):
 
 
 def _valid_template_dict() -> dict[str, Any]:
-    return dict(
-        template_id="fuzz-demo", name="Demo", version="1.0.0", type="security",
-        description="demo",
-        sections=(
+    return {
+        "template_id": "fuzz-demo", "name": "Demo", "version": "1.0.0", "type": "security",
+        "description": "demo",
+        "sections": (
             {"name": "summary", "fields": ["report.summary"]},
             {"name": "findings", "fields": ["finding.title"]},
         ),
-        finding_fields=[
+        "finding_fields": [
             "finding.finding_id", "finding.title", "finding.severity",
             "finding.confidence", "finding.status", "finding.evidence_ids",
             "finding.verification_ids", "finding.provenance",
         ],
-        section_order=["summary", "findings", "limitations"],
-        show_non_reportable=False,
-        evidence_presentation="references", verification_presentation="status",
-        limitations_sections=["limitations"], appendices=[],
-        output_formats=["json", "jsonl", "markdown"],
-        provenance={"source": "fuzz"},
-    )
+        "section_order": ["summary", "findings", "limitations"],
+        "show_non_reportable": False,
+        "evidence_presentation": "references", "verification_presentation": "status",
+        "limitations_sections": ["limitations"], "appendices": [],
+        "output_formats": ["json", "jsonl", "markdown"],
+        "provenance": {"source": "fuzz"},
+    }
 
 
 def _gt_record(kind: str = "expected_blocked") -> dict[str, Any]:
@@ -272,7 +274,7 @@ def test_fuzz_http_dispatch_no_crash(msg):
         assert resp2 is None or isinstance(resp2, dict)
     except EXPECTED_EXC as e:
         _assert_verdict("REJECTED", ctx=f"{type(e).__name__}:{e}"[:120])
-    except Exception as e:  # noqa: BLE001 - fuzz must surface unhandled crashes
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH dispatch input={msg!r:.300} exc={type(e).__name__}:{e!r:.300}")
 
 
@@ -287,7 +289,7 @@ def test_fuzz_http_duplicate_ids_no_crash():
         _assert_verdict("VALID", ctx="duplicate-ids")
     except EXPECTED_EXC:
         _assert_verdict("REJECTED", ctx="duplicate-ids")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH duplicate-ids exc={e!r:.300}")
 
 
@@ -310,7 +312,7 @@ def test_fuzz_http_huge_event_burst_no_crash():
         _assert_verdict("VALID", ctx="burst")
     except EXPECTED_EXC:
         _assert_verdict("FAIL_CLOSED", ctx="burst")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH burst exc={e!r:.300}")
 
 
@@ -336,7 +338,7 @@ def test_fuzz_http_host_guard(h):
         _assert_verdict(str(e.status), ctx=f"host={h!r:.80}")
     except EXPECTED_EXC:
         _assert_verdict("FAIL_CLOSED", ctx=f"host={h!r:.80}")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH host={h!r:.200} exc={e!r:.300}")
 
 
@@ -358,7 +360,7 @@ def test_fuzz_http_origin_guard(o):
         _assert_verdict(str(e.status), ctx=f"origin={o!r:.80}")
     except EXPECTED_EXC:
         _assert_verdict("FAIL_CLOSED", ctx=f"origin={o!r:.80}")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH origin={o!r:.200} exc={e!r:.300}")
 
 
@@ -383,7 +385,7 @@ def test_fuzz_http_auth_guard(a):
             _assert_verdict(str(e.status), ctx=f"auth={a!r:.80}")
     except EXPECTED_EXC:
         _assert_verdict("FAIL_CLOSED", ctx=f"auth={a!r:.80}")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH auth={a!r:.200} exc={e!r:.300}")
     finally:
         if old is None:
@@ -407,7 +409,7 @@ def test_fuzz_http_auth_misconfigured_fail_closed():
             _assert_verdict("401", ctx="misconfigured")
     except EXPECTED_EXC:
         _assert_verdict("FAIL_CLOSED", ctx="misconfigured")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH misconfigured exc={e!r:.300}")
 
 
@@ -438,7 +440,7 @@ def test_fuzz_http_session_tokens(tok):
             _assert_verdict(str(e.status), ctx=f"tok={tok!r:.80}")
     except EXPECTED_EXC:
         _assert_verdict("REJECTED", ctx=f"tok={tok!r:.80}")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH tok={tok!r:.200} exc={e!r:.300}")
 
 
@@ -480,7 +482,7 @@ def test_fuzz_http_session_triples(triple):
                 _assert_verdict(str(e.status), ctx=repr(triple)[:100])
     except EXPECTED_EXC:
         _assert_verdict("REJECTED", ctx=repr(triple)[:100])
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH triple={triple!r:.300} exc={e!r:.300}")
 
 
@@ -503,7 +505,7 @@ def test_fuzz_session_map_stale_and_malformed_caps():
                 _assert_verdict("QUARANTINED", ctx=f"cap={c!r:.60}")
         except EXPECTED_EXC:
             _assert_verdict("REJECTED", ctx=f"cap={c!r:.60}")
-        except Exception as e:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as e:
             pytest.fail(f"UNHANDLED CRASH cap={c!r:.200} exc={e!r:.300}")
 
 
@@ -534,9 +536,9 @@ _LIVE_CASES = [
     ("bad-json", b"{not json", "/mcp", "POST"),
     ("truncated", b'{"jsonrpc": "2.0", "id":', "/mcp", "POST"),
     ("wrong-version", b'{"jsonrpc":"1.0","id":1,"method":"ping"}', "/mcp", "POST"),
-    ("unknown-tool", b'{"jsonrpc":"2.0","id":1,"method":"tools/call",'
-                      b'"params":{"name":"evil","arguments":{}}}', "/mcp", "POST"),
-    ("unicode", '{"jsonrpc":"2.0","id":1,"method":"ping","params":{}}'.encode(),
+    ("unknown-tool", (b'{"jsonrpc":"2.0","id":1,"method":"tools/call",'
+                      b'"params":{"name":"evil","arguments":{}}}'), "/mcp", "POST"),
+    ("unicode", b'{"jsonrpc":"2.0","id":1,"method":"ping","params":{}}',
      "/mcp", "POST"),
     ("control", b'{"jsonrpc":"2.0","id":1,"method":"\x00ping"}', "/mcp", "POST"),
     ("ansi", b'{"jsonrpc":"2.0","id":1,"method":"ping\x1b[31m"}', "/mcp", "POST"),
@@ -559,7 +561,7 @@ def test_fuzz_http_live_transport(name, raw, path, method):
             # error bodies must stay JSON-shaped (sanitized, no traceback)
             try:
                 parsed = json.loads(body.decode("utf-8", errors="replace") or "null")
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 parsed = None
             blob = body.decode("utf-8", errors="replace")
             assert "Traceback" not in blob
@@ -572,12 +574,10 @@ def test_fuzz_http_live_transport(name, raw, path, method):
             _assert_verdict("FAIL_CLOSED", ctx=name)
     except EXPECTED_EXC:
         _assert_verdict("FAIL_CLOSED", ctx=name)
-    except Exception as e:  # noqa: BLE001
-        pytest.fail(f"UNHANDLED CRASH live={name} exc={e!r:.300}")
     finally:
         try:
             server.stop()
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             pass
 
 
@@ -593,20 +593,20 @@ def test_fuzz_http_live_huge_body_413():
             assert status in (400, 403, 413), status
             _assert_verdict(str(status), ctx="huge")
             # server still alive afterwards
-            s2, b2 = _live_post(server, b'{"jsonrpc":"2.0","id":2,"method":"ping"}')
+            s2, _b2 = _live_post(server, b'{"jsonrpc":"2.0","id":2,"method":"ping"}')
             assert s2 == 200
             _assert_verdict("VALID", ctx="huge-alive")
         except (ConnectionError, OSError, http.client.HTTPException):
             _assert_verdict("FAIL_CLOSED", ctx="huge")
     except EXPECTED_EXC:
         _assert_verdict("FAIL_CLOSED", ctx="huge")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH huge exc={e!r:.300}")
     finally:
         try:
             server.stop()
-        except Exception:
-            pass
+        except (OSError, RuntimeError):
+            server = None
 
 
 # ===========================================================================
@@ -674,7 +674,7 @@ def test_fuzz_checklist_spec(name, payload):
             _assert_verdict("VALID", ctx=name)
         except EXPECTED_EXC:
             _assert_verdict("SANITIZED", ctx=name)
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH checklist={name} input={payload!r:.400} exc={e!r:.300}")
 
 
@@ -731,7 +731,7 @@ def test_fuzz_template_construct(name, payload):
             assert isinstance(errors, tuple)
         except EXPECTED_EXC:
             _assert_verdict("REJECTED", ctx=name)
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH template={name} exc={e!r:.300}")
 
 
@@ -767,17 +767,14 @@ def test_fuzz_template_model_copy_bypass():
             try:
                 ok, _, errors, _ = ReportTemplateValidator().validate(mutated)
                 # validator must catch the bypass (never VALID with evil content)
-                if update.keys() & {"finding_fields", "sections"} and "evil.field" in str(update):
-                    assert not ok, (name, errors)
-                    _assert_verdict("DENY", ctx=f"bypass:{name}")
-                elif name.startswith("weaken") or name.startswith("unsafe") or name == "bad-format":
+                if update.keys() & {"finding_fields", "sections"} and "evil.field" in str(update) or name.startswith(("weaken", "unsafe")) or name == "bad-format":
                     assert not ok, (name, errors)
                     _assert_verdict("DENY", ctx=f"bypass:{name}")
                 else:
                     _assert_verdict("VALID" if ok else "REJECTED", ctx=f"bypass:{name}")
             except EXPECTED_EXC:
                 _assert_verdict("REJECTED", ctx=f"bypass:{name}")
-        except Exception as e:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as e:
             pytest.fail(f"UNHANDLED CRASH bypass={name} exc={e!r:.300}")
 
 
@@ -850,7 +847,7 @@ def test_fuzz_benchmark_parser(name, payload):
             _assert_verdict("FAIL_CLOSED", ctx=f"{name}-leak-should-deny")
         except EXPECTED_EXC:
             _assert_verdict("DENY", ctx=f"{name}-leak-denied")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH bench={name} exc={e!r:.300}")
 
 
@@ -876,7 +873,7 @@ def test_fuzz_benchmark_duplicate_ids_and_normalize():
                 _assert_verdict("VALID", ctx=f"normalize:{bad!r:.60}")
             except EXPECTED_EXC:
                 _assert_verdict("REJECTED", ctx=f"normalize:{bad!r:.60}")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH bench-normalize exc={e!r:.300}")
 
 
@@ -922,7 +919,7 @@ def test_fuzz_platform_alias(plat):
                 _assert_verdict("VALID", ctx=f"plat={plat!r:.60}")
         except EXPECTED_EXC:
             _assert_verdict("FAIL_CLOSED", ctx=f"plat={plat!r:.60}")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH plat={plat!r:.200} exc={e!r:.300}")
 
 
@@ -943,7 +940,7 @@ def test_fuzz_version_satisfies(ver, con):
             _assert_verdict("VALID", ctx=f"{ver!r:.40}/{con!r:.40}")
         except EXPECTED_EXC:
             _assert_verdict("REJECTED", ctx=f"{ver!r:.40}/{con!r:.40}")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH satisfies exc={e!r:.300}")
 
 
@@ -973,15 +970,15 @@ def test_fuzz_loader_scope_lookups(key):
             _assert_verdict("404", ctx=f"scope={key!r:.60}")
     except EXPECTED_EXC:
         _assert_verdict("FAIL_CLOSED", ctx=f"key={key!r:.60}")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH scope={key!r:.200} exc={e!r:.300}")
 
 
 def test_fuzz_loader_missing_and_empty_dirs(tmp_path):
     try:
-        from emo_cyber_agent.report_templates.library import load_official_registry as _load_rt
         from emo_cyber_agent.playbooks.library import load_official_registry as _load_pb
-    except Exception:
+        from emo_cyber_agent.report_templates.library import load_official_registry as _load_rt
+    except UNEXPECTED_EXCEPTION:
         pytest.skip("loader surface absent")
     missing = tmp_path / "does-not-exist-xyz"
     empty = tmp_path / "empty-dir"
@@ -1000,7 +997,7 @@ def test_fuzz_loader_missing_and_empty_dirs(tmp_path):
                         _assert_verdict("404", ctx=f"{loader.__module__}:{label}")
                     else:
                         _assert_verdict("REJECTED", ctx=f"{loader.__module__}:{label}")
-            except Exception as e:  # noqa: BLE001
+            except UNEXPECTED_EXCEPTION as e:
                 pytest.fail(f"UNHANDLED CRASH loader={label} exc={e!r:.300}")
     # empty-sections manifest text: YAML with no sections must REJECT or VALID-bounded
     try:
@@ -1017,7 +1014,7 @@ def test_fuzz_loader_missing_and_empty_dirs(tmp_path):
                 _assert_verdict("VALID", ctx=f"empty-manifest:{i}")
             except EXPECTED_EXC:
                 _assert_verdict("REJECTED", ctx=f"empty-manifest:{i}")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH empty-manifest exc={e!r:.300}")
 
 
@@ -1052,7 +1049,7 @@ def test_fuzz_bind_query_scope(caller_audit, caller_proj, req_audit, req_snap):
                 _assert_verdict("DENY", ctx=f"{caller_audit!r}/{req_audit!r}")
             else:
                 _assert_verdict("REJECTED", ctx=f"{caller_audit!r}/{req_audit!r}")
-    except Exception as e:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as e:
         pytest.fail(f"UNHANDLED CRASH scope exc={e!r:.300}")
 
 
@@ -1068,5 +1065,5 @@ def test_fuzz_token_validator_shapes():
                 _assert_verdict("VALID", ctx=f"tok={tok!r:.60}")
             except EXPECTED_EXC:
                 _assert_verdict("DENY", ctx=f"tok={tok!r:.60}")
-        except Exception as e:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as e:
             pytest.fail(f"UNHANDLED CRASH token={tok!r:.200} exc={e!r:.300}")

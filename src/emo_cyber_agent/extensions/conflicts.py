@@ -17,8 +17,8 @@ from emo_cyber_agent.extensions.spec import ExtensionConflictKind
 
 __all__ = [
     "ExtensionConflict",
-    "detect_duplicates",
     "detect_cycles",
+    "detect_duplicates",
     "provider_conflicts",
     "require_single_provider",
 ]

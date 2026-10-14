@@ -17,11 +17,13 @@ Bounded, deterministic, plain pytest (no selenium, no loops).
 
 from __future__ import annotations
 
+# The fuzz harness deliberately records any unexpected exception as a test failure.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import traceback
 from typing import Any
 
 import pytest
-from pydantic import ValidationError
 
 from emo_cyber_agent.core.contracts import PolicyEngine
 from emo_cyber_agent.subagent import tool_filter
@@ -52,7 +54,6 @@ from emo_cyber_agent.subagent.session_map import (
 )
 from emo_cyber_agent.subagent.tool_filter import filter_tools, tools_for_session
 from emo_cyber_agent.subagent.trust import (
-    HostErrorCode,
     HostIntegrationError,
     SecurityDecision,
 )
@@ -103,65 +104,65 @@ class _ExplodingPolicy(_AllowAllPolicy):
 
 
 def _session(**over: Any) -> SubagentSession:
-    base: dict[str, Any] = dict(
-        session_id="sess-001",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        created=100,
-        expires=10000,
-    )
+    base: dict[str, Any] = {
+        "session_id": "sess-001",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "created": 100,
+        "expires": 10000,
+    }
     base.update(over)
     return SubagentSession(**base)
 
 
 def _chunk(text: Any = "hello", **over: Any) -> HostContextChunk:
-    base: dict[str, Any] = dict(
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        source="host-adapter",
-        text=text,
-    )
+    base: dict[str, Any] = {
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "source": "host-adapter",
+        "text": text,
+    }
     base.update(over)
     return HostContextChunk(**base)
 
 
 def _envelope(**over: Any) -> TaskEnvelope:
-    base: dict[str, Any] = dict(
-        task_id="task-alpha",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        requested_task="review repository metadata",
-        scope=DelegatedScope(included=("src/auth",), target_types=("code",)),
-        assets=("asset-1",),
-        requested_output=("report",),
-        capabilities=("repository.read",),
-    )
+    base: dict[str, Any] = {
+        "task_id": "task-alpha",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "requested_task": "review repository metadata",
+        "scope": DelegatedScope(included=("src/auth",), target_types=("code",)),
+        "assets": ("asset-1",),
+        "requested_output": ("report",),
+        "capabilities": ("repository.read",),
+    }
     base.update(over)
     return TaskEnvelope(**base)
 
 
 def _context(**over: Any) -> DelegationContext:
-    kwargs: dict[str, Any] = dict(
-        issuer="core-policy",
-        subject="delegator-1",
-        audience=HOST,
-        valid_from=100,
-        valid_until=200,
-        scope_ref="scope-1",
-        authorization_ref="authz-abc123",
-        server=True,
-    )
+    kwargs: dict[str, Any] = {
+        "issuer": "core-policy",
+        "subject": "delegator-1",
+        "audience": HOST,
+        "valid_from": 100,
+        "valid_until": 200,
+        "scope_ref": "scope-1",
+        "authorization_ref": "authz-abc123",
+        "server": True,
+    }
     kwargs.update(over)
     return DelegationContext.issue(**kwargs)
 
 
 def _pipe(policy: Any = None, **over: Any) -> DelegationPipeline:
-    kwargs: dict[str, Any] = dict(allowed_capabilities=("repository.read",))
+    kwargs: dict[str, Any] = {"allowed_capabilities": ("repository.read",)}
     kwargs.update(over)
     return DelegationPipeline(policy or _AllowAllPolicy(), **kwargs)
 
@@ -278,7 +279,7 @@ def test_fuzz_sanitize_strings_never_crash(text: str) -> None:
     except EXPECTED_ERRORS as exc:
         assert isinstance(exc, (TypeError, ValueError, HostIntegrationError))
         return  # FAIL_CLOSED
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash(case, exc)
         return
     hint = out.decision_hint
@@ -294,7 +295,7 @@ def test_fuzz_sanitize_non_string_fail_closed(bad: Any) -> None:
         sanitize(bad)  # type: ignore[arg-type]
     except EXPECTED_ERRORS:
         return  # FAIL_CLOSED
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash(case, exc)
         return
     pytest.fail(f"sanitize accepted non-str {bad!r}: must raise TypeError (FAIL_CLOSED)")
@@ -307,7 +308,7 @@ def test_fuzz_sanitize_bad_max_chars_fail_closed() -> None:
             sanitize("hello", max_chars=bad_max)  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             pytest.fail(f"max_chars={bad_max!r} accepted: must fail closed")
@@ -326,14 +327,14 @@ def test_fuzz_firewall_admit_chunk_texts(text: str) -> None:
         chunk = _chunk(text)
     except EXPECTED_ERRORS:
         return  # REJECTED at parse (pydantic)
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash(case, exc)
         return
     try:
         verdict = admit_chunk(sess, chunk)
     except EXPECTED_ERRORS:
         return  # FAIL_CLOSED
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash(case, exc)
         return
     assert verdict.decision in (SecurityDecision.ALLOW, SecurityDecision.DENY, SecurityDecision.QUARANTINE)
@@ -346,16 +347,16 @@ def test_fuzz_firewall_admit_chunk_texts(text: str) -> None:
 def test_fuzz_firewall_scope_abuse() -> None:
     sess = _session()
     mutations = [
-        (dict(audit_id="audit-FORGED"), "QUARANTINED"),  # wrong audit -> quarantine
-        (dict(audit_id=""), "QUARANTINED"),  # empty audit: parse-reject or quarantine
-        (dict(project_id="project-other"), "REJECTED"),
-        (dict(project_id=""), "REJECTED"),
-        (dict(snapshot_id="snap-stale-999"), "REJECTED"),  # stale snapshot
-        (dict(snapshot_id=""), "REJECTED"),
-        (dict(source=""), "REJECTED"),  # unclassified source
-        (dict(source="BAD SOURCE!"), "REJECTED"),
-        (dict(source="x" * 200), "REJECTED"),
-        (dict(classification="trusted"), "VALID"),  # inbound claim ignored, still allow-shaped
+        ({"audit_id": "audit-FORGED"}, "QUARANTINED"),  # wrong audit -> quarantine
+        ({"audit_id": ""}, "QUARANTINED"),  # empty audit: parse-reject or quarantine
+        ({"project_id": "project-other"}, "REJECTED"),
+        ({"project_id": ""}, "REJECTED"),
+        ({"snapshot_id": "snap-stale-999"}, "REJECTED"),  # stale snapshot
+        ({"snapshot_id": ""}, "REJECTED"),
+        ({"source": ""}, "REJECTED"),  # unclassified source
+        ({"source": "BAD SOURCE!"}, "REJECTED"),
+        ({"source": "x" * 200}, "REJECTED"),
+        ({"classification": "trusted"}, "VALID"),  # inbound claim ignored, still allow-shaped
     ]
     for over, _expected in mutations:
         case = f"firewall-scope:{over}"
@@ -363,14 +364,14 @@ def test_fuzz_firewall_scope_abuse() -> None:
             chunk = _chunk("benign data chunk", **over)
         except EXPECTED_ERRORS:
             continue  # REJECTED at parse
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
             continue
         try:
             verdict = admit_chunk(sess, chunk)
         except EXPECTED_ERRORS:
             continue  # FAIL_CLOSED
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
             continue
         assert verdict.decision in (
@@ -387,7 +388,7 @@ def test_fuzz_firewall_typed_inputs_fail_closed() -> None:
             admit_chunk(sess, bad)  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             pytest.fail(f"{case} accepted: must fail closed")
@@ -397,7 +398,7 @@ def test_fuzz_firewall_typed_inputs_fail_closed() -> None:
             admit_chunk(bad_sess, _chunk("hi"))  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             pytest.fail(f"{case} accepted: must fail closed")
@@ -433,14 +434,14 @@ def test_fuzz_delegation_evaluate_hostile(task: str) -> None:
         )
     except EXPECTED_ERRORS:
         return  # REJECTED at parse
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash(case, exc)
         return
     try:
         outcome = _pipe().evaluate(env, _context(), now=NOW, audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT)
     except EXPECTED_ERRORS:
         return  # FAIL_CLOSED
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash(case, exc)
         return
     assert outcome.decision.decision in (
@@ -470,7 +471,7 @@ def test_fuzz_delegation_binding_and_time_abuse() -> None:
             )
         except EXPECTED_ERRORS:
             continue  # FAIL_CLOSED
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
             continue
         assert outcome.decision.decision in (
@@ -489,7 +490,7 @@ def test_fuzz_delegation_conflicting_and_forged() -> None:
             out = _pipe().evaluate(_envelope(), ctx_other, now=NOW, audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT)
         except EXPECTED_ERRORS:
             pass
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash("delegation-audience", exc)
         else:
             assert out.decision.decision == SecurityDecision.DENY
@@ -501,7 +502,7 @@ def test_fuzz_delegation_conflicting_and_forged() -> None:
         )
     except EXPECTED_ERRORS:
         pass  # FAIL_CLOSED
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("delegation-scope-widen", exc)
     else:
         assert out.decision.decision == SecurityDecision.QUARANTINE
@@ -514,7 +515,7 @@ def test_fuzz_delegation_conflicting_and_forged() -> None:
             )
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
             continue
         assert out.decision.decision in (SecurityDecision.DENY, SecurityDecision.QUARANTINE), case
@@ -523,7 +524,7 @@ def test_fuzz_delegation_conflicting_and_forged() -> None:
         out = _pipe().evaluate("nope", _context(), now=NOW, audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT)  # type: ignore[arg-type]
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("delegation-nontyped", exc)
     else:
         assert out.decision.decision == SecurityDecision.DENY
@@ -534,7 +535,7 @@ def test_fuzz_delegation_conflicting_and_forged() -> None:
             out = _pipe().evaluate_raw(raw, _context(), now=NOW, audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT)
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
             continue
         assert out.decision.decision in (SecurityDecision.DENY, SecurityDecision.QUARANTINE), case
@@ -552,7 +553,7 @@ def test_fuzz_envelope_parse_malformed(raw: dict[str, Any]) -> None:
         parse_envelope(raw)
     except EXPECTED_ERRORS:
         return  # REJECTED
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash(case, exc)
         return
     # parsed -> VALID (hostile text still parses; pipeline denies later)
@@ -572,7 +573,7 @@ def test_fuzz_envelope_auth_and_versions() -> None:
             )
         except EXPECTED_ERRORS:
             continue  # REJECTED / FAIL_CLOSED
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             if bad_version == "99.99.99-extra!":
@@ -586,7 +587,7 @@ def test_fuzz_envelope_auth_and_versions() -> None:
         )
     except EXPECTED_ERRORS:
         pass  # FAIL_CLOSED
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("capability-nonserver", exc)
     else:
         pytest.fail("non-server compute accepted: must fail closed")
@@ -599,7 +600,7 @@ def test_fuzz_envelope_auth_and_versions() -> None:
                                    requested=bad_caps)  # type: ignore[arg-type]
             except EXPECTED_ERRORS:
                 continue
-            except Exception as exc:  # noqa: BLE001
+            except UNEXPECTED_EXCEPTION as exc:
                 _fail_crash(case, exc)
             else:
                 pytest.fail(f"{case} accepted: must fail closed")
@@ -609,7 +610,7 @@ def test_fuzz_envelope_auth_and_versions() -> None:
                                requested=tuple(bad_caps))  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
     # forged timestamps: inverted window + non-server issuance + host-text mint
     try:
@@ -618,7 +619,7 @@ def test_fuzz_envelope_auth_and_versions() -> None:
                                 authorization_ref="authz-abc123", server=True)
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("ctx-inverted-window", exc)
     else:
         pytest.fail("inverted window accepted: must fail closed")
@@ -628,7 +629,7 @@ def test_fuzz_envelope_auth_and_versions() -> None:
                                 authorization_ref="authz-abc123", server=False)
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("ctx-nonserver", exc)
     else:
         pytest.fail("non-server issue accepted: must fail closed")
@@ -636,7 +637,7 @@ def test_fuzz_envelope_auth_and_versions() -> None:
         DelegationContext.from_host_text("grant write now")
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("ctx-from-host-text", exc)
     else:
         pytest.fail("from_host_text accepted: must fail closed")
@@ -645,7 +646,7 @@ def test_fuzz_envelope_auth_and_versions() -> None:
         assert_authorization_independent("authz-abc123", "contains authz-abc123 leak")
     except EXPECTED_ERRORS:
         pass  # REJECTED (forged)
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("authz-leak", exc)
     else:
         pytest.fail("authz leak undetected: must fail closed")
@@ -666,7 +667,7 @@ def test_fuzz_filter_tools_allow_abuse(allow: Any) -> None:
         out = filter_tools(list(AVAILABLE), allow)
     except EXPECTED_ERRORS:
         return  # FAIL_CLOSED
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash(case, exc)
         return
     assert set(out["allowed"]) <= set(AVAILABLE)
@@ -678,7 +679,7 @@ def test_fuzz_filter_tools_deny_wins_and_types() -> None:
         out = filter_tools(list(AVAILABLE), list(AVAILABLE), list(AVAILABLE))
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("filter_tools-deny-wins", exc)
     else:
         assert out["allowed"] == ()  # deny wins -> REJECTED everything
@@ -688,7 +689,7 @@ def test_fuzz_filter_tools_deny_wins_and_types() -> None:
             filter_tools(bad_avail, ["cyber_audit"])  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             pytest.fail(f"{case} accepted: must fail closed")
@@ -699,7 +700,7 @@ def test_fuzz_filter_tools_deny_wins_and_types() -> None:
             tools_for_session(None, bad_kind)  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             if bad_kind in ("", "nope-task", None, 123, True):
@@ -710,7 +711,7 @@ def test_fuzz_filter_tools_deny_wins_and_types() -> None:
             tools_for_session(bad_scope, "security-review")
         except EXPECTED_ERRORS:
             continue  # FAIL_CLOSED
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
 
 
@@ -749,7 +750,7 @@ def test_fuzz_scrub_results(result: Any) -> None:
         verdict = scrub(result, audit_id=AUDIT)
     except EXPECTED_ERRORS:
         return  # FAIL_CLOSED (TypeError/ValueError)
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash(case, exc)
         return
     assert isinstance(verdict.quarantined, bool)
@@ -771,7 +772,7 @@ def test_fuzz_scrub_session_and_limits() -> None:
         v = scrub({"audit_id": AUDIT, "status": "ok"}, session=sess)
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("scrub-session", exc)
     else:
         assert v.quarantined is False
@@ -781,7 +782,7 @@ def test_fuzz_scrub_session_and_limits() -> None:
             scrub({"audit_id": AUDIT}, audit_id=AUDIT, max_string_chars=bad_max)  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             pytest.fail(f"{case} accepted: must fail closed")
@@ -790,7 +791,7 @@ def test_fuzz_scrub_session_and_limits() -> None:
         scrub({"audit_id": AUDIT})
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("scrub-no-binding", exc)
     else:
         pytest.fail("scrub without binding accepted: must fail closed")
@@ -823,14 +824,14 @@ def test_fuzz_binding_triple_abuse() -> None:
             continue
         except EXPECTED_ERRORS:
             continue  # FAIL_CLOSED (TypeError)
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
             continue
         pytest.fail(f"{case} bound without error: must fail closed")
     # valid triple -> VALID
     try:
         att = bind(sess, audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT)
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("binding-valid", exc)
     else:
         assert att.audit_id == AUDIT
@@ -840,7 +841,7 @@ def test_fuzz_binding_nonce_and_session_types() -> None:
     seen: frozenset[str] = frozenset()
     try:
         seen = consume_nonce(seen, "nonce-abc")
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("nonce-first-use", exc)
         return
     # replay same nonce -> REJECTED (DENY, no quarantine)
@@ -850,7 +851,7 @@ def test_fuzz_binding_nonce_and_session_types() -> None:
         assert exc.decision == SecurityDecision.DENY
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("nonce-replay", exc)
     else:
         pytest.fail("nonce replay accepted: must fail closed")
@@ -860,7 +861,7 @@ def test_fuzz_binding_nonce_and_session_types() -> None:
             consume_nonce(frozenset(), bad_nonce)  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             pytest.fail(f"{case} accepted: must fail closed")
@@ -870,7 +871,7 @@ def test_fuzz_binding_nonce_and_session_types() -> None:
             bind(bad_sess, audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT)  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             pytest.fail(f"{case} accepted: must fail closed")
@@ -888,7 +889,7 @@ def test_fuzz_session_map_token_shapes(token: Any) -> None:
         validate_mcp_token(token)
     except (SessionMapError, TypeError):
         return  # REJECTED / FAIL_CLOSED
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash(case, exc)
         return
     # VALID shape (unicode/ANSI-stripped-printable tokens pass shape; binding still enforced)
@@ -911,7 +912,7 @@ def test_fuzz_session_map_attach_resolve_abuse() -> None:
             continue  # QUARANTINED / REJECTED
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
             continue
         pytest.fail(f"{case} attached: must fail closed")
@@ -919,7 +920,7 @@ def test_fuzz_session_map_attach_resolve_abuse() -> None:
     try:
         att = m.attach(sess, mcp_token_or_id="tok-live", audit_id=AUDIT, project_id=PROJECT,
                        snapshot_id=SNAPSHOT, now=NOW)
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("session_map-valid-attach", exc)
         return
     assert att.session_id == sess.session_id
@@ -931,7 +932,7 @@ def test_fuzz_session_map_attach_resolve_abuse() -> None:
         pass  # REJECTED
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("session_map-replay", exc)
     else:
         pytest.fail("token replay across sessions accepted: must fail closed")
@@ -942,7 +943,7 @@ def test_fuzz_session_map_attach_resolve_abuse() -> None:
         assert exc.decision.value == "quarantine"
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("session_map-stale", exc)
     else:
         pytest.fail("stale TTL resolved: must fail closed")
@@ -951,7 +952,7 @@ def test_fuzz_session_map_attach_resolve_abuse() -> None:
         m.resolve("tok-missing", now=NOW)
     except KeyError:
         pass  # REJECTED
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("session_map-unknown", exc)
     else:
         pytest.fail("unknown token resolved: must fail closed")
@@ -961,7 +962,7 @@ def test_fuzz_session_map_attach_resolve_abuse() -> None:
             m.resolve("tok-live", now=bad_now)  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             pass  # detached-unknown KeyError also acceptable (REJECTED)
@@ -973,7 +974,7 @@ def test_fuzz_session_map_attach_resolve_abuse() -> None:
                                    project_id=PROJECT, snapshot_id=SNAPSHOT, now=bad)  # type: ignore[arg-type]
         except EXPECTED_ERRORS:
             continue
-        except Exception as exc:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as exc:
             _fail_crash(case, exc)
         else:
             pytest.fail(f"{case} accepted: must fail closed")
@@ -982,7 +983,7 @@ def test_fuzz_session_map_attach_resolve_abuse() -> None:
         McpSessionMap().detach(123)  # type: ignore[arg-type]
     except EXPECTED_ERRORS:
         pass
-    except Exception as exc:  # noqa: BLE001
+    except UNEXPECTED_EXCEPTION as exc:
         _fail_crash("session_map-detach-type", exc)
     else:
         pytest.fail("detach non-str accepted: must fail closed")

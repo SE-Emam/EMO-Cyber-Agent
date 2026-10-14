@@ -8,12 +8,11 @@ everywhere. No security behavior is re-tested here.
 
 from __future__ import annotations
 
-import email.parser
 import email.message
+import email.parser
 import subprocess
 import tarfile
 import zipfile
-
 
 from conftest import DIST_INFO, ROOT, SDIST, VERSION, WHEEL, _uv
 
@@ -92,6 +91,7 @@ def test_build_reproduces_from_current_tree(tmp_path):
     out = tmp_path / "dist"
     proc = subprocess.run(
         [_uv(), "build", "--out-dir", str(out)],
+        check=False,
         capture_output=True,
         text=True,
         timeout=900,

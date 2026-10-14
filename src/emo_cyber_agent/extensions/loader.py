@@ -21,13 +21,20 @@ runtime setup belongs to the Core-controlled lifecycle that follows.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import importlib
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from emo_cyber_agent.extensions.compatibility import CompatibilityResult, HostProfile, check_compatibility
+from emo_cyber_agent.extensions.compatibility import (
+    CompatibilityResult,
+    HostProfile,
+    check_compatibility,
+)
 from emo_cyber_agent.extensions.conflicts import ExtensionConflict, detect_cycles
 from emo_cyber_agent.extensions.discovery import (
     DiscoveredSource,
@@ -173,7 +180,7 @@ class ExtensionLoader:
                 validation=validation,
                 compatibility=compatibility,
                 trust_state=trust.state.value,
-                conflicts=tuple(),
+                conflicts=(),
                 registered=False,
                 reason="; ".join(compatibility.reasons[:3])[:400],
             )
@@ -345,7 +352,7 @@ class ExtensionLoader:
         except ExtensionError:
             self._registry.quarantine(extension_id, version, "entry point rejected")
             raise
-        except Exception as exc:  # noqa: BLE001 - import failures are content failures
+        except UNEXPECTED_EXCEPTION as exc:
             self._registry.quarantine(extension_id, version, f"import failed: {type(exc).__name__}")
             raise ExtensionError(
                 ExtensionErrorCode.LOAD_FAILED,

@@ -7,7 +7,7 @@ either returns a complete frozen record or raises.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from emo_cyber_agent.security_knowledge.errors import KnowledgeError, KnowledgeErrorCode
 from emo_cyber_agent.security_knowledge.spec import (
@@ -15,6 +15,7 @@ from emo_cyber_agent.security_knowledge.spec import (
     TRUST_LEVELS,
     KnowledgeProvenance,
     KnowledgeRecord,
+    KnowledgeReference,
     KnowledgeRetention,
 )
 from emo_cyber_agent.threat_modeling.spec import canonical_digest
@@ -86,12 +87,10 @@ def _canonicalize(content: dict[str, Any]) -> dict[str, Any]:
             return [_scrub(v) for v in value]
         return value
 
-    return _scrub(dict(content))
+    return cast(dict[str, Any], _scrub(dict(content)))
 
 
-def record_reference(record: KnowledgeRecord) -> Any:
-    from emo_cyber_agent.security_knowledge.spec import KnowledgeReference
-
+def record_reference(record: KnowledgeRecord) -> KnowledgeReference:
     return KnowledgeReference(
         record_id=record.record_id, audit_id=record.audit_id, project_id=record.project_id,
         snapshot_id=record.snapshot_id, digest=record.digest,

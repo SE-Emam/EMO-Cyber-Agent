@@ -14,7 +14,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-
 from conftest import ROOT, VERSION, WHEEL, run_installed
 
 
@@ -99,6 +98,7 @@ def test_pipx_install_and_run_from_outside_project(tmp_path):
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     proc = subprocess.run(
         [pipx, "install", str(WHEEL)],
+        check=False,
         capture_output=True,
         text=True,
         timeout=900,
@@ -108,6 +108,7 @@ def test_pipx_install_and_run_from_outside_project(tmp_path):
     try:
         listed = subprocess.run(
             [pipx, "list", "--short"],
+            check=False,
             capture_output=True,
             text=True,
             timeout=120,
@@ -117,6 +118,7 @@ def test_pipx_install_and_run_from_outside_project(tmp_path):
         # run from /tmp — outside the project directory
         run = subprocess.run(
             ["cyber-agent", "--version"],
+            check=False,
             capture_output=True,
             text=True,
             timeout=120,
@@ -127,6 +129,7 @@ def test_pipx_install_and_run_from_outside_project(tmp_path):
         assert VERSION in run.stdout
         doctor = subprocess.run(
             ["cyber-agent", "doctor", "--format", "json"],
+            check=False,
             capture_output=True,
             text=True,
             timeout=120,
@@ -136,4 +139,4 @@ def test_pipx_install_and_run_from_outside_project(tmp_path):
         assert doctor.returncode == 0, doctor.stderr[-1000:]
         assert json.loads(doctor.stdout)["status"] == "ok"
     finally:
-        subprocess.run([pipx, "uninstall", "emo-cyber"], capture_output=True, timeout=300, env=env)
+        subprocess.run([pipx, "uninstall", "emo-cyber"], check=False, capture_output=True, timeout=300, env=env)

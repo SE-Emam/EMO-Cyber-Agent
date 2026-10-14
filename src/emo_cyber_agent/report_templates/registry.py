@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from emo_cyber_agent.report_templates.spec import ReportTemplateSpec, TemplateError, TemplateErrorCode, TemplateTrust
+import builtins
+
+from emo_cyber_agent.report_templates.spec import (
+    ReportTemplateSpec,
+    TemplateError,
+    TemplateErrorCode,
+    TemplateTrust,
+)
 
 
 class ReportTemplateRegistry:
@@ -54,7 +61,7 @@ class ReportTemplateRegistry:
     def list(self) -> list[ReportTemplateSpec]:
         return [self._templates[key] for key in sorted(self._templates)]
 
-    def versions(self, template_id: str) -> list[str]:
+    def versions(self, template_id: str) -> builtins.list[str]:
         return sorted(ver for (tid, ver) in self._templates if tid == template_id)
 
     def trust_of(self, template_id: str, version: str) -> TemplateTrust:
@@ -63,7 +70,7 @@ class ReportTemplateRegistry:
         except KeyError:
             raise TemplateError(TemplateErrorCode.NOT_FOUND, f"template not registered: {template_id}@{version}") from None
 
-    def check_cycles(self) -> list[str]:
+    def check_cycles(self) -> builtins.list[str]:
         cycles: list[str] = []
         visited: dict[str, str] = {}
 

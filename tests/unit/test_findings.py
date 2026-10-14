@@ -18,7 +18,6 @@ from emo_cyber_agent.core.findings import (
     Severity,
     SuppressionRecord,
     apply_model_suggestion,
-    assess_candidate,
     classify_candidate,
     evaluate_finding_eligibility,
     finding_fingerprint,
@@ -139,7 +138,7 @@ def test_no_evidence_denied_everywhere():
     store = FindingStore()
     c = _cand()
     cl, _ = _classify()
-    bad = dict(c=candidate_kwargs(c), evidence_ids=[])
+    {"c": candidate_kwargs(c), "evidence_ids": []}
     with pytest.raises(ValueError):
         promote_candidate(candidate=c, verification_status="confirmed", verification_ids=("v1",), evidence_ids=[], observation_ids=["o1"], classification=cl, scope_ok=True, policy_ok=True, audit_id="A")
     with pytest.raises(ValueError):
@@ -216,7 +215,7 @@ def test_cvss_passthrough_never_computed():
 
 def test_downgrade_with_reason_and_conflict():
     c = _cand(sev="high")
-    cl, conflict = classify_candidate(candidate=c, verification_status="supported", scanner_severities=["low"], evidence_count=2, independent_sources=1, contradiction=False)
+    cl, _conflict = classify_candidate(candidate=c, verification_status="supported", scanner_severities=["low"], evidence_count=2, independent_sources=1, contradiction=False)
     assert cl.severity.severity == Severity.MEDIUM and "downgraded" in cl.severity.basis
     cl2, conflict2 = fx_conflicting_classification()
     assert conflict2 is not None and cl2.severity.severity == Severity.HIGH  # provisional kept, conflict recorded
@@ -275,7 +274,8 @@ def test_remediation_structured_not_executed():
     assert f.remediation.recommendation and f.remediation.validation_guidance
     import emo_cyber_agent.core.findings as m
 
-    assert "subprocess" not in open(m.__file__).read().split('"""', 2)[-1]
+    with open(m.__file__) as source_file:
+        assert "subprocess" not in source_file.read().split('"""', 2)[-1]
 
 
 def test_suppression_requires_actor_not_model():

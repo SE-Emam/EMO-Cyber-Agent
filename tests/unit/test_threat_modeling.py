@@ -5,22 +5,32 @@ scenarios, attack paths, controls, delta, service orchestration,
 templates, schemas, determinism, integrations. No Findings,
 no severity, no execution, no model.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import json
 from pathlib import Path
 
 import pytest
 
-from emo_cyber_agent.threat_modeling.attack_surface import build_attack_surface
-from emo_cyber_agent.threat_modeling.controls import coverage_for, expected_controls, observe_controls
+from emo_cyber_agent.threat_modeling.controls import (
+    coverage_for,
+    expected_controls,
+    observe_controls,
+)
 from emo_cyber_agent.threat_modeling.delta import diff_threat_models
 from emo_cyber_agent.threat_modeling.errors import ThreatModelError, ThreatModelErrorCode
-from emo_cyber_agent.threat_modeling.methods import get_method, register_method, registered_methods, rules_for
+from emo_cyber_agent.threat_modeling.methods import (
+    get_method,
+    register_method,
+    registered_methods,
+    rules_for,
+)
 from emo_cyber_agent.threat_modeling.paths import find_attack_paths
 from emo_cyber_agent.threat_modeling.service import ThreatModelingService
 from emo_cyber_agent.threat_modeling.spec import (
     ThreatMethod,
-    ThreatRule,
     ThreatTemplateConfig,
     TrustBoundary,
     assert_no_threat_verdicts,
@@ -62,17 +72,17 @@ def test_contract_ids_frozen_extra_forbidden():
     assert stable_id("threat", "stride", "SPOOFING", "x" * 200) != ""
     assert len(stable_id("threat", "stride", "SPOOFING", "x" * 200)) <= 78
     assert stable_id("a", "b") == stable_id("a", "b")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         TrustBoundary(boundary_id="Bad_ID", kind="TRUST")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         TrustBoundary(boundary_id="ok-id", kind="NOPE")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         TrustBoundary(boundary_id="ok-id", kind="TRUST", basis="MAYBE")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         TrustBoundary(boundary_id="ok-id", kind="TRUST", basis="DECLARED")
     ok = TrustBoundary(boundary_id="ok-id2", kind="TRUST", basis="DECLARED", provenance={"declared_by": "team"})
     assert ok.basis == "DECLARED"
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         TrustBoundary(boundary_id="ok-id", kind="TRUST", basis="OBSERVED", bogus="x")
     with pytest.raises(ThreatModelError):
         assert_no_threat_verdicts("this is exploitable")
@@ -189,7 +199,6 @@ def test_scenarios_are_hypotheses_not_findings():
 
 
 def test_scenario_status_rises_only_with_evidence():
-    from emo_cyber_agent.threat_modeling.threats import build_threat_scenarios
 
     candidates = [{"method": "stride", "category": "SPOOFING", "subject": "entry-x", "preconditions": (), "attack_goal": "goal", "required_evidence": (), "limitations": ()}]
     bare, _ = build_threat_scenarios(candidates)
@@ -203,7 +212,6 @@ def test_scenario_status_rises_only_with_evidence():
 
 def test_attack_paths_bounded_and_classed():
     graph, _ = _graph("sql_flow")
-    from emo_cyber_agent.threat_modeling.paths import find_attack_paths
 
     paths, partial = find_attack_paths(graph, audit_id="A", max_paths=25, max_length=8)
     assert partial is False
@@ -216,9 +224,8 @@ def test_attack_paths_bounded_and_classed():
 
 def test_attack_path_budget_exhaustion():
     graph, _ = _graph("cyclic")
-    from emo_cyber_agent.threat_modeling.paths import find_attack_paths
 
-    paths, partial = find_attack_paths(graph, audit_id="A", max_paths=1, max_length=2)
+    _paths, partial = find_attack_paths(graph, audit_id="A", max_paths=1, max_length=2)
     assert isinstance(partial, bool)
     foreign, _ = _graph("sql_flow", audit="FOREIGN")
     from emo_cyber_agent.threat_modeling.paths import find_attack_paths as _find
@@ -250,7 +257,6 @@ def test_delta_presence_not_resolution():
     graph, caps = _graph("auth_flow")
     base = service.build_model(model_id="tm-base", audit_id="A", project_id="P", snapshot_id="snap-1", methods=("stride",), code_graph=graph, codeintel_capabilities=caps)
     target = service.build_model(model_id="tm-target", audit_id="A", project_id="P", snapshot_id="snap-2", methods=("stride", "attack-tree"), code_graph=graph, codeintel_capabilities=caps)
-    from emo_cyber_agent.threat_modeling.delta import diff_threat_models
 
     delta = diff_threat_models(base, target)
     kinds = {e.kind for e in delta.entries}
@@ -271,7 +277,7 @@ def test_delta_presence_not_resolution():
 def test_service_determinism_and_digest():
     service = ThreatModelingService()
     graph, caps = _graph("auth_flow")
-    kwargs = dict(model_id="tm-001", audit_id="A", project_id="P", snapshot_id="snap-1", methods=("stride",), code_graph=graph, codeintel_capabilities=caps)
+    kwargs = {"model_id": "tm-001", "audit_id": "A", "project_id": "P", "snapshot_id": "snap-1", "methods": ("stride",), "code_graph": graph, "codeintel_capabilities": caps}
     first = service.build_model(**kwargs)
     second = service.build_model(**kwargs)
     assert first.model_digest == second.model_digest

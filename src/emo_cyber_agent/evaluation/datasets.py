@@ -13,17 +13,21 @@ values before invoking the system under test is denied with
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
 import threading
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from emo_cyber_agent.evaluation.cases import (
+    SPLIT_VISIBILITIES,
     BlindEvaluationCase,
     EvaluationCase,
-    SPLIT_VISIBILITIES,
     normalize_case,
 )
 from emo_cyber_agent.evaluation.errors import EvaluationError, EvaluationErrorCode
@@ -31,15 +35,15 @@ from emo_cyber_agent.evaluation.ground_truth import GroundTruthRecord
 from emo_cyber_agent.evaluation.spec import CaseSplit, evaluation_digest
 
 __all__ = [
-    "DatasetManifest",
-    "EvaluationDataset",
+    "BlindDatasetProvider",
     "ContaminationHit",
     "ContaminationReport",
-    "BlindDatasetProvider",
-    "load_dataset",
+    "DatasetManifest",
+    "EvaluationDataset",
     "build_dataset",
-    "contamination_scan",
     "collect_forbidden_identifiers",
+    "contamination_scan",
+    "load_dataset",
 ]
 
 MANIFEST_NAME = "dataset.json"
@@ -227,7 +231,7 @@ def load_dataset(root: str | Path, *, manifest_name: str = MANIFEST_NAME) -> Eva
         )
     try:
         raw = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except Exception as exc:
+    except UNEXPECTED_EXCEPTION as exc:
         raise EvaluationError(
             EvaluationErrorCode.INVALID_DATASET,
             f"unreadable manifest {manifest_path.name}: {exc}",
@@ -236,7 +240,7 @@ def load_dataset(root: str | Path, *, manifest_name: str = MANIFEST_NAME) -> Eva
         manifest = DatasetManifest(**raw)
     except EvaluationError:
         raise
-    except Exception as exc:
+    except UNEXPECTED_EXCEPTION as exc:
         raise EvaluationError(
             EvaluationErrorCode.INVALID_DATASET,
             f"invalid manifest {manifest_path.name}: {exc}",
@@ -264,7 +268,7 @@ def load_dataset(root: str | Path, *, manifest_name: str = MANIFEST_NAME) -> Eva
         for case_path in sorted(section_dir.glob("*.json")):
             try:
                 payload = json.loads(case_path.read_text(encoding="utf-8"))
-            except Exception as exc:
+            except UNEXPECTED_EXCEPTION as exc:
                 raise EvaluationError(
                     EvaluationErrorCode.INVALID_CASE,
                     f"unreadable case {section_dir.name}/{case_path.name}: {exc}",
@@ -393,7 +397,7 @@ def collect_forbidden_identifiers(roots: Iterable[str | Path], *, min_length: in
             if path.suffix.lower() == ".json":
                 try:
                     payload = json.loads(path.read_text(encoding="utf-8"))
-                except Exception:  # noqa: BLE001, S112 - unreadable fixture files
+                except UNEXPECTED_EXCEPTION:
                     continue
                 tokens.update(_identifier_values(payload, min_length=min_length))
     return tuple(sorted(tokens))

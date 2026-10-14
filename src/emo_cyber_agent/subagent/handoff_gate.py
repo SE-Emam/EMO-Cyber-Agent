@@ -13,12 +13,16 @@ caller-supplied), no mutation of inputs.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import hashlib
 import json
+from collections.abc import Callable, Mapping
 from enum import StrEnum
-from typing import Any, Mapping, Self
+from typing import Any, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from emo_cyber_agent.subagent.handoff import (
     AuditHandoff,
@@ -37,9 +41,10 @@ from emo_cyber_agent.subagent.session import (
     SubagentSession,
 )
 
+_firewall_scrub: Callable[..., Any] | None
 try:  # result_firewall is present — use scrub(); else inline minimal note.
     from emo_cyber_agent.subagent.result_firewall import scrub as _firewall_scrub
-except Exception:  # pragma: no cover - fallback path
+except UNEXPECTED_EXCEPTION:  # pragma: no cover - fallback path
     _firewall_scrub = None
 
 SCRUB_UNAVAILABLE_NOTE = "scrub-unavailable:inline-note"
@@ -309,7 +314,7 @@ def assemble(
                 for p in (clean_handoff.get("provenance", []) or [])
             ),
         )
-    except Exception as exc:
+    except UNEXPECTED_EXCEPTION as exc:
         reasons = (f"invalid: cannot build AuditHandoff: {exc}",)
         return HandoffGateResult(
             status=GateStatus.FAILED,
@@ -337,7 +342,7 @@ def assemble(
     note = (health_note or str(data.get("health_note", "") or ""))[:300]
     try:
         health = HealthSnapshot(health=session.health, state=lifecycle_state, note=note)
-    except Exception as exc:
+    except UNEXPECTED_EXCEPTION as exc:
         reasons = (f"invalid: cannot build HealthSnapshot: {exc}",)
         return HandoffGateResult(
             status=GateStatus.FAILED,
@@ -370,7 +375,7 @@ def assemble(
             project_id=session.project_id,
             snapshot_id=session.snapshot_id,
         )
-    except Exception as exc:
+    except UNEXPECTED_EXCEPTION as exc:
         quarantined_exc = getattr(exc, "quarantine", False)
         status = GateStatus.QUARANTINED if quarantined_exc else GateStatus.FAILED
         reasons = (f"{'quarantined' if quarantined_exc else 'invalid'}: cannot seal ResultEnvelope: {exc}",)

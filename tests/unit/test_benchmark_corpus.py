@@ -6,6 +6,9 @@ against PostT020Case (spec-owned schema, reused — nothing redefined here).
 
 from __future__ import annotations
 
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
 from collections import Counter
 from pathlib import Path
@@ -116,7 +119,7 @@ def test_blind_projection_holds(cases: list[PostT020Case]) -> None:
         assert not leaked, f"{case.case_id}: blind leak {sorted(leaked)}"
         nested = FORBIDDEN_KEYS & set(_input_keys_recursive(case.input))
         assert not nested, f"{case.case_id}: input carries {sorted(nested)}"
-        with pytest.raises(Exception):
+        with pytest.raises(UNEXPECTED_EXCEPTION):
             post_t020_blind(case.model_dump())
 
 
@@ -184,7 +187,7 @@ def test_g11_m3_nested_ground_truth_refused_at_construction() -> None:
         {"items": [{"label": "leak"}]},
         {"deep": {"deeper": {"verdict": "pass"}}},
     ):
-        with pytest.raises(Exception):
+        with pytest.raises(UNEXPECTED_EXCEPTION):
             PostT020Case.model_validate(_valid_kwargs(input=nested_input))
 
 

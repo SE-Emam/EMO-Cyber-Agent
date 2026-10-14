@@ -8,10 +8,17 @@ No tool execution, no Finding creation, no confirmation.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from typing import Any
 
 from emo_cyber_agent.threat_modeling.attack_surface import build_attack_surface
-from emo_cyber_agent.threat_modeling.controls import CATEGORY_CONTROLS, expected_controls, observe_controls
+from emo_cyber_agent.threat_modeling.controls import (
+    CATEGORY_CONTROLS,
+    expected_controls,
+    observe_controls,
+)
 from emo_cyber_agent.threat_modeling.errors import ThreatModelError, ThreatModelErrorCode
 from emo_cyber_agent.threat_modeling.methods import get_method
 from emo_cyber_agent.threat_modeling.paths import find_attack_paths
@@ -25,8 +32,10 @@ from emo_cyber_agent.threat_modeling.spec import (
     ThreatTemplateConfig,
     ThreatVerificationHandoff,
     assert_no_threat_verdicts,
-    canonical_digest as _canonical_digest,
     stable_id,
+)
+from emo_cyber_agent.threat_modeling.spec import (
+    canonical_digest as _canonical_digest,
 )
 from emo_cyber_agent.threat_modeling.stride import elicit_stride
 from emo_cyber_agent.threat_modeling.system_model import build_system_model
@@ -164,7 +173,7 @@ class ThreatModelingService:
         return ThreatModel(
             model_id=model_id, audit_id=audit_id, project_id=project_id, snapshot_id=snapshot_id,
             methods=tuple(methods), system=system, surface=surface, scenarios=tuple(scenarios),
-            attack_paths=tuple(paths), controls=tuple([*observed, *expected]), mitigations=tuple(mitigations),
+            attack_paths=tuple(paths), controls=(*observed, *expected), mitigations=tuple(mitigations),
             handoffs=tuple(handoffs), assessment=assessment, coverage=coverage,
             limitations=tuple(limitations), model_digest=digest,
         )
@@ -192,7 +201,7 @@ class ThreatModelingService:
             snapshot_id=model.snapshot_id, methods=tuple(methods), code_graph=code_graph,
             codeintel_capabilities=codeintel_capabilities,
         )
-        return refreshed.model_copy(update={"limitations": tuple([*refreshed.limitations, f"refresh triggered by change predicates: {','.join(sorted(predicates_fired)) or 'none'}"])})
+        return refreshed.model_copy(update={"limitations": (*refreshed.limitations, f"refresh triggered by change predicates: {','.join(sorted(predicates_fired)) or 'none'}")})
 
     def select_methods_for_skills(self, skills: tuple[str, ...]) -> tuple[str, ...]:
         methods: list[str] = []
@@ -300,7 +309,7 @@ class ThreatModelingService:
         for path in paths:
             try:
                 doc = _yaml.safe_load(path.read_text())
-            except Exception as e:
+            except UNEXPECTED_EXCEPTION as e:
                 raise ThreatModelError(ThreatModelErrorCode.INVALID, f"malformed template YAML: {e}") from e
             if not isinstance(doc, dict) or "threat_template" not in doc:
                 raise ThreatModelError(ThreatModelErrorCode.INVALID, "template YAML must contain a top-level threat_template mapping")

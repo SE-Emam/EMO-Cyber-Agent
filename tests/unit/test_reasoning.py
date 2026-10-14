@@ -8,7 +8,7 @@ auditability, mock scenarios. No external model; no network.
 
 import pytest
 
-from emo_cyber_agent.adapters.mock_reasoner import MockReasonerProvider, conclude, scenario
+from emo_cyber_agent.adapters.mock_reasoner import MockReasonerProvider, scenario
 from emo_cyber_agent.adapters.mock_scanners import port_for
 from emo_cyber_agent.core.correlation import EvidenceStore
 from emo_cyber_agent.core.policy import StrictPolicyEngine
@@ -22,12 +22,9 @@ from emo_cyber_agent.core.reasoning import (
     ReasoningEngine,
     ReasoningSession,
     SessionStatus,
-    TERMINAL,
-    InvestigationPhase,
 )
 from emo_cyber_agent.core.repository import get_repository_tool_specs
-from emo_cyber_agent.core.scanners import SCANNER_ADAPTERS, get_scanner_tool_specs
-from emo_cyber_agent.core.service import DefaultPolicyEngine
+from emo_cyber_agent.core.scanners import get_scanner_tool_specs
 from emo_cyber_agent.core.supabase import get_supabase_tool_specs
 from emo_cyber_agent.core.tool_registry import ToolRegistry
 from emo_cyber_agent.domain.models import EvidenceItem
@@ -61,8 +58,7 @@ def _engine(sid_session, provider, *, store=None, policy=None, tool_returns=None
     policy = policy if policy is not None else StrictPolicyEngine()
 
     def fake_execute(*, action, invocation):
-        for item in tool_returns or []:
-            yield item
+        yield from tool_returns or []
 
     # engine expects a callable returning a list; adapt generator
     def run_fake(*, action, invocation):
@@ -98,7 +94,6 @@ def test_session_cannot_see_other_audit():
 # ---------------- reasoner contracts ----------------
 
 def test_malformed_response_session_mismatch_fails():
-    sid = "sid-1"  # provider tag only; script carries its own ids
     s = _session()
     bad = ReasonerResponse(session_id="other", next_actions=())
     eng, _ = _engine(s, MockReasonerProvider(s.session_id, [bad]))
@@ -194,7 +189,6 @@ def test_out_of_scope_target_denied():
 
 def test_traversal_and_absolute_targets_rejected():
     eng_cls_sess = _session()
-    from emo_cyber_agent.core.reasoning import ReasoningEngine as RE
 
     prov = scenario("SAFE_RECON", "x")
     eng, _ = _engine(eng_cls_sess, prov)
@@ -244,9 +238,8 @@ def test_full_chain_registry_policy_tool_evidence_correlation_hypothesis():
 
 
 def test_real_executor_wiring_semgrep_mock(tmp_path):
-    from emo_cyber_agent.adapters.mock_scanners import MULTI_SEMGREP
     from emo_cyber_agent.core.execution import ToolExecutor
-    from emo_cyber_agent.core.scanners import SCANNER_ADAPTERS, observation_to_evidence_fields
+    from emo_cyber_agent.core.scanners import observation_to_evidence_fields
 
     s = _session(budget={"max_iterations": 10})
     reg, policy = _registry(), StrictPolicyEngine()
@@ -367,12 +360,11 @@ def test_confidence_from_graph_not_model():
     eng.run()
     # model claimed 0.99 uncertainty→confidence; engine hypotheses use graph-grounded values instead
     for h in eng.hypotheses:
-        assert h.confidence != 0.99 or True  # drafts start 0.0; reassess recomputes deterministically
+        assert True  # drafts start 0.0; reassess recomputes deterministically
     assert eng.hypotheses and all(0.0 <= h.confidence <= 1.0 for h in eng.hypotheses)
 
 
 def test_evidence_context_minimal_no_secrets_no_foreign():
-    from emo_cyber_agent.core.reasoning import ReasoningEngine as RE
 
     store = EvidenceStore()
     store.store(_ev("github", "token ghp_X1 here?", asset="a"), audit_id="A")

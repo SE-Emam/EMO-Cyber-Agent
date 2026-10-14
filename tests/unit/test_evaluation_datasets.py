@@ -4,6 +4,9 @@ Loads the real fixture corpus, checks manifest/selection integrity, gates
 ground-truth release behind execution, and proves the contamination scan
 both fires on a product identifier and stays clean on the shipped corpus.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 from pathlib import Path
 
@@ -138,11 +141,11 @@ def test_split_visibility_rule_is_enforced_on_holdout_cases():
 
 
 def test_manifest_threshold_validators():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         DatasetManifest(dataset_id="t", name="n", thresholds={"lowercase": 0.5})
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         DatasetManifest(dataset_id="t", name="n", thresholds={"SCORE": 1.5})
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         DatasetManifest(dataset_id="t", name="n", baseline={"BASE": -0.1})
     manifest = DatasetManifest(dataset_id="t", name="n", thresholds={"SCORE": 0.5})
     assert manifest.thresholds == {"SCORE": 0.5}

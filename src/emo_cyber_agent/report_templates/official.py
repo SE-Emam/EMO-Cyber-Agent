@@ -8,6 +8,8 @@ verification-preserving, mandatory fields non-droppable.
 
 from __future__ import annotations
 
+from datetime import UTC
+
 from emo_cyber_agent.report_templates import agent_security_assessment as _agent
 from emo_cyber_agent.report_templates import change_aware_security_review as _change
 from emo_cyber_agent.report_templates import cloud_security_assessment as _cloud
@@ -73,13 +75,13 @@ def build_official_registry() -> ReportTemplateRegistry:
 
 def resolve_official(template_id: str) -> ResolvedReportTemplate:
     """Resolve a POST-T020 template id to an immutable snapshot via the engine."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     spec = get_official_template(template_id)
     return ResolvedReportTemplate(
         template_id=spec.template_id,
         version=spec.version,
         digest=ResolvedReportTemplate.digest_of(spec),
-        resolved_at=datetime.now(timezone.utc).isoformat(),
+        resolved_at=datetime.now(UTC).isoformat(),
         spec=spec,
     )

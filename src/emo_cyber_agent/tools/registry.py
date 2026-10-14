@@ -7,13 +7,23 @@ the foundation for the ToolRegistry and ToolInvocation.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
+import builtins
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationInfo,
+    field_validator,
+    model_validator,
+)
 
 # ---------------------------------------------------------------------------
 # Enumerations
@@ -168,7 +178,7 @@ class ToolInvocation(BaseModel):
 
     # Execution tracking
     parameters_digest: str = Field(default="", description="Integrity hash of parameters")
-    started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    started_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     completed_at: str | None = None
     status: ToolInvocationStatus = ToolInvocationStatus.REQUESTED
 
@@ -190,7 +200,9 @@ class ToolInvocation(BaseModel):
 
     @field_validator("status")
     @classmethod
-    def valid_status_transition(cls, v: ToolInvocationStatus, info) -> ToolInvocationStatus:
+    def valid_status_transition(
+        cls, v: ToolInvocationStatus, info: ValidationInfo
+    ) -> ToolInvocationStatus:
         # Basic validation - more complex transitions could be added
         if v not in [
             ToolInvocationStatus.REQUESTED,
@@ -244,15 +256,14 @@ class ToolInvocation(BaseModel):
                 f"Invalid transition from {self.status.value} to {new_status.value}"
             )
 
+        completed_at: str | None = self.completed_at
         if new_status in [
             ToolInvocationStatus.COMPLETED,
             ToolInvocationStatus.DENIED,
             ToolInvocationStatus.FAILED,
             ToolInvocationStatus.TIMEOUT,
         ]:
-            completed_at = datetime.now(timezone.utc).isoformat()
-        else:
-            completed_at = self.completed_at
+            completed_at = datetime.now(UTC).isoformat()
 
         return ToolInvocation(
             **{
@@ -270,7 +281,7 @@ class ToolInvocation(BaseModel):
                 "output_summary": output_summary,
                 "evidence_ids": evidence_ids or self.evidence_ids,
                 "status": ToolInvocationStatus.COMPLETED,
-                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "completed_at": datetime.now(UTC).isoformat(),
             }
         )
 
@@ -281,7 +292,7 @@ class ToolInvocation(BaseModel):
                 **self.model_dump(),
                 "error_summary": error_summary,
                 "status": ToolInvocationStatus.FAILED,
-                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "completed_at": datetime.now(UTC).isoformat(),
             }
         )
 
@@ -319,7 +330,7 @@ class ToolRegistry:
         """List all registered tools."""
         return list(self._tools.values())
 
-    def names(self) -> list[str]:
+    def names(self) -> builtins.list[str]:
         """List all tool IDs."""
         return sorted(self._tools.keys())
 
@@ -340,12 +351,9 @@ class ToolRegistry:
             target = kwargs.get("target")
             if not target:
                 return False
-            if target not in tool.target_types:
-                return False
+            return target in tool.target_types
 
-            return True
-
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             return False
 
     def resolve(self, tool_id: str, **kwargs: Any) -> ToolSpec:

@@ -13,7 +13,8 @@ from __future__ import annotations
 
 import platform
 import sys
-from typing import TYPE_CHECKING, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -24,12 +25,12 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     from emo_cyber_agent.evaluation.runner import EvaluationRun
 
 __all__ = [
+    "VOLATILE_RUN_FIELDS",
+    "DeterminismReport",
+    "assert_deterministic",
     "environment_capture",
     "identity_digest_of",
-    "DeterminismReport",
     "verify_determinism",
-    "assert_deterministic",
-    "VOLATILE_RUN_FIELDS",
 ]
 
 VOLATILE_RUN_FIELDS: tuple[str, ...] = ("run_id", "started_at", "completed_at", "environment")
@@ -45,7 +46,7 @@ def environment_capture() -> dict[str, str]:
     }
 
 
-def identity_digest_of(run: "EvaluationRun") -> str:
+def identity_digest_of(run: EvaluationRun) -> str:
     return run.identity_digest
 
 
@@ -62,7 +63,7 @@ class DeterminismReport(BaseModel):
         return evaluation_digest({"digests": list(self.digests), "repeat": self.repeat_count})
 
 
-def verify_determinism(runs: Sequence["EvaluationRun | str"]) -> DeterminismReport:
+def verify_determinism(runs: Sequence[EvaluationRun | str]) -> DeterminismReport:
     digests: list[str] = []
     run_ids: list[str] = []
     for entry in runs:
@@ -80,7 +81,7 @@ def verify_determinism(runs: Sequence["EvaluationRun | str"]) -> DeterminismRepo
     )
 
 
-def assert_deterministic(runs: Sequence["EvaluationRun | str"]) -> DeterminismReport:
+def assert_deterministic(runs: Sequence[EvaluationRun | str]) -> DeterminismReport:
     report = verify_determinism(runs)
     if not report.deterministic:
         raise EvaluationError(

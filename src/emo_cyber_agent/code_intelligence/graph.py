@@ -14,7 +14,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from emo_cyber_agent.code_intelligence.errors import CodeIntelligenceError, CodeIntelligenceErrorCode
+from emo_cyber_agent.code_intelligence.errors import (
+    CodeIntelligenceError,
+    CodeIntelligenceErrorCode,
+)
 from emo_cyber_agent.code_intelligence.spec import (
     DEFAULT_MAX_EDGES,
     DEFAULT_MAX_NODES,

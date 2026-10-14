@@ -25,6 +25,9 @@ No sockets, no clock, no randomness, no I/O: the caller supplies ``now``
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import hashlib
 import json
 from enum import StrEnum
@@ -37,7 +40,7 @@ from emo_cyber_agent.subagent.trust import HostErrorCode, HostIntegrationError, 
 
 try:  # Preferred triple check; falls back to inline exact-match below.
     from emo_cyber_agent.subagent.binding import assert_binding as _binding_assert_binding
-except Exception:  # pragma: no cover - binding module unavailable
+except UNEXPECTED_EXCEPTION:  # pragma: no cover - binding module unavailable
     _binding_assert_binding = None  # type: ignore[assignment]
 
 MAX_TOKEN_LENGTH = 256

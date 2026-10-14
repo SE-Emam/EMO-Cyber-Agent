@@ -25,15 +25,15 @@ HOST = "host-alpha"
 
 
 def _session(**over) -> SubagentSession:
-    base = dict(
-        session_id="sess-01",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        created=100,
-        expires=9999,
-    )
+    base = {
+        "session_id": "sess-01",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "created": 100,
+        "expires": 9999,
+    }
     base.update(over)
     return SubagentSession(**base)
 
@@ -49,7 +49,7 @@ def test_bind_happy_returns_attestation():
 
 
 def test_assert_binding_happy_no_raise():
-    assert_binding(_session(), audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT) is None
+    assert assert_binding(_session(), audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT) is None
 
 
 def test_attestation_roundtrip():
@@ -156,7 +156,7 @@ def test_nonce_bad_inputs_rejected():
 
 def test_bind_deterministic():
     sess = _session()
-    kw = dict(audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT)
+    kw = {"audit_id": AUDIT, "project_id": PROJECT, "snapshot_id": SNAPSHOT}
     first = bind(sess, **kw)
     for _ in range(3):
         assert bind(sess, **kw) == first

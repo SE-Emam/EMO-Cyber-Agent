@@ -5,11 +5,20 @@ VULNERABILITY?". Chain: Code Intelligence → Evidence → Correlation →
 Hypothesis → Verification → Finding.
 """
 
-from emo_cyber_agent.code_intelligence.errors import CodeIntelligenceError, CodeIntelligenceErrorCode
+from emo_cyber_agent.code_intelligence.errors import (
+    CodeIntelligenceError,
+    CodeIntelligenceErrorCode,
+)
 from emo_cyber_agent.code_intelligence.graph import CodeGraph, GraphLimits
-from emo_cyber_agent.code_intelligence.provider import PROVIDER_CAPABILITIES, CodeIntelligenceProvider
+from emo_cyber_agent.code_intelligence.provider import (
+    PROVIDER_CAPABILITIES,
+    CodeIntelligenceProvider,
+)
 from emo_cyber_agent.code_intelligence.queries import ALLOWED_QUERY_TYPES, CodeGraphQueryPort
-from emo_cyber_agent.code_intelligence.service import CodeIntelligenceService, get_code_intelligence_tool_specs
+from emo_cyber_agent.code_intelligence.service import (
+    CodeIntelligenceService,
+    get_code_intelligence_tool_specs,
+)
 from emo_cyber_agent.code_intelligence.spec import (
     CODE_INTELLIGENCE_CONTRACT_VERSION,
     TAINT_TAXONOMY_VERSION,

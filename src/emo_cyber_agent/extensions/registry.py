@@ -13,11 +13,16 @@ injected, so two audits can never observe each other's extensions.
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Callable
+from typing import Any, TypeAlias
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from emo_cyber_agent.extensions.compatibility import CompatibilityResult, HostProfile, check_compatibility
+from emo_cyber_agent.extensions.compatibility import (
+    CompatibilityResult,
+    HostProfile,
+    check_compatibility,
+)
 from emo_cyber_agent.extensions.conflicts import provider_conflicts
 from emo_cyber_agent.extensions.errors import ExtensionError, ExtensionErrorCode
 from emo_cyber_agent.extensions.resolver import ExtensionResolver, Resolution, ResolutionRequest
@@ -41,6 +46,8 @@ __all__ = [
     "RegisteredExtension",
     "RegistrySummary",
 ]
+
+BuiltinList: TypeAlias = list
 
 #: The complete read-only query surface. No raw import path, no execute.
 ALLOWED_QUERIES: frozenset[str] = frozenset(
@@ -181,13 +188,15 @@ class ExtensionRegistry:
     def list(self) -> list[RegisteredExtension]:
         return [self._entries[key] for key in sorted(self._entries)]
 
-    def versions(self, extension_id: str) -> list[str]:
+    def versions(self, extension_id: str) -> BuiltinList[str]:
         from emo_cyber_agent.extensions.spec import version_key
 
         found = [key[1] for key in self._entries if key[0] == extension_id]
         return sorted(found, key=version_key)
 
-    def list_by_type(self, extension_type: str | ExtensionType) -> list[RegisteredExtension]:
+    def list_by_type(
+        self, extension_type: str | ExtensionType
+    ) -> BuiltinList[RegisteredExtension]:
         wanted = extension_type.value if isinstance(extension_type, ExtensionType) else str(extension_type)
         return [entry for entry in self.list() if entry.extension_type == wanted]
 
@@ -203,12 +212,12 @@ class ExtensionRegistry:
     def get_provenance(self, extension_id: str, version: str | None = None) -> ExtensionProvenance:
         return self.get(extension_id, version).manifest.source_provenance
 
-    def identities(self) -> list[str]:
+    def identities(self) -> BuiltinList[str]:
         return [entry.identity for entry in self.list()]
 
     def provides_index(self) -> dict[str, tuple[str, ...]]:
         """capability/feature token -> deterministic ``id@version`` list."""
-        index: dict[str, list[str]] = {}
+        index: dict[str, BuiltinList[str]] = {}
         for entry in self.list():
             for capability in entry.manifest.declared_capabilities:
                 index.setdefault(capability, []).append(entry.identity)
@@ -275,7 +284,7 @@ class ExtensionRegistry:
         """The only dynamic entry point. Unknown names fail closed."""
         if name not in ALLOWED_QUERIES:
             raise ExtensionError(ExtensionErrorCode.QUERY_UNKNOWN, f"unsupported query: {name}")
-        handler = {
+        handlers: dict[str, Callable[[], Any]] = {
             "list_extensions": lambda: [entry.summary() for entry in self.list()],
             "get_extension": lambda: self.get(str(params.get("extension_id", "")), params.get("version")).summary(),
             "list_by_type": lambda: [
@@ -297,5 +306,6 @@ class ExtensionRegistry:
             "get_health": lambda: self.get_health(
                 str(params.get("extension_id", "")), params.get("version")
             ).model_dump(mode="json"),
-        }[name]
+        }
+        handler = handlers[name]
         return handler()

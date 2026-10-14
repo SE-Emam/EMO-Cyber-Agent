@@ -61,7 +61,7 @@ def test_direct_edge_allow():
 
 
 def test_assert_edge_allow_no_raise():
-    assert_edge(_edge(), receiver="agent-b", now=NOW) is None
+    assert assert_edge(_edge(), receiver="agent-b", now=NOW) is None
 
 
 def test_edge_roundtrip():

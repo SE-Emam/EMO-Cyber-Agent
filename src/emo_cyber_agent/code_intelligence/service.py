@@ -8,10 +8,16 @@ interpret provider output directly.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
 from typing import Any
 
-from emo_cyber_agent.code_intelligence.errors import CodeIntelligenceError, CodeIntelligenceErrorCode
+from emo_cyber_agent.code_intelligence.errors import (
+    CodeIntelligenceError,
+    CodeIntelligenceErrorCode,
+)
 from emo_cyber_agent.code_intelligence.graph import CodeGraph, GraphLimits
 from emo_cyber_agent.code_intelligence.provider import CodeIntelligenceProvider
 from emo_cyber_agent.code_intelligence.spec import (
@@ -59,7 +65,7 @@ class CodeIntelligenceService:
             bundle = self._provider.analyze(snapshot=snapshot, files=clean)
         except CodeIntelligenceError:
             raise
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise CodeIntelligenceError(CodeIntelligenceErrorCode.PROVIDER_ERROR, f"provider failed: {e}") from e
         graph = CodeGraph(snapshot, limits=self._limits)
         try:
@@ -71,7 +77,11 @@ class CodeIntelligenceService:
         return graph
 
     def _ingest(self, graph: CodeGraph, files: dict[str, str], bundle: Any) -> None:
-        get = (lambda k, d=None: bundle.get(k, d)) if isinstance(bundle, dict) else (lambda k, d=None: getattr(bundle, k, d))
+        def get(key: str, default: Any = None) -> Any:
+            if isinstance(bundle, dict):
+                return bundle.get(key, default)
+            return getattr(bundle, key, default)
+
         skipped = set(get("skipped", []) or [])
         for path, content in files.items():
             if path in skipped:
@@ -121,7 +131,7 @@ class CodeIntelligenceService:
         table = {"symbol": CodeSymbol, "ast_ref": AstNodeReference, "call_edge": CallEdge, "df_edge": DataFlowEdge, "dep_edge": DependencyEdge, "endpoint": RouteEndpoint, "boundary": AuthorizationBoundary, "source": DataSource, "sink": DataSink, "taint_path": TaintPath, "db_relation": DatabaseRelationship, "component": CodeComponent}
         try:
             return table[kind](**item)
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise CodeIntelligenceError(CodeIntelligenceErrorCode.PROVIDER_ERROR, f"provider emitted malformed {kind}: {e}") from e
 
     # -- evidence + observations -------------------------------------------
@@ -163,7 +173,7 @@ def get_code_intelligence_tool_specs() -> list[Any]:
     intelligence → Evidence. No bypass."""
     from emo_cyber_agent.core.tool_registry import ToolSpec
 
-    base = dict(version="1.0.0", description="Read-only code intelligence operation", category="other", risk_level="low", supports_read_only=True, supports_verification=False, supports_remediation=False, target_types=("repo",), evidence_behavior="summarize", timeout_ms=120000, tags=("code-intelligence",))
+    base = {"version": "1.0.0", "description": "Read-only code intelligence operation", "category": "other", "risk_level": "low", "supports_read_only": True, "supports_verification": False, "supports_remediation": False, "target_types": ("repo",), "evidence_behavior": "summarize", "timeout_ms": 120000, "tags": ("code-intelligence",)}
     return [
         ToolSpec(tool_id="code-intel.analyze", name="Code Intelligence Analyze", capabilities_required=("code.symbols.read",), **base),  # type: ignore[arg-type]
         ToolSpec(tool_id="code-intel.query", name="Code Intelligence Query", capabilities_required=("code.symbols.read",), **base),  # type: ignore[arg-type]

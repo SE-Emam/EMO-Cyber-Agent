@@ -1,0 +1,26 @@
+services:
+  emo-cyber:
+    build:
+      context: .
+      target: runtime
+    image: emo-cyber:local
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    network_mode: none
+    command: ["doctor"]
+
+  test:
+    build:
+      context: .
+      target: test
+    image: emo-cyber-test:local
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    network_mode: none

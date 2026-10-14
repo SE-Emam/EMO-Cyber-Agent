@@ -203,6 +203,11 @@ class SecurityKnowledgeService:
         record, _ = self._queries.get_record(record_id, audit_id=audit_id, project_id=project_id)
         if record is None:
             return None
+        if not isinstance(record, KnowledgeRecord):
+            raise KnowledgeError(
+                KnowledgeErrorCode.INCOMPATIBLE_RECORD,
+                "knowledge store returned an incompatible record",
+            )
         check_record_scope(record, audit_id=audit_id, project_id=project_id, snapshot_id=snapshot_id)
         return record
 

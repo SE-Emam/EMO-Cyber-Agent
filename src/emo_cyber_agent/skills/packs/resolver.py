@@ -7,6 +7,9 @@ nothing, executes nothing, confirms nothing.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from typing import Any
 
 from emo_cyber_agent.skills.packs.pack import (
@@ -103,7 +106,7 @@ class PackResolver:
                 try:
                     pack = pack_registry.get(rp.pack_id)
                     codeintel.extend(c for c in pack.required_code_intelligence if c not in codeintel)
-                except Exception:
+                except UNEXPECTED_EXCEPTION:
                     continue
         task_id = str(getattr(task_spec, "task_id", "") or "")
         payload = {"task": task_id, "skills": sorted(matched), "packs": [[p.pack_id, p.pack_version, p.status] for p in resolved_packs], "caps": sorted(provider_capabilities)}

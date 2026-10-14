@@ -35,6 +35,15 @@ cyber-agent config show
 
 `--no-model` is useful for deterministic scanner-only workflows and should not silently imply a complete security audit.
 
+The foundation `audit` command returns a JSON result with
+`result.status = "partial"`, zero evaluated controls, and scanner-run/evidence
+metadata from Gitleaks when the local binary is available. Secret values are
+redacted before observations are returned. Semgrep is not invoked until its
+offline configuration is verified, and scanner evidence is not classified
+into EMO findings. This is not a completed security assessment. The top-level
+CLI status `ok` indicates that the command serialized a response; it does not
+mean the nested audit result is complete.
+
 ## Examples
 
 ```bash

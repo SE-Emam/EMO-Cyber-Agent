@@ -1,4 +1,7 @@
 """Capability-minimization tests — POST-T018 (Agent 4B)."""
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import sys
 from pathlib import Path
@@ -125,7 +128,7 @@ def test_empty_edge():
 
 
 def test_result_invariants_reject_forgery():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         MinimizationResult(
             effective=("extra.read",),
             rejected=(),
@@ -136,7 +139,7 @@ def test_result_invariants_reject_forgery():
             denied=(),
             server_allowlist=(),
         )
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         MinimizationResult(
             effective=("a.read",),
             rejected=(),
@@ -147,7 +150,7 @@ def test_result_invariants_reject_forgery():
             denied=(),
             server_allowlist=(),
         )
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         MinimizationResult(
             effective=("a.read",),
             rejected=(),

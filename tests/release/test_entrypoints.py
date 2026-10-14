@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import json
 
-
 from conftest import ROOT, VERSION, run_console_script
 
 EXPECTED_COMMANDS = {"audit", "doctor", "extensions", "mcp", "report", "review", "status", "verify"}

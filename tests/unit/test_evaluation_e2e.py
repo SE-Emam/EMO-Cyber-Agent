@@ -17,6 +17,11 @@ from pathlib import Path
 import pytest
 
 from emo_cyber_agent.core.service import FoundationSecurityAuditor
+
+
+@pytest.fixture(autouse=True)
+def _disable_external_scanners(monkeypatch):
+    monkeypatch.setattr("emo_cyber_agent.core.service.shutil.which", lambda _name: None)
 from emo_cyber_agent.evaluation import (
     BlindEvaluationCase,
     CliSUTAdapter,
@@ -25,15 +30,19 @@ from emo_cyber_agent.evaluation import (
     PythonApiSUTAdapter,
     ScriptedSUTAdapter,
     audit_projection,
+    blind_case,
     build_dataset,
     collect_forbidden_identifiers,
     contamination_scan,
     load_dataset,
     normalize_case,
-    blind_case,
 )
 from emo_cyber_agent.evaluation.metrics import DETERMINISM
-from emo_cyber_agent.evaluation.sut import _default_cli_runner, _default_mcp_dispatch, _parse_cli_output
+from emo_cyber_agent.evaluation.sut import (
+    _default_cli_runner,
+    _default_mcp_dispatch,
+    _parse_cli_output,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 CORPUS = ROOT / "tests" / "fixtures" / "evaluation"
@@ -155,7 +164,7 @@ def cli_dataset():
             [
                 *records_exit,
                 {"kind": "state", "subject": "permission_profile", "value": "read_only"},
-                {"kind": "state", "subject": "status", "value": "created"},
+                {"kind": "state", "subject": "status", "value": "partial"},
             ],
         ),
         case_doc("e2e-cli-doctor", "cli_doctor", {}, records_exit),
@@ -165,7 +174,7 @@ def cli_dataset():
             {"target": "README.md"},
             [
                 *records_exit,
-                {"kind": "state", "subject": "status", "value": "created"},
+                {"kind": "state", "subject": "status", "value": "partial"},
             ],
         ),
     ]
@@ -209,7 +218,7 @@ def mcp_dataset():
             {"arguments": {"target": "src"}},
             [
                 {"kind": "state", "subject": "permission_profile", "value": "read_only"},
-                {"kind": "state", "subject": "status", "value": "created"},
+                {"kind": "state", "subject": "status", "value": "partial"},
             ],
         ),
         case_doc(
@@ -222,7 +231,7 @@ def mcp_dataset():
             "e2e-mcp-review",
             "mcp_cyber_review",
             {"arguments": {"target": "README.md"}},
-            [{"kind": "state", "subject": "status", "value": "created"}],
+            [{"kind": "state", "subject": "status", "value": "partial"}],
         ),
     ]
     return build_dataset(
@@ -410,15 +419,16 @@ def test_evaluation_package_stays_offline_and_reference_free():
                 # ``store`` only matters as a call, ``remember``/``promote`` as
                 # core learning hooks; bare references in prose are harmless.
                 following = tokens[index + 1] if index + 1 < len(tokens) else None
-                if name in {"store", "remember", "promote_candidate"}:
-                    if following is not None and following.string == "(":
-                        hits.append(f"{path.name}:{token.start[0]}: {name}(")
-                elif name in {"eval", "exec"}:
+                if name in {"store", "remember", "promote_candidate"} or name in {"eval", "exec"}:
                     if following is not None and following.string == "(":
                         hits.append(f"{path.name}:{token.start[0]}: {name}(")
                 else:
                     hits.append(f"{path.name}:{token.start[0]}: import/use of {name}")
-            if name == "os" and index + 2 < len(tokens) and tokens[index + 1].string == ".":
-                if tokens[index + 2].string == "environ":
-                    hits.append(f"{path.name}:{token.start[0]}: os.environ")
+            if (
+                name == "os"
+                and index + 2 < len(tokens)
+                and tokens[index + 1].string == "."
+                and tokens[index + 2].string == "environ"
+            ):
+                hits.append(f"{path.name}:{token.start[0]}: os.environ")
     assert hits == [], hits

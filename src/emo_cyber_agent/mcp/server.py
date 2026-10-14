@@ -8,6 +8,9 @@ concurrent audits cannot mix.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
 import sys
 from typing import Any
@@ -48,7 +51,7 @@ def _extract_progress_token(params: Any) -> Any | None:
         if isinstance(token, str) and token.strip() and len(token) <= 256:
             return token
         return None
-    except Exception:
+    except UNEXPECTED_EXCEPTION:
         return None
 
 
@@ -71,7 +74,7 @@ class _McpProgressTracker:
                 total=4,
             )
             self._reporter = ProgressReporter()
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             self._state = None  # type: ignore[assignment]
             self._reporter = None  # type: ignore[assignment]
 
@@ -96,8 +99,8 @@ class _McpProgressTracker:
                     },
                 }
             )
-        except Exception:
-            pass  # reporting-only: never break execution
+        except UNEXPECTED_EXCEPTION:
+            return  # reporting-only: never break execution
 
     def started(self) -> None:
         self._emit("STARTED", "RUN_STARTED")
@@ -200,12 +203,12 @@ class McpServer:
             if tracker is not None:
                 tracker.completed()
             return {"content": [{"type": "text", "text": json.dumps(payload, sort_keys=True, ensure_ascii=False)}]}
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             if tracker is not None:
                 try:
                     tracker.failed()
-                except Exception:
-                    pass
+                except UNEXPECTED_EXCEPTION:
+                    pass  # reporting failure must not mask the original error
             raise
         finally:
             if tracker is not None:
@@ -227,7 +230,7 @@ class McpServer:
                 continue
             try:
                 response = self.handle_message(message)
-            except Exception:  # never leak internals; protocol stays alive
+            except UNEXPECTED_EXCEPTION:  # never leak internals; protocol stays alive
                 req_id = message.get("id") if isinstance(message, dict) else None
                 response = _p.error_envelope(req_id, -32603, "internal error")
             # Interleave progress notifications (if any) BEFORE the response
@@ -236,8 +239,8 @@ class McpServer:
             for notification in self.drain_notifications():
                 try:
                     stdout.write(json.dumps(notification, sort_keys=True, ensure_ascii=False) + "\n")
-                except Exception:
-                    pass  # transport best-effort; response below still flows
+                except UNEXPECTED_EXCEPTION:
+                    continue  # transport best-effort; response below still flows
             if response is not None:
                 stdout.write(json.dumps(response, sort_keys=True, ensure_ascii=False) + "\n")
                 stdout.flush()

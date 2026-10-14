@@ -8,6 +8,9 @@ all fail. Stdlib only, cross-platform.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import argparse
 import hashlib
 import json
@@ -62,7 +65,7 @@ def main() -> int:
     try:
         expected = _load_manifest(manifest)
         record("manifest.readable", True, f"{len(expected)} entries")
-    except Exception as exc:  # fail closed
+    except UNEXPECTED_EXCEPTION as exc:  # fail closed
         record("manifest.readable", False, f"{type(exc).__name__}: {exc}")
         expected = {}
 
@@ -76,7 +79,7 @@ def main() -> int:
             record(f"artifact.present:{filename}", True, f"{target.stat().st_size} bytes")
             try:
                 got = _sha256(target)
-            except Exception as exc:
+            except UNEXPECTED_EXCEPTION as exc:
                 record(f"artifact.sha256:{filename}", False, f"unreadable: {exc}")
                 continue
             record(
@@ -88,7 +91,7 @@ def main() -> int:
         # Exclude the manifest itself: it ships inside --artifacts-dir but is not a pinned artifact.
         try:
             manifest_resolved = manifest.resolve()
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             manifest_resolved = manifest.absolute()
         actual = {p.name for p in artifacts_dir.iterdir() if p.is_file() and p.resolve() != manifest_resolved}
         extras = sorted(actual - set(expected))

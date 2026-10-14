@@ -7,27 +7,15 @@ This test file focuses specifically on the Tool Registry and ToolInvocation
 models and their integration with the core security components.
 """
 
-import pytest
-import uuid
-from datetime import datetime
 
-from emo_cyber_agent.domain.models import (
-    AuditJob,
-    Asset,
-    AuditResult,
-    EvidenceItem,
-    Finding,
-    FindingSeverity,
-    FindingStatus,
-    AuditStatus,
-)
-from emo_cyber_agent.core.contracts import PolicyEngine, SecurityAuditor
-from emo_cyber_agent.core.service import DefaultPolicyEngine, FoundationSecurityAuditor
+import pytest
+
+from emo_cyber_agent.core.service import FoundationSecurityAuditor
 from emo_cyber_agent.core.tool_registry import (
-    ToolRegistry,
-    ToolSpec,
     ToolInvocation,
     ToolInvocationStatus,
+    ToolRegistry,
+    ToolSpec,
 )
 
 
@@ -396,7 +384,7 @@ def test_toolinvocation_update_error():
 
 def test_tool_spec_enum_values():
     """Test that all ToolCategory and RiskLevel enum values are accessible."""
-    from emo_cyber_agent.core.tool_registry import ToolCategory, RiskLevel
+    from emo_cyber_agent.core.tool_registry import RiskLevel, ToolCategory
 
     for category in ToolCategory:
         ToolSpec(
@@ -683,7 +671,6 @@ def test_tool_spec_optional_fields():
 
 def test_tool_registry_integration_with_core():
     """Test integration between ToolRegistry and Core components."""
-    from emo_cyber_agent.core.service import FoundationSecurityAuditor
 
     # Create auditor with tool registry
     auditor = FoundationSecurityAuditor()

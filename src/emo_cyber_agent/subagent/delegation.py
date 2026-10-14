@@ -22,6 +22,9 @@ Security invariants (fail-closed, deterministic, side-effect free):
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
 import re
 import unicodedata
@@ -50,7 +53,7 @@ from emo_cyber_agent.subagent.trust import (
 
 try:  # Reuse the shared sanitizer normalizer so both screens agree (M2).
     from emo_cyber_agent.subagent.sanitizer import normalize as _sanitizer_normalize
-except Exception:  # pragma: no cover - fallback inline NFKC when sanitizer unavailable
+except UNEXPECTED_EXCEPTION:  # pragma: no cover - fallback inline NFKC when sanitizer unavailable
     _sanitizer_normalize = None  # type: ignore[assignment]
 
 _SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
@@ -139,7 +142,7 @@ def normalize_text(text: str) -> str:
     if _sanitizer_normalize is not None:
         try:
             raw = _sanitizer_normalize(raw)
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             raw = unicodedata.normalize("NFKC", raw)
     else:  # NOTE: fallback path when sanitizer import failed; same NFKC semantics
         raw = unicodedata.normalize("NFKC", raw)
@@ -368,7 +371,7 @@ class DelegationPipeline:
                     list(effective.effective),
                 )
             )
-        except Exception as exc:  # fail closed on engine errors
+        except UNEXPECTED_EXCEPTION as exc:  # fail closed on engine errors
             return _deny(f"policy-denied: engine error: {exc}", now=now)
         if not policy_allowed:
             return DelegationOutcome(
@@ -403,7 +406,7 @@ class DelegationPipeline:
         """Parse-then-evaluate convenience wrapper (parse failures → DENY)."""
         try:
             envelope = parse_envelope(data)
-        except Exception as exc:
+        except UNEXPECTED_EXCEPTION as exc:
             return _deny(f"invalid: cannot parse delegation envelope: {exc}", now=now)
         return self.evaluate(
             envelope,

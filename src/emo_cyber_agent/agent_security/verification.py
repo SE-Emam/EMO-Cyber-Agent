@@ -10,7 +10,10 @@ from __future__ import annotations
 from typing import Any
 
 from emo_cyber_agent.agent_security.errors import AgentSecurityError, AgentSecurityErrorCode
-from emo_cyber_agent.agent_security.spec import AgentVerificationHandoff, assert_no_authority_language
+from emo_cyber_agent.agent_security.spec import (
+    AgentVerificationHandoff,
+    assert_no_authority_language,
+)
 
 CATEGORY_HANDOFFS: dict[str, dict[str, str]] = {
     "PROMPT_INJECTION": {"method": "static_confirmation", "success": "record showing untrusted content cannot alter tool selection", "refutation": "record showing untrusted content alters tool selection"},

@@ -3,16 +3,16 @@
   "artifacts": {
     "sdist": {
       "name": "emo_cyber-0.2.1.tar.gz",
-      "sha256": "c937eaacd9942508cc708b182b4048f5345fd4b044b94035c67d8573064bf61b",
-      "size": 931125
+      "sha256": "1af97126280bd8bcfbc07ee12d39dd62cef45ef2095cb71005ade280935f1587",
+      "size": 946336
     },
     "wheel": {
       "name": "emo_cyber-0.2.1-py3-none-any.whl",
-      "sha256": "38b0d7e5e65c507e13e332596860ba46ea61fa6ec9baceba7e7a98ba64d8a0f7",
-      "size": 755726
+      "sha256": "acb6694b4e8dd9852adc86c6046dc36ac1659dcf592fcbc5ee0a1b9109b0005f",
+      "size": 766237
     }
   },
-  "build_timestamp": "2026-10-09T04:10:04.692855+00:00",
+  "build_timestamp": "2026-10-14T00:12:29.867125+00:00",
   "build_tool": {
     "backend": "hatchling",
     "backend_version": "unknown",
@@ -22,11 +22,11 @@
   "dependency_snapshot": {
     "annotated-doc": {
       "license": "MIT",
-      "version": "0.0.4"
+      "version": "0.0.5"
     },
     "annotated-types": {
-      "license": "UNKNOWN",
-      "version": "0.7.0"
+      "license": "MIT",
+      "version": "0.8.0"
     },
     "attrs": {
       "license": "MIT",
@@ -34,7 +34,7 @@
     },
     "click": {
       "license": "BSD-3-Clause",
-      "version": "8.4.0"
+      "version": "8.5.0"
     },
     "jsonschema": {
       "license": "MIT",
@@ -54,23 +54,23 @@
     },
     "pydantic": {
       "license": "MIT",
-      "version": "2.13.4"
+      "version": "2.13.5"
     },
     "pydantic-core": {
       "license": "MIT",
-      "version": "2.46.4"
+      "version": "2.46.5"
     },
     "pydantic-settings": {
       "license": "MIT",
-      "version": "2.14.2"
+      "version": "2.15.0"
     },
     "pygments": {
       "license": "BSD-2-Clause",
-      "version": "2.20.0"
+      "version": "2.21.0"
     },
     "python-dotenv": {
       "license": "BSD-3-Clause",
-      "version": "1.2.2"
+      "version": "1.2.4"
     },
     "pyyaml": {
       "license": "MIT",
@@ -82,11 +82,11 @@
     },
     "rich": {
       "license": "MIT",
-      "version": "15.0.0"
+      "version": "14.3.4"
     },
     "rpds-py": {
       "license": "MIT",
-      "version": "2026.6.3"
+      "version": "2026.9.1"
     },
     "shellingham": {
       "license": "ISC License",
@@ -94,19 +94,19 @@
     },
     "typer": {
       "license": "MIT",
-      "version": "0.25.1"
+      "version": "0.27.3"
     },
     "typing-extensions": {
       "license": "PSF-2.0",
-      "version": "4.15.0"
+      "version": "4.16.0"
     },
     "typing-inspection": {
       "license": "MIT",
-      "version": "0.4.2"
+      "version": "0.4.4"
     }
   },
   "evaluation_gate": "PASS",
-  "git_revision": "6d8a9033ffa08c8867a5b7ea09409c29e2bbda73",
+  "git_revision": "6cdbd7a811c59c558be2ca905f1f7efe1b1d7451",
   "invariant_gate": "PASS",
   "platform": "Darwin-arm64",
   "project": "emo-cyber",
@@ -120,8 +120,8 @@
   "schema_result": "36/36",
   "schema_version": "1.0",
   "security_gate": "PASS",
-  "source_tree_digest": "125e85400c5076b37ceffa79378c120bb29e83ee7293a7f207a82d746b855506",
-  "test_count": 2681,
-  "test_result": "2675 passed, 6 skipped, 0 failed (local unit suite, marketing pass)",
+  "source_tree_digest": "3e89366c642d46816e89c7fea7bf0f8e5a428fbfe57a8f905ffe2709d1d34b0e",
+  "test_count": 2744,
+  "test_result": "2738 passed, 6 skipped",
   "version": "0.2.1"
 }

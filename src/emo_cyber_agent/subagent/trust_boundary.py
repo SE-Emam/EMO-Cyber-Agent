@@ -22,8 +22,9 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Sequence
 from enum import StrEnum
-from typing import Any, Self, Sequence
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 

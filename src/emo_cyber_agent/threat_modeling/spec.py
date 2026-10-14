@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -672,7 +672,7 @@ class ThreatModel(BaseModel):
     assessment: ThreatAssessment = Field(default_factory=ThreatAssessment)
     coverage: ModelCoverage = Field(default_factory=ModelCoverage)
     limitations: tuple[str, ...] = ()
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     model_digest: str = Field(default="", max_length=128)
 
     @field_validator("model_id")

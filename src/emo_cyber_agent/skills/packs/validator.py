@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import re
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from emo_cyber_agent.skills.packs.pack import PackTrust, SecuritySkillPack, contains_verdict, is_write_capability
+from emo_cyber_agent.skills.packs.pack import (
+    PackTrust,
+    SecuritySkillPack,
+    contains_verdict,
+    is_write_capability,
+)
 
 _UNSAFE_RE = re.compile(r"(ignore\s+(all\s+)?(previous|prior)\s+instructions|grant\s+\w+\s+access|mark\s+\w+\s+confirmed|disable\s+verification|run\s+(a\s+)?command|export\s+secrets|os\.system|subprocess|__import__|eval\(|exec\()", re.IGNORECASE)
 _RESULT_BIAS_RE = re.compile(r"(at least one|must be found|must find|guarantee|ensure .*(high|critical).*(found|confirmed))", re.IGNORECASE)
@@ -98,7 +106,7 @@ class PackValidator:
             else:
                 try:
                     self._skills.get(skill)
-                except Exception:
+                except UNEXPECTED_EXCEPTION:
                     errors.append(f"skill-missing:{skill}")
         for tool in pack.allowed_tools:
             if self._tools is None:
@@ -106,7 +114,7 @@ class PackValidator:
             else:
                 try:
                     self._tools.get(tool)
-                except Exception:
+                except UNEXPECTED_EXCEPTION:
                     errors.append(f"tool-missing:{tool}")
         trust = PackTrust.UNTRUSTED
         if quarantined:

@@ -1,4 +1,7 @@
 """Contract tests for the subagent delegation layer — POST-T018."""
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import json
 import sys
@@ -17,7 +20,6 @@ from emo_cyber_agent.subagent import (
     ContextTrust,
     DelegatedScope,
     DelegationContext,
-    DelegationSecurityDecision,
     EffectiveCapabilitySet,
     HostErrorCode,
     HostIntegrationError,
@@ -41,60 +43,60 @@ HOST = "host-alpha"
 
 
 def _envelope(**over) -> TaskEnvelope:
-    base = dict(
-        task_id="task-alpha",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        requested_task="review-auth",
-        scope=DelegatedScope(included=("src/auth",), target_types=("code",)),
-        assets=("asset-1",),
-        requested_output=("report",),
-        capabilities=("read.code", "run.sast"),
-    )
+    base = {
+        "task_id": "task-alpha",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "requested_task": "review-auth",
+        "scope": DelegatedScope(included=("src/auth",), target_types=("code",)),
+        "assets": ("asset-1",),
+        "requested_output": ("report",),
+        "capabilities": ("read.code", "run.sast"),
+    }
     base.update(over)
     return TaskEnvelope(**base)
 
 
 def _context(**over):
-    base = dict(
-        issuer="core-policy",
-        subject="delegator-1",
-        audience=HOST,
-        valid_from=100,
-        valid_until=200,
-        scope_ref="scope-1",
-        authorization_ref="authz-abc123",
-    )
+    base = {
+        "issuer": "core-policy",
+        "subject": "delegator-1",
+        "audience": HOST,
+        "valid_from": 100,
+        "valid_until": 200,
+        "scope_ref": "scope-1",
+        "authorization_ref": "authz-abc123",
+    }
     base.update(over)
     return DelegationContext(**base)
 
 
 def _cap_envelope(**over) -> CapabilityEnvelope:
-    base = dict(
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        requested=("read.code", "run.sast", "write.code"),
-        allowed=("read.code", "run.sast"),
-        denied=("write.code",),
-        inherited=(),
-    )
+    base = {
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "requested": ("read.code", "run.sast", "write.code"),
+        "allowed": ("read.code", "run.sast"),
+        "denied": ("write.code",),
+        "inherited": (),
+    }
     base.update(over)
     return CapabilityEnvelope(**base)
 
 
 def _session(**over) -> SubagentSession:
-    base = dict(
-        session_id="sess-01",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        created=100,
-        expires=9999,
-    )
+    base = {
+        "session_id": "sess-01",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "created": 100,
+        "expires": 9999,
+    }
     base.update(over)
     return SubagentSession(**base)
 
@@ -110,7 +112,7 @@ def test_envelope_roundtrip():
 
 
 def test_envelope_rejects_bad_ids():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _envelope(task_id="NOT_KEBAB!!")
 
 
@@ -158,7 +160,7 @@ def test_effective_capability_narrowing():
 
 
 def test_effective_rejects_widening():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         EffectiveCapabilitySet(
             audit_id=AUDIT,
             project_id=PROJECT,
@@ -173,7 +175,7 @@ def test_effective_rejects_widening():
 
 
 def test_effective_rejects_denied_intersection():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         EffectiveCapabilitySet(
             audit_id=AUDIT,
             project_id=PROJECT,
@@ -192,7 +194,7 @@ def test_effective_requires_server_computation():
     with pytest.raises(HostIntegrationError) as exc:
         EffectiveCapabilitySet.compute(env, policy_version="1.0.0", computed_at=1, server=False)
     assert exc.value.code == HostErrorCode.CAPABILITY_DENIED
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         EffectiveCapabilitySet(
             audit_id=AUDIT,
             project_id=PROJECT,
@@ -253,12 +255,12 @@ def test_host_text_cannot_mint_authorization():
 
 
 def test_untrusted_issuer_rejected():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _context(issuer="model-host")
 
 
 def test_non_server_authz_token_rejected():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _context(authorization_ref="model-says-allow")
 
 
@@ -359,9 +361,9 @@ def test_check_compatibility_paths():
 
 
 def test_host_profile_rejects_bad_versions():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         HostProfile(host_id=HOST, name="x", host_version="latest")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         HostProfile(host_id="BAD ID", name="x")
 
 
@@ -401,7 +403,7 @@ def test_handoff_roundtrip_and_binding():
 
 
 def test_handoff_rejects_secrets():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         AuditHandoff(audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT, finding_refs=("password=hunter2",))
 
 
@@ -467,7 +469,7 @@ def test_no_secret_fields_on_envelope():
     blob = env.to_canonical_json().lower()
     for marker in ("password", "api_key", "private_key", "bearer ", "client_secret"):
         assert marker not in blob
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         TaskEnvelope(
             task_id="task-alpha",
             host_id=HOST,
@@ -520,9 +522,9 @@ def test_regression_scope_excluded_shrinkage_is_widening():
 
 def test_regression_envelope_collection_bounds_rejected():
     big = tuple(f"asset-{i}" for i in range(257))
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _envelope(assets=big)
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         DelegatedScope(included=tuple(f"scope-{i}" for i in range(257)))
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _envelope(assets=("x" * 513,))

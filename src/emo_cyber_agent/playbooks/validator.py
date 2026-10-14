@@ -7,6 +7,9 @@ grants nothing, executes nothing.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import re
 from typing import Any
 
@@ -66,7 +69,7 @@ class PlaybookValidator:
             seen.add(tid)
         overlap = {task_ref_id(r) for r in spec.required_tasks} & {task_ref_id(r) for r in spec.optional_tasks}
         if overlap:
-            errors.append(f"duplicate-task:{sorted(overlap)[0]}")
+            errors.append(f"duplicate-task:{min(overlap)}")
         # --- execution order must reference declared tasks ---
         declared = {task_ref_id(r) for r in (*spec.required_tasks, *spec.optional_tasks)}
         for tid in spec.execution_order:
@@ -82,7 +85,7 @@ class PlaybookValidator:
         # --- capabilities: requested ∩ denied must be empty ---
         clash = set(spec.requested_capabilities) & set(spec.denied_capabilities)
         if clash:
-            errors.append(f"capability-clash:{sorted(clash)[0]}")
+            errors.append(f"capability-clash:{min(clash)}")
         for cap in spec.requested_capabilities:
             if is_write_capability(cap) and spec.security_read_only_default:
                 warnings.append(f"capability-write-requested:{cap}")
@@ -136,7 +139,7 @@ class PlaybookValidator:
                 continue
             try:
                 task = self._tasks.get(tid, ver)
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 errors.append(f"task-missing:{ref}")
                 continue
             if spec.security_read_only_default:
@@ -151,7 +154,7 @@ class PlaybookValidator:
             else:
                 try:
                     self._tasks.get(tid, ref.split("@", 1)[1] if "@" in ref else None)
-                except Exception:
+                except UNEXPECTED_EXCEPTION:
                     warnings.append(f"optional-task-missing:{ref}")
         # skills
         for skill in spec.required_skills:
@@ -160,7 +163,7 @@ class PlaybookValidator:
                 continue
             try:
                 self._skills.get(skill)
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 errors.append(f"skill-missing:{skill}")
         for skill in spec.optional_skills:
             if self._skills is None:
@@ -168,7 +171,7 @@ class PlaybookValidator:
             else:
                 try:
                     self._skills.get(skill)
-                except Exception:
+                except UNEXPECTED_EXCEPTION:
                     warnings.append(f"optional-skill-missing:{skill}")
         # tools
         for tool in spec.required_tools:
@@ -177,7 +180,7 @@ class PlaybookValidator:
                 continue
             try:
                 self._tools.get(tool)
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 errors.append(f"tool-missing:{tool}")
         for tool in spec.optional_tools:
             if self._tools is None:
@@ -185,7 +188,7 @@ class PlaybookValidator:
             else:
                 try:
                     self._tools.get(tool)
-                except Exception:
+                except UNEXPECTED_EXCEPTION:
                     warnings.append(f"optional-tool-absent:{tool}")
         # report template
         if spec.report_template:
@@ -194,7 +197,7 @@ class PlaybookValidator:
             else:
                 try:
                     self._templates.get(spec.report_template)
-                except Exception:
+                except UNEXPECTED_EXCEPTION:
                     errors.append(f"template-missing:{spec.report_template}")
         # extends / dependencies existence (registry-level, when self registry known)
         return errors, warnings

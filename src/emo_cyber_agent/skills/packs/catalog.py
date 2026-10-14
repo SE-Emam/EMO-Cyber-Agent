@@ -8,6 +8,10 @@ with loader-assigned TRUSTED provenance (never self-declared).
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
+import builtins
 from pathlib import Path
 from typing import Any
 
@@ -54,7 +58,7 @@ class PackRegistry:
     def list(self) -> list[SecuritySkillPack]:
         return [self._packs[key] for key in sorted(self._packs)]
 
-    def versions(self, pack_id: str) -> list[str]:
+    def versions(self, pack_id: str) -> builtins.list[str]:
         return sorted(ver for (pid, ver) in self._packs if pid == pack_id)
 
     def trust_of(self, pack_id: str, version: str) -> PackTrust:
@@ -63,14 +67,14 @@ class PackRegistry:
         except KeyError:
             raise PackError(PackErrorCode.NOT_FOUND, f"pack not registered: {pack_id}@{version}") from None
 
-    def dependencies(self, pack_id: str, version: str | None = None) -> list[str]:
+    def dependencies(self, pack_id: str, version: str | None = None) -> builtins.list[str]:
         return sorted(self.get(pack_id, version).dependencies)
 
-    def check_cycles(self) -> list[str]:
+    def check_cycles(self) -> builtins.list[str]:
         cycles: list[str] = []
         visited: dict[str, str] = {}
 
-        def visit(node: str, stack: list[str]) -> None:
+        def visit(node: str, stack: builtins.list[str]) -> None:
             visited[node] = "open"
             stack.append(node)
             try:
@@ -90,7 +94,9 @@ class PackRegistry:
                 visit(pid, [])
         return sorted(cycles)
 
-    def applicable(self, *, asset: str = "", domain: str = "") -> list[SecuritySkillPack]:
+    def applicable(
+        self, *, asset: str = "", domain: str = ""
+    ) -> builtins.list[SecuritySkillPack]:
         result = []
         for pack in self.list():
             if asset and asset not in pack.applicable_assets:
@@ -109,36 +115,40 @@ def build_known_capabilities(*, skill_registry: Any = None, tool_registry: Any =
         from emo_cyber_agent.core.policy import KNOWN_READ_CAPABILITIES
 
         known.update(KNOWN_READ_CAPABILITIES)
-    except Exception:
-        pass
+    except UNEXPECTED_EXCEPTION:
+        known.update(())
     try:
         from emo_cyber_agent.code_intelligence.spec import PROVIDER_CAPABILITY_TO_REQUESTED
 
         known.update(PROVIDER_CAPABILITY_TO_REQUESTED.values())
-    except Exception:
-        pass
+    except (ImportError, OSError, AttributeError):
+        known.update(())
     try:
+        from emo_cyber_agent.core.resources import official_catalog_path
         from emo_cyber_agent.tasks.library import load_official_registry as _lt
 
-        for task in _lt("templates/tasks/official").list():
+        catalog_root = official_catalog_path()
+        for task in _lt(catalog_root / "tasks" / "official").list():
             known.update(task.required_capabilities)
             known.update(task.denied_capabilities)
-    except Exception:
-        pass
+    except UNEXPECTED_EXCEPTION:
+        known.update(())
     try:
+        from emo_cyber_agent.core.resources import official_catalog_path
         from emo_cyber_agent.playbooks.library import load_official_registry as _lp
 
-        for playbook in _lp("templates/playbooks/official").list():
+        catalog_root = official_catalog_path()
+        for playbook in _lp(catalog_root / "playbooks" / "official").list():
             known.update(playbook.requested_capabilities)
             known.update(playbook.denied_capabilities)
-    except Exception:
-        pass
+    except (ImportError, OSError, AttributeError, ValueError):
+        known.update(())
     if skill_registry is not None:
         try:
             for skill in skill_registry.list():
                 known.update(skill.required_capabilities)
-        except Exception:
-            pass
+        except UNEXPECTED_EXCEPTION:
+            known.update(())
     return known
 
 
@@ -155,7 +165,7 @@ def load_yaml_text(text: str) -> dict[str, Any]:
     yaml = _require_yaml()
     try:
         doc = yaml.safe_load(text)
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise PackError(PackErrorCode.INVALID, f"malformed YAML: {e}") from e
     if not isinstance(doc, dict) or "pack" not in doc:
         raise PackError(PackErrorCode.INVALID, "YAML must contain a top-level pack mapping")
@@ -226,12 +236,12 @@ def validate_against_schema(flat: dict[str, Any], schema: dict[str, Any] | None 
                 from emo_cyber_agent.core.resources import load_schema_text
 
                 schema = _json.loads(load_schema_text("security-skill-pack"))
-            except Exception as e:
+            except UNEXPECTED_EXCEPTION as e:
                 raise PackError(PackErrorCode.INVALID, f"pack schema unavailable: {e}") from e
     assert isinstance(schema, dict), "schema unavailable"
     try:
         _js.validate(flat, schema)
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise PackError(PackErrorCode.INVALID, f"schema validation failed: {e}") from e
 
 

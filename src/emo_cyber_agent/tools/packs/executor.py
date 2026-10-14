@@ -9,6 +9,9 @@ normalized evidence mapping.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from typing import Any
 
 from emo_cyber_agent.tools.packs.errors import ToolPackError, ToolPackErrorCode
@@ -55,7 +58,7 @@ def validate_inputs(definition: Any, inputs: dict[str, Any]) -> dict[str, Any]:
             if field.type == "path":
                 try:
                     cleaned[name] = normalize_path(value.strip())
-                except Exception as e:
+                except UNEXPECTED_EXCEPTION as e:
                     raise ToolPackError(ToolPackErrorCode.INPUT_REJECTED, f"path rejected: {name}: {e}") from e
             else:
                 cleaned[name] = value.strip()[: field.max_length]
@@ -89,7 +92,7 @@ class PackExecutor:
         validation; values validated per input contract; the port
         always runs shell=False. No caller can inject raw argv.
         """
-        pack, definition = self._definition(resolved)
+        _pack, definition = self._definition(resolved)
         adapter = self._adapters.get(definition.adapter)
         if adapter is None:
             raise ToolPackError(ToolPackErrorCode.TOOL_UNAVAILABLE, f"no adapter registered: {definition.adapter}")
@@ -192,7 +195,7 @@ class PackExecutor:
         try:
             decision = self._policy.get_decision(policy_decision_id)
             return str(decision.policy_version) if decision else ""
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             return ""
 
 
@@ -202,5 +205,5 @@ def adapter_argv(adapter: Any, resolved: ResolvedTool, confined_target: str) -> 
 
     try:
         return list(adapter.argv(None, confined_target))
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise _E(_C.TOOL_UNAVAILABLE, f"adapter argv failed: {e}") from e

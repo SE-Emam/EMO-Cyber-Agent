@@ -10,6 +10,9 @@ rechecks, snapshot freezing.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from typing import Any
 
 from emo_cyber_agent.playbooks.spec import (
@@ -20,9 +23,9 @@ from emo_cyber_agent.playbooks.spec import (
     PlaybookSpec,
     PlaybookStatus,
     ProjectContext,
+    ResolutionStatus,
     ResolvedPlaybook,
     ResolvedPlaybookTask,
-    ResolutionStatus,
     is_write_capability,
     task_ref_id,
     task_ref_version,
@@ -152,7 +155,7 @@ class PlaybookResolver:
                 task_spec = self._tasks.get(tid, task_ref_version(ref))
             except PlaybookError:
                 raise
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 if is_required:
                     return self._blocked(spec, reasons + [f"required-task-missing:{tid}"], warnings, context)
                 skipped_optional.append(tid)
@@ -160,7 +163,7 @@ class PlaybookResolver:
                 continue
             try:
                 rt = task_resolver.resolve(task_spec, project_files=project_files, project_objective=project_objective, audit_scope=audit_scope, skill_versions=skill_versions)
-            except Exception as e:
+            except UNEXPECTED_EXCEPTION as e:
                 if is_required:
                     return self._blocked(spec, reasons + [f"required-task-failed:{tid}:{e}"], warnings, context)
                 skipped_optional.append(tid)
@@ -194,7 +197,7 @@ class PlaybookResolver:
                     warnings.append(f"optional-skill-unmatched:{sid}")
             try:
                 skill_caps = _SkillResolver(self._skills).required_capabilities(skills_matched)
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 skill_caps = []
         else:
             skills_matched = sorted(set(spec.required_skills) | set(spec.optional_skills))
@@ -211,7 +214,7 @@ class PlaybookResolver:
                     resolved_tool = self._tools.get(tool)
                     requested_tools.append(tool)
                     tool_versions[tool] = str(getattr(resolved_tool, "version", "unknown"))
-                except Exception:
+                except UNEXPECTED_EXCEPTION:
                     return self._blocked(spec, reasons + [f"required-tool-missing:{tool}"], warnings, context)
             else:
                 requested_tools.append(tool)
@@ -222,7 +225,7 @@ class PlaybookResolver:
                     resolved_tool = self._tools.get(tool)
                     requested_tools.append(tool)
                     tool_versions[tool] = str(getattr(resolved_tool, "version", "unknown"))
-                except Exception:
+                except UNEXPECTED_EXCEPTION:
                     warnings.append(f"optional-tool-absent:{tool}")
             else:
                 requested_tools.append(tool)
@@ -243,22 +246,24 @@ class PlaybookResolver:
         template_version = ""
         template_known = False
         if self._templates is not None and spec.report_template:
-            from emo_cyber_agent.report_templates.resolver import ReportTemplateResolver as _TplResolver
+            from emo_cyber_agent.report_templates.resolver import (
+                ReportTemplateResolver as _TplResolver,
+            )
 
             try:
                 snap = _TplResolver(self._templates).resolve(template_id=spec.report_template)
                 template_version = snap.version
                 template_known = True
                 reasons.append(f"report-template:{spec.report_template}@{template_version}")
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 return self._blocked(spec, reasons + [f"template-missing:{spec.report_template}"], warnings, context)
         elif spec.report_template:
             warnings.append(f"template-unverified:{spec.report_template}")
 
         # --- 11. plan + snapshot ---
         skill_version_map: dict[str, str] = {}
-        for t in resolved_tasks:
-            skill_version_map.update(t.skill_versions)
+        for resolved_task in resolved_tasks:
+            skill_version_map.update(resolved_task.skill_versions)
         for sid in skills_matched:
             skill_version_map.setdefault(sid, skill_versions.get(sid, "unknown"))
         plan = PlaybookPlan(
@@ -277,7 +282,7 @@ class PlaybookResolver:
             skipped_optional_tasks=tuple(sorted(skipped_optional)), skills=tuple(sorted(skills_matched)), skill_versions=skill_version_map,
             requested_tools=tuple(sorted(requested_tools)), tool_versions=tool_versions, requested_capabilities=tuple(requested_caps),
             denied_capabilities=tuple(denied_caps), evidence_requirements=tuple(sorted(set(evidence))),
-            verification_requirements=tuple([f"required={spec.verification_required}"]), verification_methods=tuple(sorted(set(verification_methods))),
+            verification_requirements=(f"required={spec.verification_required}",), verification_methods=tuple(sorted(set(verification_methods))),
             report_template=spec.report_template, report_template_version=template_version, report_template_known=template_known,
             plan=plan, lifecycle=PlaybookStatus.READY, policy_version=self._policy_version, digest=digest,
             reasons=tuple(reasons), warnings=tuple(warnings),

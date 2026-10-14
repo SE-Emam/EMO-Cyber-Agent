@@ -19,9 +19,12 @@ run with any other engine type.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -71,7 +74,7 @@ class PolicyDecision(BaseModel):
     profile: str = Field(default="read_only")
     reason_codes: tuple[str, ...] = Field(default_factory=tuple)
     constraints: dict[str, Any] = Field(default_factory=dict)
-    issued_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    issued_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     policy_version: str = Field(default=POLICY_VERSION)
 
 
@@ -113,7 +116,7 @@ class StrictPolicyEngine(PolicyEngine):
             return True  # scope table enforced by services; engine checks shape only
         try:
             return bool(self._scope_allows(audit_id, target))
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             return False
 
     def check_capability(self, tool_id: str, capability: str) -> bool:
@@ -126,9 +129,7 @@ class StrictPolicyEngine(PolicyEngine):
             return False
         if profile == "read_only" and not read_only:
             return False
-        if _DESTRUCTIVE_RE.search(risk_level or ""):
-            return False
-        return True
+        return not _DESTRUCTIVE_RE.search(risk_level or "")
 
     def check_target(self, target: str) -> bool:
         return bool(target and target.strip())
@@ -174,7 +175,7 @@ class StrictPolicyEngine(PolicyEngine):
                     if not self._scope_allows(audit_id, target):
                         allowed = False
                         reasons.append("out-of-scope")
-                except Exception:
+                except UNEXPECTED_EXCEPTION:
                     allowed = False
                     reasons.append("scope-check-failed")
         if allowed and not reasons:

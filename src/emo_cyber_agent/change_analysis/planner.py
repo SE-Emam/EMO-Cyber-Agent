@@ -8,9 +8,18 @@ sole downstream authorities.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from typing import Any
 
-from emo_cyber_agent.change_analysis.spec import ChangeReviewPlan, ChangeSet, SecurityImpact, VerificationHandoff, canonical_digest
+from emo_cyber_agent.change_analysis.spec import (
+    ChangeReviewPlan,
+    ChangeSet,
+    SecurityImpact,
+    VerificationHandoff,
+    canonical_digest,
+)
 
 # Deterministic domain → task mapping (real task ids from POST-RC-002).
 DOMAIN_TASKS: dict[str, tuple[str, ...]] = {
@@ -81,7 +90,7 @@ def plan_review(
                 if set(pack.skills) & set(impact.affected_skills):
                     targeted_packs.append(pack.pack_id)
                     codeintel.extend(c for c in pack.required_code_intelligence if c not in codeintel)
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             limitations.append(f"pack-selection-unavailable: {e}")
     else:
         limitations.append("pack-selection-unavailable: no pack registry wired")

@@ -154,7 +154,7 @@ def test_session_mismatch_440_quarantine_never_dispatched(srv):
 
 
 def test_unknown_session_404(srv):
-    status, body, _ = _post(srv.url, _rpc("ping", {}), {"Mcp-Session-Id": "sess-ghost-999"})
+    status, _body, _ = _post(srv.url, _rpc("ping", {}), {"Mcp-Session-Id": "sess-ghost-999"})
     assert status == 404
 
 

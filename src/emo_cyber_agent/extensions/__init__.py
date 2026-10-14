@@ -20,6 +20,32 @@ depends on a model provider.
 
 from __future__ import annotations
 
+# functions
+from emo_cyber_agent.extensions.catalog import (
+    OFFICIAL_PUBLISHER,
+    READ_ACTIONS,
+    MaterializedContent,
+    build_read_registry,
+    content_resource,
+    extension_roots,
+    load_official_extensions,
+    materialize_content,
+    materialize_evaluation_dataset,
+    materialize_playbook,
+    materialize_report_template,
+    materialize_skill,
+    materialize_skill_pack,
+    materialize_task,
+    materialize_threat_method,
+    materialize_tool_pack,
+    materialize_verification_adapter,
+    materialize_verification_strategy,
+    read_extensions,
+    read_resource_text,
+    resolve_resource_path,
+    verify_extension_contract,
+)
+
 # constants
 from emo_cyber_agent.extensions.compatibility import (
     CompatibilityResult,
@@ -36,7 +62,26 @@ from emo_cyber_agent.extensions.conflicts import (
     detect_duplicates,
     provider_conflicts,
 )
+from emo_cyber_agent.extensions.discovery import (
+    ENTRY_POINT_GROUP,
+    MANIFEST_GLOBS,
+    DiscoveredSource,
+    DiscoveryReport,
+    DistributionRecord,
+    EntryPointRef,
+    discover_directory,
+    discover_distributions,
+    discover_entry_points,
+    discover_manifest_file,
+    parse_entry_target,
+    source_from_dict,
+)
 from emo_cyber_agent.extensions.errors import ExtensionError, ExtensionErrorCode
+from emo_cyber_agent.extensions.loader import (
+    ExtensionLoader,
+    LoadReport,
+    default_importer,
+)
 from emo_cyber_agent.extensions.manifest import (
     MANIFEST_KEYS,
     compute_manifest_digest,
@@ -47,6 +92,13 @@ from emo_cyber_agent.extensions.manifest import (
     manifest_to_dict,
     normalize_manifest_dict,
     validate_against_schema,
+)
+from emo_cyber_agent.extensions.provenance import (
+    ProvenanceAssessment,
+    artifact_digest_of,
+    assess_provenance,
+    provenance_digest,
+    verify_artifact_digest,
 )
 
 # classes / enums
@@ -79,8 +131,8 @@ from emo_cyber_agent.extensions.spec import (
     ExtensionArtifact,
     ExtensionCapabilityDeclaration,
     ExtensionCompatibility,
-    ExtensionDeclaredCapability,
     ExtensionConflictKind,
+    ExtensionDeclaredCapability,
     ExtensionDependency,
     ExtensionDependencyType,
     ExtensionEntrypoint,
@@ -117,58 +169,6 @@ from emo_cyber_agent.extensions.trust import (
     trust_allows_load,
     trust_allows_registration,
 )
-
-# functions
-from emo_cyber_agent.extensions.catalog import (
-    OFFICIAL_PUBLISHER,
-    READ_ACTIONS,
-    MaterializedContent,
-    build_read_registry,
-    content_resource,
-    extension_roots,
-    load_official_extensions,
-    materialize_content,
-    materialize_evaluation_dataset,
-    materialize_playbook,
-    materialize_report_template,
-    materialize_skill,
-    materialize_skill_pack,
-    materialize_task,
-    materialize_threat_method,
-    materialize_tool_pack,
-    materialize_verification_adapter,
-    materialize_verification_strategy,
-    read_extensions,
-    read_resource_text,
-    resolve_resource_path,
-    verify_extension_contract,
-)
-from emo_cyber_agent.extensions.discovery import (
-    ENTRY_POINT_GROUP,
-    MANIFEST_GLOBS,
-    DiscoveredSource,
-    DiscoveryReport,
-    DistributionRecord,
-    EntryPointRef,
-    discover_directory,
-    discover_distributions,
-    discover_entry_points,
-    discover_manifest_file,
-    parse_entry_target,
-    source_from_dict,
-)
-from emo_cyber_agent.extensions.loader import (
-    ExtensionLoader,
-    LoadReport,
-    default_importer,
-)
-from emo_cyber_agent.extensions.provenance import (
-    ProvenanceAssessment,
-    artifact_digest_of,
-    assess_provenance,
-    provenance_digest,
-    verify_artifact_digest,
-)
 from emo_cyber_agent.extensions.validator import (
     ExtensionValidation,
     ExtensionValidator,
@@ -182,8 +182,8 @@ __all__ = [
     "ALLOWED_QUERIES",
     "ALLOWED_TRANSITIONS",
     "CAPABILITY_ALLOWED_FOR",
-    "CONTRACT_VERSION",
     "CONTENT_RESOURCE_ID",
+    "CONTRACT_VERSION",
     "DATA_ACCESS_TOKENS",
     "DECLARATIVE_TYPES",
     "ENTRY_POINT_GROUP",
@@ -290,9 +290,9 @@ __all__ = [
     "normalize_manifest_dict",
     "parse_entry_target",
     "parse_version",
-    "provider_conflicts",
     "provenance_complete",
     "provenance_digest",
+    "provider_conflicts",
     "python_satisfies",
     "read_extensions",
     "read_resource_text",

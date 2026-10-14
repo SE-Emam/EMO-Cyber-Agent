@@ -8,13 +8,16 @@ only: grants nothing, widens nothing, executes nothing.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
+from datetime import UTC, datetime
 from typing import Any
 
 from emo_cyber_agent.tasks.spec import (
+    ResolutionStatus,
     ResolvedSkill,
     ResolvedTask,
-    ResolutionStatus,
     TaskError,
     TaskErrorCode,
     TaskScope,
@@ -111,13 +114,13 @@ class TaskResolver:
                 template_known = True
                 template_version = str(getattr(resolved_template, "version", ""))
                 reasons.append(f"report-template:{effective_template}@{template_version} known")
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 if report_template_override:
                     raise TaskError(TaskErrorCode.TEMPLATE_MISSING, f"report template override not registered: {report_template_override}") from None
                 warnings.append(f"report-template-unverified:{effective_template}")
         elif effective_template:
             warnings.append(f"report-template-unverified:{effective_template}")
-        stamp = datetime.now(timezone.utc).isoformat()
+        stamp = datetime.now(UTC).isoformat()
         skill_version_map = {s.skill_id: s.version for s in resolved_skills}
         return ResolvedTask(
             task_id=spec.task_id,
@@ -131,7 +134,7 @@ class TaskResolver:
             scope=scope,
             methodology_phases=tuple(spec.methodology_phases),
             evidence_requirements=tuple(spec.evidence_required),
-            verification_requirements=tuple([f"required={spec.verification_required}", f"confirmation={spec.verification_confirmation}", f"refutation={spec.verification_refutation}"]),
+            verification_requirements=(f"required={spec.verification_required}", f"confirmation={spec.verification_confirmation}", f"refutation={spec.verification_refutation}"),
             verification_methods=tuple(spec.verification_methods),
             report_template=effective_template,
             report_template_known=template_known,

@@ -8,6 +8,9 @@ No real secrets. Stdlib only, cross-platform (sys.executable-based).
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import argparse
 import json
 import os
@@ -36,7 +39,7 @@ def _run(prefix: list[str], args: list[str], cwd: Path, env_extra: dict | None =
     env = dict(os.environ)
     if env_extra:
         env.update(env_extra)
-    return subprocess.run([*prefix, *args], capture_output=True, text=True, timeout=TIMEOUT, cwd=str(cwd), env=env)
+    return subprocess.run([*prefix, *args], check=False, capture_output=True, text=True, timeout=TIMEOUT, cwd=str(cwd), env=env)
 
 
 def main() -> int:
@@ -69,7 +72,7 @@ def main() -> int:
             ok = p.returncode == 0 and isinstance(body.get("checks"), dict)
             leak = FAKE_SECRET in p.stdout or FAKE_SECRET in p.stderr
             record("cli.doctor.json", ok and not leak, f"exit={p.returncode} keys={len(body.get('checks', {})) if ok else 0}")
-        except Exception as exc:
+        except UNEXPECTED_EXCEPTION as exc:
             record("cli.doctor.json", False, f"unparseable: {exc}")
 
         p = _run(prefix, ["doctor"], work)
@@ -79,7 +82,7 @@ def main() -> int:
         try:
             body = json.loads(p.stdout)
             record("cli.status.unknown_json", p.returncode == 1 and body.get("status") == "unknown-audit", f"exit={p.returncode}")
-        except Exception as exc:
+        except UNEXPECTED_EXCEPTION as exc:
             record("cli.status.unknown_json", False, f"unparseable: {exc}")
         p2 = _run(prefix, ["status", "unknown-audit-zzz"], work)
         record("cli.status.unknown_human", p2.returncode == 1 and "unknown-audit" in p2.stdout, f"exit={p2.returncode}")
@@ -89,7 +92,7 @@ def main() -> int:
             body = json.loads(p.stdout)
             ok = p.returncode == 0 and body.get("status") == "ok" and body["result"].get("target") == "."
             record("cli.audit.json", ok and FAKE_SECRET not in p.stdout, f"exit={p.returncode}")
-        except Exception as exc:
+        except (OSError, ValueError, TypeError, KeyError) as exc:
             record("cli.audit.json", False, f"unparseable: {exc}")
         ph = _run(prefix, ["audit", ".", "--format", "human"], work)
         record("cli.audit.human", ph.returncode == 0 and "audit_id" in ph.stdout and FAKE_SECRET not in ph.stdout, f"exit={ph.returncode}")
@@ -98,7 +101,7 @@ def main() -> int:
         try:
             body = json.loads(p.stdout)
             record("cli.review.json", p.returncode == 0 and body.get("status") == "ok" and FAKE_SECRET not in p.stdout, f"exit={p.returncode}")
-        except Exception as exc:
+        except (OSError, ValueError, TypeError, KeyError) as exc:
             record("cli.review.json", False, f"unparseable: {exc}")
 
         cand = {"audit_id": "PARITY-A", "hypothesis": "parity hypothesis", "evidence_ids": ["e1"]}
@@ -110,7 +113,7 @@ def main() -> int:
         try:
             body = json.loads(p.stdout)
             record("cli.verify.json", p.returncode == 0 and body.get("result", {}).get("plan_id") not in (None, ""), f"exit={p.returncode}")
-        except Exception as exc:
+        except (OSError, ValueError, TypeError, KeyError) as exc:
             record("cli.verify.json", False, f"unparseable: {exc}")
 
         findings = [{"finding_id": "f1", "audit_id": "PARITY-A", "title": "T", "description": "D",
@@ -123,7 +126,7 @@ def main() -> int:
         try:
             json.loads(p.stdout)
             record("cli.report.json", p.returncode == 0, f"exit={p.returncode}")
-        except Exception as exc:
+        except (OSError, ValueError, TypeError, KeyError) as exc:
             record("cli.report.json", False, f"unparseable: {exc}")
 
         # Exit-code meanings: 2 == invalid input (bad mode / bad format).
@@ -136,14 +139,14 @@ def main() -> int:
         try:
             json.loads(p.stdout)
             record("cli.stderr.separation", FAKE_SECRET not in p.stderr, f"stderr_bytes={len(p.stderr)}")
-        except Exception as exc:
+        except (OSError, ValueError, TypeError, KeyError) as exc:
             record("cli.stderr.separation", False, f"stdout unparseable: {exc}")
         # Presence-only: doctor must never echo a real-valued canary even if configured.
         p = _run(prefix, ["doctor", "--format", "json"], work, env_extra={"EMO_TEST_SECRET_CANARY": FAKE_SECRET})
         record("cli.redaction.canary", FAKE_SECRET not in (p.stdout + p.stderr), f"exit={p.returncode}")
     except subprocess.TimeoutExpired as exc:
         record("cli.no_hang", False, f"timeout: {exc}")
-    except Exception as exc:
+    except (OSError, ValueError, TypeError, KeyError) as exc:
         record("cli.harness", False, f"{type(exc).__name__}: {exc}")
     finally:
         shutil.rmtree(work, ignore_errors=True)

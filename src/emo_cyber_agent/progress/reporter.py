@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Iterable
+from collections.abc import Callable, Iterable
 
 from .events import ProgressEvent
 
@@ -32,7 +32,7 @@ class ProgressReporter:
     def cli_sink(self) -> ProgressSink:
         def _sink(event: ProgressEvent) -> None:
             bar_width = 20
-            filled = int(round((event.percent / 100.0) * bar_width))
+            filled = round((event.percent / 100.0) * bar_width)
             bar = "#" * filled + "-" * (bar_width - filled)
             print(f"[{bar}] {event.percent:6.2f}% {event.phase} ({event.message_code})")
 

@@ -7,6 +7,8 @@ full validation pipeline; content stays untrusted until proven otherwise.
 
 from __future__ import annotations
 
+import builtins
+
 from emo_cyber_agent.skills.spec import (
     SkillSpec,
     SkillTrust,
@@ -82,16 +84,16 @@ class SkillRegistry:
     def list(self) -> list[SkillSpec]:
         return [self._skills[key] for key in sorted(self._skills)]
 
-    def versions(self, skill_id: str) -> list[str]:
+    def versions(self, skill_id: str) -> builtins.list[str]:
         return sorted(ver for (sid, ver) in self._skills if sid == skill_id)
 
     def validation_of(self, skill_id: str, version: str) -> SkillValidation:
         return self._validations[(skill_id, version)]
 
-    def dependencies(self, skill_id: str, version: str | None = None) -> list[str]:
+    def dependencies(self, skill_id: str, version: str | None = None) -> builtins.list[str]:
         return list(self.get(skill_id, version).dependencies)
 
-    def compatible_skills(self, skill_id: str, version: str | None = None) -> list[SkillSpec]:
+    def compatible_skills(self, skill_id: str, version: str | None = None) -> builtins.list[SkillSpec]:
         """Skills sharing domain or linked by dependency, same registry only."""
         base = self.get(skill_id, version)
         out = []
@@ -102,7 +104,7 @@ class SkillRegistry:
                 out.append(spec)
         return out
 
-    def check_cycles(self) -> list[str]:
+    def check_cycles(self) -> builtins.list[str]:
         """Return dependency cycles (empty = acyclic). Deterministic order."""
         cycles: list[str] = []
         visited: dict[str, str] = {}

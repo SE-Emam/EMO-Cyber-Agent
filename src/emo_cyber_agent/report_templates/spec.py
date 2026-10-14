@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -96,13 +96,13 @@ class VisibilityRule(BaseModel):
         elif self.show_if_field.startswith("finding."):
             actual = finding_view.get(self.show_if_field[len("finding."):])
         if self.operator == "==":
-            return actual == self.value
+            return bool(actual == self.value)
         if self.operator == "!=":
-            return actual != self.value
+            return bool(actual != self.value)
         if self.operator == "in":
-            return actual in (self.value if isinstance(self.value, list) else [self.value])
+            return bool(actual in (self.value if isinstance(self.value, list) else [self.value]))
         if self.operator == "not-in":
-            return actual not in (self.value if isinstance(self.value, list) else [self.value])
+            return bool(actual not in (self.value if isinstance(self.value, list) else [self.value]))
         return False
 
 
@@ -191,7 +191,7 @@ class ResolvedReportTemplate(BaseModel):
     template_id: str
     version: str
     digest: str = ""
-    resolved_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    resolved_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     spec: ReportTemplateSpec | None = None
 
     @staticmethod

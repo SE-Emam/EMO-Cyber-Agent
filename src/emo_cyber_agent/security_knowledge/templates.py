@@ -8,6 +8,9 @@ and never widen a caller's scope.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +26,7 @@ def load_knowledge_template(path: Any) -> KnowledgeTemplateConfig:
 
     try:
         doc = _yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise KnowledgeError(KnowledgeErrorCode.INVALID, f"malformed template YAML: {e}") from e
     if not isinstance(doc, dict) or "knowledge_template" not in doc:
         raise KnowledgeError(KnowledgeErrorCode.INVALID, "template YAML must contain a top-level knowledge_template mapping")

@@ -258,8 +258,7 @@ def _truncate_with_marker(text: str, *, max_chars: int) -> tuple[str, bool, int]
     if len(text) <= max_chars:
         return text, False, 0
     keep = max_chars - len(TRUNCATION_MARKER)
-    if keep < 0:
-        keep = 0
+    keep = max(keep, 0)
     dropped = len(text) - keep
     return text[:keep] + TRUNCATION_MARKER, True, dropped
 

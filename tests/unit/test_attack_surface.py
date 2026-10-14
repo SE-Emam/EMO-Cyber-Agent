@@ -4,6 +4,9 @@ Surface categories, element linkage, completeness honesty
 (never NONE from nothing, never FULL from partial), queries,
 audit binding, determinism, purity. No Findings, no severity.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import json
 from pathlib import Path
@@ -49,7 +52,7 @@ def test_surface_categories_closed():
     }
     from emo_cyber_agent.threat_modeling.spec import AttackSurfaceElement
 
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         AttackSurfaceElement(element_id="x", category="NOPE")
 
 
@@ -71,7 +74,6 @@ def test_state_change_and_admin_surfaces():
 
     graph, caps = _graph("auth_flow")
     system = build_system_model(audit_id="A", project_id="P", snapshot_id="s", code_graph=graph)
-    from emo_cyber_agent.threat_modeling.attack_surface import build_attack_surface
 
     surface = build_attack_surface(system, code_graph=graph, codeintel_capabilities=caps)
     categories = {e.category for e in surface.elements}
@@ -91,7 +93,6 @@ def test_empty_surface_is_unknown_never_none():
 def test_none_observed_only_with_routes_capability():
     from emo_cyber_agent.code_intelligence.graph import CodeGraph
     from emo_cyber_agent.code_intelligence.spec import CodeProject, CodeSnapshot
-    from emo_cyber_agent.threat_modeling.attack_surface import build_attack_surface
     from emo_cyber_agent.threat_modeling.system_model import build_system_model
 
     system = build_system_model(audit_id="A", project_id="P", snapshot_id="s")

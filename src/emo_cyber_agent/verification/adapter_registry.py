@@ -8,6 +8,10 @@ health contracts, and non-deterministic result contracts.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
+import builtins
 from typing import Any
 
 from emo_cyber_agent.verification.adapter_contracts import (
@@ -35,12 +39,12 @@ class VerificationAdapterRegistry:
             if "escalation" in message:
                 raise StrategyError(StrategyErrorCode.ADAPTER_ESCALATION, message) from e
             raise StrategyError(StrategyErrorCode.ADAPTER_CAPABILITY_UNKNOWN, message) from e
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise StrategyError(StrategyErrorCode.ADAPTER_INVALID_REQUEST, f"adapter contract incomplete: {e}") from e
         try:
             health = adapter.health()
             provenance = adapter.provenance
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise StrategyError(StrategyErrorCode.ADAPTER_INVALID_REQUEST, f"adapter contract incomplete: {e}") from e
         self._check_capabilities(capabilities)
         if not provenance or not provenance.get("provider_identity"):
@@ -76,11 +80,11 @@ class VerificationAdapterRegistry:
     def list(self) -> list[VerificationAdapter]:
         return [self._adapters[key] for key in sorted(self._adapters)]
 
-    def versions(self, adapter_id: str) -> list[str]:
+    def versions(self, adapter_id: str) -> builtins.list[str]:
         return sorted(v for (sid, v) in self._adapters if sid == adapter_id)
 
-    def describe(self) -> list[dict[str, Any]]:
-        out: list[dict[str, Any]] = []
+    def describe(self) -> builtins.list[dict[str, Any]]:
+        out: builtins.list[dict[str, Any]] = []
         for adapter in self.list():
             capabilities = adapter.capabilities()
             health = adapter.health()

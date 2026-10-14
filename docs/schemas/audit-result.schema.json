@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["schema_version", "audit_id", "status", "target", "coverage", "findings"],
   "properties": {
-    "schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+$"},
+    "schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
     "audit_id": {"type": "string"},
     "status": {"enum": ["completed", "partial", "failed", "cancelled"]},
     "target": {"type": "string"},
@@ -28,7 +28,9 @@
     },
     "tool_failures": {"type": "array", "items": {"type": "string"}},
     "limitations": {"type": "array", "items": {"type": "string"}},
-    "metadata": {"type": "object"}
+    "metadata": {"type": "object"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "completed_at": {"type": ["string", "null"], "format": "date-time"}
   },
   "additionalProperties": false
 }

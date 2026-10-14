@@ -8,13 +8,9 @@ poisoning vs misuse separation. No connections, no invocations.
 import json
 from pathlib import Path
 
-import pytest
-
 from emo_cyber_agent.agent_security.agent_model import build_agent_system
-from emo_cyber_agent.agent_security.errors import AgentSecurityError
 from emo_cyber_agent.agent_security.mcp_model import KNOWN_PROTOCOL_VERSIONS, build_mcp_topology
 from emo_cyber_agent.agent_security.service import AgentSecurityService
-from emo_cyber_agent.agent_security.spec import MCP_CHECK_KINDS
 
 
 def _config():

@@ -4,6 +4,9 @@ Malicious-content battery, tool-output isolation regression,
 scope/authority attacks, stale/budget/mitigation/URL attacks,
 E2E workflows with zero Findings. No live execution anywhere.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import json
 from pathlib import Path
@@ -23,7 +26,7 @@ def _config():
 
 def _assessment(**over):
     service = AgentSecurityService()
-    kwargs = dict(audit_id="A", project_id="P", snapshot_id="s1", architecture=_config(), task_scope=("read-only",))
+    kwargs = {"audit_id": "A", "project_id": "P", "snapshot_id": "s1", "architecture": _config(), "task_scope": ("read-only",)}
     kwargs.update(over)
     return service.analyze(**kwargs)
 
@@ -38,7 +41,7 @@ def test_adversarial_texts_all_inert():
     payloads = _payloads()
     assert len(payloads) == 11
     service = AgentSecurityService()
-    before = _assessment()
+    _assessment()
     poisoned = service.analyze(
         audit_id="A",
         project_id="P",
@@ -112,7 +115,7 @@ def test_tool_result_parts_stay_separate():
 
     parts = ToolResultParts(result_id="res-001", data_digest="d" * 64, instruction_like_digest="e" * 64, metadata_digest="f" * 64)
     assert parts.data_digest != parts.instruction_like_digest
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ToolResultParts(result_id="Bad_ID")
 
 
@@ -143,7 +146,7 @@ def test_severity_confirmation_injection_rejected():
         assert_no_authority_language("severity critical confirmed vulnerability")
     from emo_cyber_agent.agent_security.spec import AgentThreatScenario
 
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         AgentThreatScenario(scenario_id="ok-id", category="TOOL_MISUSE", hypothesis_status="CONFIRMED")
 
 
@@ -161,8 +164,6 @@ def test_malicious_mitigation_never_executes():
     assessment = _assessment()
     for scenario in assessment.scenarios:
         assert scenario.control_ids == () or all(isinstance(c, str) for c in scenario.control_ids)
-    import ast as _ast
-
     text = "\n".join((Path("src/emo_cyber_agent/agent_security") / f).read_text() for f in ["service.py", "verification.py", "threat_rules.py"])
     assert "apply_patch" not in text and "edit_file" not in text and "auto_merge" not in text
 

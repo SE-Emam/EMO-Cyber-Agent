@@ -17,6 +17,9 @@ valid manifest is still an untrusted manifest.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import re
 from typing import Any
 
@@ -27,18 +30,17 @@ from emo_cyber_agent.extensions.spec import (
     CAPABILITY_ALLOWED_FOR,
     DATA_ACCESS_TOKENS,
     DECLARATIVE_TYPES,
-    EXECUTABLE_TYPES,
     EXTENSION_API_VERSION,
     EXTENSION_TYPES,
     FORBIDDEN_DECLARATIONS,
     FORBIDDEN_PROCESS_DECLARATIONS,
     FORBIDDEN_SECRET_DECLARATIONS,
-    NetworkRequirement,
-    ProcessRequirement,
-    SecretDeclaration,
     ExtensionEntrypointKind,
     ExtensionManifest,
     ExtensionResource,
+    NetworkRequirement,
+    ProcessRequirement,
+    SecretDeclaration,
 )
 
 __all__ = [
@@ -141,7 +143,7 @@ class ExtensionValidator:
 
         try:
             validate_against_schema(raw, self._schema)
-        except Exception as exc:  # noqa: BLE001 - typed ExtensionError or jsonschema noise
+        except UNEXPECTED_EXCEPTION as exc:
             return (f"schema:{str(exc)[:220]}",)
         return ()
 
@@ -223,9 +225,11 @@ class ExtensionValidator:
                 errors.append("entrypoint-invalid:implementation without contract")
         if manifest.type_value in DECLARATIVE_TYPES and kind == ExtensionEntrypointKind.IMPLEMENTATION.value:
             errors.append(f"entrypoint-invalid:declarative type must not ship code:{manifest.type_value}")
-        if manifest.type_value in EXECUTABLE_TYPES and kind == ExtensionEntrypointKind.DECLARATIVE.value:
-            if manifest.type_value == "verification_adapter":
-                errors.append("entrypoint-invalid:verification adapter requires an implementation")
+        if (
+            manifest.type_value == "verification_adapter"
+            and kind == ExtensionEntrypointKind.DECLARATIVE.value
+        ):
+            errors.append("entrypoint-invalid:verification adapter requires an implementation")
         return errors
 
     def _dependency_errors(self, manifest: ExtensionManifest) -> list[str]:

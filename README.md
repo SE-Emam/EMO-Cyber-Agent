@@ -92,6 +92,19 @@ From source (developers):
 pip install -e '.[all]'
 ```
 
+Docker (reproducible runtime and test target):
+
+```bash
+make docker-build
+make docker-run
+make docker-test
+make docker-unit
+```
+
+The runtime runs as an unprivileged user with a read-only filesystem, no
+Linux capabilities, and no network access. See `docs/docker.md` for the
+security model and release-image pinning requirements.
+
 ## MCP and integrations
 
 Register once as an MCP server, then delegate from any compatible host:
@@ -181,6 +194,14 @@ Read-only analysis; no auto-remediation, no exploit capabilities, no
 scores-as-verdicts. Live-host interop beyond contract tests is
 environment-dependent (see host docs). Progress never gates security
 decisions; recovery never mutates policy, evidence, or findings.
+
+`FoundationSecurityAuditor.audit` currently invokes locally installed Gitleaks
+through the strict read-only tool boundary and returns redacted scanner
+observations as evidence. It remains `partial`: Semgrep is intentionally not
+run until offline rule configuration is verified, Trivy and OSV-Scanner are
+not part of this local path, and finding classification/full control coverage
+are not implemented. `review` and `verify` remain partial stubs. A successful
+CLI process or an empty findings list is not a completed security assessment.
 
 ## Verification and tests
 

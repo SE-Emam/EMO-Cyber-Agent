@@ -8,7 +8,11 @@ not: no expected values, no labels, no verdicts.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -24,14 +28,14 @@ from emo_cyber_agent.evaluation.spec import (
 )
 
 __all__ = [
-    "CaseSource",
-    "EvaluationScenario",
-    "EvaluationCase",
-    "BlindEvaluationCase",
     "SPLIT_VISIBILITIES",
+    "BlindEvaluationCase",
+    "CaseSource",
+    "EvaluationCase",
+    "EvaluationScenario",
     "blind_case",
-    "normalize_case",
     "case_sections",
+    "normalize_case",
 ]
 
 _CASE_ID = r"^[a-z0-9][a-z0-9._-]{1,95}$"
@@ -183,7 +187,7 @@ def normalize_case(payload: Mapping[str, Any]) -> EvaluationCase:
         return EvaluationCase(**data)
     except EvaluationError:
         raise
-    except Exception as exc:
+    except UNEXPECTED_EXCEPTION as exc:
         raise EvaluationError(
             EvaluationErrorCode.INVALID_CASE,
             f"invalid case {data.get('case_id', '?')}: {exc}",

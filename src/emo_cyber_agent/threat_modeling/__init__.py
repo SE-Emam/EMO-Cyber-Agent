@@ -7,10 +7,19 @@ no execution, no remediation.
 """
 
 from emo_cyber_agent.threat_modeling.attack_surface import build_attack_surface
-from emo_cyber_agent.threat_modeling.controls import coverage_for, expected_controls, observe_controls
+from emo_cyber_agent.threat_modeling.controls import (
+    coverage_for,
+    expected_controls,
+    observe_controls,
+)
 from emo_cyber_agent.threat_modeling.delta import diff_threat_models
 from emo_cyber_agent.threat_modeling.errors import ThreatModelError, ThreatModelErrorCode
-from emo_cyber_agent.threat_modeling.methods import get_method, register_method, registered_methods, rules_for
+from emo_cyber_agent.threat_modeling.methods import (
+    get_method,
+    register_method,
+    registered_methods,
+    rules_for,
+)
 from emo_cyber_agent.threat_modeling.paths import find_attack_paths
 from emo_cyber_agent.threat_modeling.provenance import build_threat_provenance
 from emo_cyber_agent.threat_modeling.queries import ALLOWED_SURFACE_QUERIES, ThreatQueryPort
@@ -111,7 +120,6 @@ __all__ = [
     "build_threat_provenance",
     "build_threat_scenarios",
     "canonical_digest",
-    "stable_id",
     "coverage_for",
     "diff_threat_models",
     "elicit_stride",
@@ -122,4 +130,5 @@ __all__ = [
     "register_method",
     "registered_methods",
     "rules_for",
+    "stable_id",
 ]

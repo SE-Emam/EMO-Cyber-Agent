@@ -7,6 +7,8 @@ queue is exhausted the mock requests termination.
 
 from __future__ import annotations
 
+from typing import Any
+
 from emo_cyber_agent.core.reasoning import (
     ActionKind,
     HypothesisDraft,
@@ -16,11 +18,11 @@ from emo_cyber_agent.core.reasoning import (
 )
 
 
-def _act(kind: str, **kw) -> ReasonerAction:
+def _act(kind: str, **kw: Any) -> ReasonerAction:
     return ReasonerAction(kind=ActionKind(kind), reason=kw.pop("reason", "test reason"), **kw)
 
 
-def _resp(session_id: str, actions: list[ReasonerAction], **kw) -> ReasonerResponse:
+def _resp(session_id: str, actions: list[ReasonerAction], **kw: Any) -> ReasonerResponse:
     return ReasonerResponse(session_id=session_id, **kw, next_actions=tuple(actions))
 
 
@@ -31,9 +33,16 @@ class MockReasonerProvider(ReasonerProvider):
         self._session_id = session_id
         self._script = list(script)
         self.calls = 0
-        self.seen_contexts: list[dict] = []
+        self.seen_contexts: list[dict[str, Any]] = []
 
-    def propose(self, *, context, state, allowed_capabilities, objective):
+    def propose(
+        self,
+        *,
+        context: dict[str, Any],
+        state: dict[str, Any],
+        allowed_capabilities: list[str],
+        objective: str,
+    ) -> ReasonerResponse:
         self.calls += 1
         self.seen_contexts.append(context)
         if self._script:

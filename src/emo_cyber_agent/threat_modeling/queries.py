@@ -9,7 +9,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 
 from emo_cyber_agent.threat_modeling.errors import ThreatModelError, ThreatModelErrorCode
@@ -65,7 +66,7 @@ class ThreatQueryPort:
     def _record(self, query_type: str, target: str, result: Any) -> dict[str, Any]:
         entry = {
             "query_type": query_type, "target": target, "snapshot_id": self._model.snapshot_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(), "result_digest": _digest(result),
+            "timestamp": datetime.now(UTC).isoformat(), "result_digest": _digest(result),
         }
         self.history.append(entry)
         return entry
@@ -129,7 +130,7 @@ class ThreatQueryPort:
     def run_named(self, query_type: str, *, audit_id: str, target: str = "") -> tuple[Any, dict[str, Any]]:
         """Dispatch by allowlisted name only. Anything else is rejected —
         there is no DSL to inject into."""
-        dispatch = {
+        dispatch: dict[str, Callable[[], tuple[Any, dict[str, Any]]]] = {
             "list_external_entrypoints": lambda: self.list_external_entrypoints(audit_id=audit_id),
             "list_state_changing_entrypoints": lambda: self.list_state_changing_entrypoints(audit_id=audit_id),
             "list_trust_boundaries": lambda: self.list_trust_boundaries(audit_id=audit_id),

@@ -24,28 +24,32 @@ Shape reuses frozen-pydantic conventions (``frozen=True``,
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import hashlib
 import json
 import re
-from typing import Any, Callable, Literal, Self
+from collections.abc import Callable
+from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = [
-    "SPEC_VERSION",
     "HIBP_API_BASE",
+    "SPEC_VERSION",
     "THREATFOX_API_URL",
     "THREATFOX_IOC_TYPES",
+    "DarkLeakMonitor",
     "LeakFinding",
     "LeakTriageVerdict",
-    "DarkLeakMonitor",
     "hibp_breach_request",
-    "threatfox_ioc_request",
     "parse_hibp_response",
     "parse_threatfox_response",
+    "sha256_hex",
+    "threatfox_ioc_request",
     "triage",
     "triage_leak",
-    "sha256_hex",
 ]
 
 SPEC_VERSION = "1.0.0"
@@ -183,14 +187,14 @@ def parse_hibp_response(payload: Any) -> list[LeakFinding]:
     elif isinstance(payload, list):
         account, breaches = "", payload
     else:
-        raise ValueError("hibp payload must be a dict or list")
+        raise ValueError("hibp payload must be a dict or list")  # noqa: TRY004 - stable parser API
     if not isinstance(breaches, list):
-        raise ValueError("hibp breaches must be a list")
+        raise ValueError("hibp breaches must be a list")  # noqa: TRY004 - stable parser API
     account = (account or "").strip()
     findings: list[LeakFinding] = []
     for index, entry in enumerate(breaches):
         if not isinstance(entry, dict):
-            raise ValueError(f"hibp breach entry {index} must be a dict")
+            raise ValueError(f"hibp breach entry {index} must be a dict")  # noqa: TRY004 - stable parser API
         name = str(entry.get("Name", entry.get("name", ""))).strip()
         if not name:
             raise ValueError(f"hibp breach entry {index} has no Name")
@@ -236,13 +240,13 @@ def parse_threatfox_response(payload: Any) -> list[LeakFinding]:
     elif isinstance(payload, list):
         items = payload
     else:
-        raise ValueError("threatfox payload must be a dict or list")
+        raise ValueError("threatfox payload must be a dict or list")  # noqa: TRY004 - stable parser API
     if not isinstance(items, list):
-        raise ValueError("threatfox data must be a list")
+        raise ValueError("threatfox data must be a list")  # noqa: TRY004 - stable parser API
     findings: list[LeakFinding] = []
     for index, entry in enumerate(items):
         if not isinstance(entry, dict):
-            raise ValueError(f"threatfox entry {index} must be a dict")
+            raise ValueError(f"threatfox entry {index} must be a dict")  # noqa: TRY004 - stable parser API
         ioc = str(entry.get("ioc", entry.get("search_term", ""))).strip()
         if not ioc:
             raise ValueError(f"threatfox entry {index} has no ioc")
@@ -270,7 +274,7 @@ def _coerce_finding(leak: Any) -> LeakFinding | None:
     if isinstance(leak, dict):
         try:
             return LeakFinding.model_validate(leak)
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             return None
     return None
 

@@ -10,6 +10,9 @@ TRUSTED provenance.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +39,7 @@ def load_yaml_text(text: str) -> dict[str, Any]:
     yaml = _require_yaml()
     try:
         doc = yaml.safe_load(text)
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise TemplateError(TemplateErrorCode.INVALID, f"malformed YAML: {e}") from e
     if not isinstance(doc, dict) or "report_template" not in doc:
         raise TemplateError(TemplateErrorCode.INVALID, "YAML must contain a top-level report_template mapping")
@@ -84,14 +87,14 @@ def validate_against_schema(flat: dict[str, Any], schema: dict[str, Any] | None 
                 from emo_cyber_agent.core.resources import load_schema_text
 
                 schema = _json.loads(load_schema_text("report-template"))
-            except Exception as e:
+            except UNEXPECTED_EXCEPTION as e:
                 raise TemplateError(TemplateErrorCode.INVALID, f"template schema unavailable: {e}") from e
         else:
             schema = _json.loads(schema_path.read_text())
     assert isinstance(schema, dict), "schema unavailable"
     try:
         _js.validate(flat, schema)
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise TemplateError(TemplateErrorCode.INVALID, f"schema validation failed: {e}") from e
 
 

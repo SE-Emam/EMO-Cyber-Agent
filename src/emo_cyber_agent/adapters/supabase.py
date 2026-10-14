@@ -13,7 +13,11 @@ var name), never a raw key/token, and refuses secret-looking values.
 
 from __future__ import annotations
 
-from typing import Any, Callable
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
+from collections.abc import Callable
+from typing import Any
 
 from emo_cyber_agent.core.repository import content_digest, mark_untrusted
 from emo_cyber_agent.core.supabase import (
@@ -67,7 +71,7 @@ class SupabaseAdapter(SupabasePort):
             raw = self._transport(endpoint, params)
         except SupabaseError:
             raise
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise SupabaseError(SupabaseErrorCode.PROVIDER_ERROR, redact_supabase_secrets(str(e))) from e
         if not isinstance(raw, dict):
             raise SupabaseError(SupabaseErrorCode.PROVIDER_ERROR, f"bad {what} payload")

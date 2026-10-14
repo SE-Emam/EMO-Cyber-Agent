@@ -23,11 +23,11 @@ __all__ = [
     "ReportTemplateResolver",
     "ReportTemplateService",
     "ReportTemplateSpec",
+    "ReportTemplateValidator",
     "ResolvedReportTemplate",
     "TemplateError",
     "TemplateErrorCode",
     "TemplateSection",
     "TemplateTrust",
     "VisibilityRule",
-    "ReportTemplateValidator",
 ]

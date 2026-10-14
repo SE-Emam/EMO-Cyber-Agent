@@ -12,9 +12,13 @@ reads wall clocks, randomness, or model/host text.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Mapping
+from typing import Any
 
 from emo_cyber_agent.subagent.session import (
     ALLOWED_TRANSITIONS,
@@ -44,7 +48,7 @@ try:  # pragma: no cover - import path exercised when recovery is present
     from emo_cyber_agent.recovery import RecoveryManager, RecoveryRequest
 
     _RECOVERY_AVAILABLE = True
-except Exception:  # pragma: no cover - fallback when recovery is unavailable
+except UNEXPECTED_EXCEPTION:  # pragma: no cover - fallback when recovery is unavailable
     _RECOVERY_MAX_ATTEMPTS = 3
     _OUTCOME_RECOVERED = "RECOVERED"
     _OUTCOME_QUARANTINED = "QUARANTINED"
@@ -158,7 +162,7 @@ def _fail_closed(
     # Bridge walk: prefer a direct FAILED edge, else step toward it via
     # UNAVAILABLE / RECOVERING, both of which are legal intermediate stops.
     guard = 0
-    while current.state != SubagentLifecycle.FAILED:
+    while current.state.value != SubagentLifecycle.FAILED.value:
         guard += 1
         if guard > 6:  # defense in depth: transition graph is finite
             raise HostIntegrationError(
@@ -210,7 +214,7 @@ def _scope_summary(scope: Any) -> str:
                 f"included={list(scope.get('included', []))} "
                 f"target_types={list(scope.get('target_types', []))}"
             )
-    except Exception:
+    except UNEXPECTED_EXCEPTION:
         pass
     return f"scope={type(scope).__name__}"
 
@@ -460,6 +464,7 @@ class LifecycleCoordinator:
                 ok=False,
                 reason=rec.detail,
             )
+        assert refs is not None  # `present` is true only when refs is available.
         nxt = _step(session, SubagentLifecycle.COMPLETED)
         rec = _record(
             "completed",
@@ -473,9 +478,9 @@ class LifecycleCoordinator:
 
 
 __all__ = [
+    "MAX_LIFECYCLE_RECOVERY_ATTEMPTS",
     "CoordinationRecord",
     "LifecycleCoordinator",
     "LifecycleRecoveryOutcome",
     "LifecycleResult",
-    "MAX_LIFECYCLE_RECOVERY_ATTEMPTS",
 ]

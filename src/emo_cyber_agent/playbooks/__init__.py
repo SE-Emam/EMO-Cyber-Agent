@@ -15,8 +15,8 @@ from emo_cyber_agent.playbooks.spec import (
     PlaybookStatus,
     PlaybookTrust,
     ProjectContext,
-    ResolvedPlaybook,
     ResolutionStatus,
+    ResolvedPlaybook,
 )
 from emo_cyber_agent.playbooks.validator import PlaybookValidator
 
@@ -31,7 +31,7 @@ __all__ = [
     "PlaybookTrust",
     "PlaybookValidator",
     "ProjectContext",
-    "ResolvedPlaybook",
     "ResolutionStatus",
+    "ResolvedPlaybook",
     "evaluate_condition",
 ]

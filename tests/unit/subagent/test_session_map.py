@@ -28,15 +28,15 @@ NOW = 1000
 
 
 def _session(**over) -> SubagentSession:
-    base = dict(
-        session_id="sess-01",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        created=100,
-        expires=9999,
-    )
+    base = {
+        "session_id": "sess-01",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "created": 100,
+        "expires": 9999,
+    }
     base.update(over)
     return SubagentSession(**base)
 

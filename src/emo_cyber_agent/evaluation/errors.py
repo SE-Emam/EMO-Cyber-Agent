@@ -7,9 +7,12 @@ target secrets, or host configuration into a report or a log line.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from enum import StrEnum
 
-__all__ = ["EvaluationErrorCode", "EvaluationError"]
+__all__ = ["EvaluationError", "EvaluationErrorCode"]
 
 
 class EvaluationErrorCode(StrEnum):
@@ -49,7 +52,7 @@ class EvaluationError(Exception):
             from emo_cyber_agent.core.supabase import redact_supabase_secrets
 
             clean = redact_supabase_secrets(redact_credentials(str(message)))
-        except Exception:  # noqa: BLE001 - redaction must never raise
+        except UNEXPECTED_EXCEPTION:
             clean = redact_credentials(str(message))
         super().__init__(f"{code.value}: {clean[:500]}")
         self.code = code

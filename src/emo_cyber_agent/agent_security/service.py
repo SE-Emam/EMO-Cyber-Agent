@@ -9,6 +9,9 @@ tool execution, no Finding creation, no confirmation.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from typing import Any
 
 from emo_cyber_agent.agent_security.agent_model import build_agent_system
@@ -17,15 +20,26 @@ from emo_cyber_agent.agent_security.credential_analysis import analyze_credentia
 from emo_cyber_agent.agent_security.delegation import analyze_delegations
 from emo_cyber_agent.agent_security.errors import AgentSecurityError, AgentSecurityErrorCode
 from emo_cyber_agent.agent_security.mcp_model import build_mcp_topology
-from emo_cyber_agent.agent_security.memory_analysis import analyze_retrieval_trust, check_memory_isolation
+from emo_cyber_agent.agent_security.memory_analysis import (
+    analyze_retrieval_trust,
+    check_memory_isolation,
+)
 from emo_cyber_agent.agent_security.provenance import build_agent_provenance
-from emo_cyber_agent.agent_security.scope_analysis import build_capability_graph, detect_excessive_agency, detect_scope_widening
+from emo_cyber_agent.agent_security.scope_analysis import (
+    build_capability_graph,
+    detect_excessive_agency,
+    detect_scope_widening,
+)
 from emo_cyber_agent.agent_security.spec import (
     AgentSecurityControl,
     AgentSecurityObservation,
+    AgentSystem,
     AgentThreatScenario,
 )
-from emo_cyber_agent.agent_security.tool_poisoning import analyze_tool_misuse, analyze_tool_poisoning
+from emo_cyber_agent.agent_security.tool_poisoning import (
+    analyze_tool_misuse,
+    analyze_tool_poisoning,
+)
 from emo_cyber_agent.threat_modeling.spec import canonical_digest, stable_id
 
 # Volatile operational metadata excluded from deterministic identity.
@@ -76,7 +90,7 @@ CHANGE_TRIGGERS: dict[str, tuple[str, ...]] = {
 class AgentSecurityAssessment:
     """Immutable assessment snapshot. Attribute holder, not a model."""
 
-    def __init__(self, *, system: Any, surface: Any, capability_graph: Any, mcp_topology: Any, scenarios: Any, controls: Any, handoffs: Any, observations: Any, signals: Any, digest: str, limitations: Any, methods: Any = ()):
+    def __init__(self, *, system: AgentSystem, surface: Any, capability_graph: Any, mcp_topology: Any, scenarios: Any, controls: Any, handoffs: Any, observations: Any, signals: Any, digest: str, limitations: Any, methods: Any = ()):
         self.system = system
         self.surface = surface
         self.capability_graph = capability_graph
@@ -147,7 +161,10 @@ class AgentSecurityService:
         )
 
     def _signals(self, system: Any, *, task_scope: tuple[str, ...], description_samples: dict[str, str], output_samples: dict[str, str], retrieval_samples: dict[str, str], allowed_tools: dict[str, tuple[str, ...]], policy_grants: dict[str, tuple[str, ...]]) -> list[dict[str, Any]]:
-        from emo_cyber_agent.agent_security.prompt_analysis import PRIVILEGED_SINK_KINDS, analyze_prompt_injection
+        from emo_cyber_agent.agent_security.prompt_analysis import (
+            PRIVILEGED_SINK_KINDS,
+            analyze_prompt_injection,
+        )
 
         signals: list[dict[str, Any]] = []
         privileged = [t for t in system.mcp_tools] + [s for s in system.tool_bindings]
@@ -265,7 +282,7 @@ class AgentSecurityService:
             known = set()
             try:
                 known = {p.pack_id for p in pack_registry.list()}
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 known = set()
             selected = [p for p in selected if not known or p in known]
         return tuple(selected)
@@ -282,10 +299,9 @@ class AgentSecurityService:
             raise AgentSecurityError(AgentSecurityErrorCode.VERIFICATION_STALE, f"handoff {handoff.handoff_id} not compatible with snapshot {current_snapshot_id}")
 
     def build_evidence(self, assessment: AgentSecurityAssessment) -> list[Any]:
+        from emo_cyber_agent.agent_security.provenance import build_agent_provenance as _prov
         from emo_cyber_agent.core.repository import redact_credentials
         from emo_cyber_agent.domain.models import EvidenceItem
-
-        from emo_cyber_agent.agent_security.provenance import build_agent_provenance as _prov
 
         items: list[Any] = []
         for scenario in assessment.scenarios:
@@ -300,8 +316,9 @@ class AgentSecurityService:
         return items
 
     def report_view(self, assessment: AgentSecurityAssessment, evidence_ids: tuple[str, ...] = ()) -> dict[str, Any]:
-        from emo_cyber_agent.threat_modeling.spec import assert_no_threat_verdicts as _assert
         import json as _json
+
+        from emo_cyber_agent.threat_modeling.spec import assert_no_threat_verdicts as _assert
 
         view = {
             "agent_system": {"agents": len(assessment.system.agents), "subagents": len(assessment.system.subagents), "mcp_servers": len(assessment.system.mcp_servers), "mcp_tools": len(assessment.system.mcp_tools)},
@@ -347,7 +364,7 @@ class AgentSecurityService:
         for path in paths:
             try:
                 doc = _yaml.safe_load(path.read_text())
-            except Exception as e:
+            except UNEXPECTED_EXCEPTION as e:
                 from emo_cyber_agent.agent_security.errors import AgentSecurityError as _E3
                 from emo_cyber_agent.agent_security.errors import AgentSecurityErrorCode as _C3
 

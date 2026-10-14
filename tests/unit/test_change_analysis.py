@@ -5,6 +5,9 @@ dependency/database linking, predicates, propagation, impact,
 planning, baselines, evidence, reports, schemas, determinism,
 skill/pack/task integration. No git, no network, no model.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import json
 from pathlib import Path
@@ -23,7 +26,6 @@ from emo_cyber_agent.change_analysis.spec import (
     CHANGE_PREDICATES,
     FILE_CHANGE_STATES,
     REVIEW_MODES,
-    ChangeSet,
     ComparisonSnapshot,
     assert_no_verdicts,
     canonical_digest,
@@ -45,9 +47,9 @@ def _graph(symbols=(), endpoints=(), boundaries=(), taint=(), sources=(), sinks=
         CodeProject,
         CodeSnapshot,
         CodeSymbol,
+        DatabaseRelationship,
         DataSink,
         DataSource,
-        DatabaseRelationship,
         DependencyEdge,
         RouteEndpoint,
         TaintPath,
@@ -85,8 +87,8 @@ def test_contract_vocabularies_and_frozen():
     assert len(CHANGE_PREDICATES) == 12
     assert set(REVIEW_MODES) == {"FULL_REVIEW", "TARGETED_REVIEW", "REBASE_REVIEW"}
     assert "RESOLVED" not in BASELINE_STATES
-    snap = _snap("s", {})
-    with pytest.raises(Exception):
+    _snap("s", {})
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ComparisonSnapshot(snapshot_id="s", audit_id="A", files={}, bogus_field="x")
     with pytest.raises(ChangeError):
         assert_no_verdicts("this is confirmed vulnerable")
@@ -237,14 +239,13 @@ def test_propagation_bounded_and_explained():
         boundaries=[("b1", "decorator")],
         db=[("r1", "src/c.py:far_fn", "public.t")],
     )
-    from emo_cyber_agent.change_analysis.diff import _link_symbols
 
     changeset = compare_snapshots(base, target, target_graph=graph)
     surface, partial, trail = propagate(changeset, target_graph=graph, max_hops=4, max_nodes=500)
     assert "src/b.py:caller_fn" in surface.symbols and "src/c.py:far_fn" in surface.symbols
     assert surface.routes == ("GET /x",) and surface.boundaries == ("b1",) and surface.database_objects == ("public.t",)
     assert partial is False and trail[0].startswith("seeds:")
-    small, partial2, trail2 = propagate(changeset, target_graph=graph, max_hops=4, max_nodes=1)
+    _small, partial2, trail2 = propagate(changeset, target_graph=graph, max_hops=4, max_nodes=1)
     assert partial2 is True and any("budget-exhausted" in t for t in trail2)
 
 
@@ -288,15 +289,15 @@ def test_plan_modes_handoffs_digest():
 
 
 def test_plan_selects_real_packs_and_tasks():
-    from emo_cyber_agent.skills.packs.catalog import load_official_packs
     from emo_cyber_agent.skills.builtin.catalog import load_builtin_registry
+    from emo_cyber_agent.skills.packs.catalog import load_official_packs
 
     skills = load_builtin_registry()
     packs = load_official_packs("templates/skills/packs/official", skill_registry=skills)
     base = _snap("b", {"requirements.txt": "flask==3.0.0\n"})
     target = _snap("t", {"requirements.txt": "flask==3.1.0\n"})
     svc = ChangeService(skill_registry=skills, pack_registry=packs)
-    _, _, impact, plan, _ = svc.review(base, target)
+    _, _, _impact, plan, _ = svc.review(base, target)
     assert "dependency-supply-chain" in plan.targeted_packs
     assert "dependency-audit" in plan.targeted_tasks
     assert "injection-security" not in plan.targeted_packs
@@ -307,7 +308,7 @@ def test_plan_selects_real_packs_and_tasks():
 def test_baseline_states_not_finding_states():
     from emo_cyber_agent.change_analysis.spec import BaselineSecurityObservation
 
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         BaselineSecurityObservation(observation_key="k", state="RESOLVED")
     result = compare_baselines({"a": "d1", "b": "d1", "c": "d1", "d": ""}, {"a": "d1", "b": "d2", "e": "d3", "d": "d9"})
     assert {o.observation_key: o.state for o in result} == {"a": "PERSISTING", "b": "CHANGED", "c": "REMOVED", "d": "INDETERMINATE", "e": "NEW"}
@@ -344,7 +345,7 @@ def test_schemas_validate_real_payloads():
     import jsonschema
 
     svc = ChangeService()
-    changeset, _, impact, plan, _ = svc.review(_snap("b", {"src/a.py": "v1\n"}), _snap("t", {"src/a.py": "v2\n"}))
+    changeset, _, _impact, plan, _ = svc.review(_snap("b", {"src/a.py": "v1\n"}), _snap("t", {"src/a.py": "v2\n"}))
     cs_schema = json.loads(Path("docs/schemas/change-set.schema.json").read_text())
     jsonschema.validate(json.loads(json.dumps(changeset.model_dump(mode="json", exclude={"symbols", "routes", "dependencies", "database_relations", "classifications"}))), cs_schema)
     plan_schema = json.loads(Path("docs/schemas/change-review-plan.schema.json").read_text())
@@ -387,7 +388,7 @@ def test_dependency_change_workflow_end_to_end():
     base_graph = _graph(deps=[("requirements.txt", "flask", "3.0.0")])
     target_graph = _graph(deps=[("requirements.txt", "flask", "3.1.0")])
     svc = ChangeService()
-    changeset, fired, impact, plan, _ = svc.review(base, target, base_graph=base_graph, target_graph=target_graph)
+    _changeset, fired, _impact, plan, _ = svc.review(base, target, base_graph=base_graph, target_graph=target_graph)
     assert "DEPENDENCY_VERSION_CHANGED" in fired
     assert "dependency-audit" in plan.targeted_tasks
     assert plan.coverage_statement != ""

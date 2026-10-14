@@ -22,7 +22,7 @@ def analyze_delegations(system: Any) -> list[dict[str, Any]]:
     parent_scopes: dict[str, tuple[str, ...]] = {}
     for delegation in sorted(delegations, key=lambda d: d.delegation_id):
         parent_scopes.setdefault(delegation.issuer, ())
-        if delegation.issuer in parent_scopes and parent_scopes[delegation.issuer]:
+        if parent_scopes.get(delegation.issuer):
             widened = widened_scopes(parent_scopes[delegation.issuer], delegation.scope)
         else:
             widened = []

@@ -12,7 +12,6 @@ import hashlib
 import json
 import tomllib
 
-
 from conftest import ROOT, SDIST, VERSION, WHEEL
 
 MANIFEST = ROOT / "release" / "release-manifest.json"

@@ -21,7 +21,7 @@ import subprocess
 import sys
 import tomllib
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -147,6 +147,7 @@ def _run_pytest(paths: list[str], *, timeout: int = 1800) -> tuple[int, str]:
     """Run existing suites with the project's pytest options."""
     proc = subprocess.run(
         [sys.executable, "-m", "pytest", *paths, "-o", "addopts=", "-q"],
+        check=False,
         capture_output=True,
         text=True,
         timeout=timeout,
@@ -205,6 +206,7 @@ class SchemaGate(ReleaseGate):
     def run(self) -> ReleaseEvidence:
         proc = subprocess.run(
             [sys.executable, "scripts/validate_schemas.py"],
+            check=False,
             capture_output=True,
             text=True,
             timeout=300,
@@ -279,7 +281,7 @@ def run_all() -> dict:
     decision = {
         "package": PACKAGE,
         "version": VERSION,
-        "evaluated_at": datetime.now(timezone.utc).isoformat(),
+        "evaluated_at": datetime.now(UTC).isoformat(),
         "gates": {item.gate: item.to_dict() for item in evidence},
         "release_status": "BLOCKED" if blocked else "PASS",
         "blocked_by": blocked,

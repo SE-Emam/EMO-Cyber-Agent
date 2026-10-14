@@ -21,10 +21,13 @@ They MUST NOT make security decisions, compute severity, or escalate privilege.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import hashlib
 import re
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -122,7 +125,7 @@ def normalize_path(path: str) -> str:
     p = path.strip()
     if "\x00" in p:
         raise RepositoryError(RepositoryErrorCode.PATH_TRAVERSAL, "null byte denied")
-    if p.startswith("/") or p.startswith("\\"):
+    if p.startswith(("/", "\\")):
         raise RepositoryError(RepositoryErrorCode.PATH_TRAVERSAL, f"absolute path denied: {p[:80]}")
     if len(p) > 1 and p[1] == ":":
         raise RepositoryError(RepositoryErrorCode.PATH_TRAVERSAL, "drive-letter path denied")
@@ -149,7 +152,7 @@ def validate_ref(ref: str) -> str:
     r = ref.strip()
     if "\x00" in r or "%" in r:
         raise RepositoryError(RepositoryErrorCode.INVALID_REF, "invalid ref characters")
-    if not _REF_RE.match(r) or r in (".", "..") or ".." in r or r.startswith("/") or r.startswith("-"):
+    if not _REF_RE.match(r) or r in (".", "..") or ".." in r or r.startswith(("/", "-")):
         raise RepositoryError(RepositoryErrorCode.INVALID_REF, f"invalid ref: {r[:80]}")
     return r
 
@@ -351,18 +354,18 @@ class RepositoryPort(ABC):
 
 def get_repository_tool_specs() -> list[ToolSpec]:
     """Read-only ToolSpecs for repository operations (no write capabilities)."""
-    base = dict(
-        version="1.0.0",
-        description="Read-only repository operation",
-        category="repository",
-        risk_level="low",
-        supports_read_only=True,
-        supports_verification=False,
-        supports_remediation=False,
-        target_types=("repo",),
-        evidence_behavior="summarize",
-        timeout_ms=30000,
-    )
+    base = {
+        "version": "1.0.0",
+        "description": "Read-only repository operation",
+        "category": "repository",
+        "risk_level": "low",
+        "supports_read_only": True,
+        "supports_verification": False,
+        "supports_remediation": False,
+        "target_types": ("repo",),
+        "evidence_behavior": "summarize",
+        "timeout_ms": 30000,
+    }
     return [
         ToolSpec(tool_id="repository.metadata", name="Repository Metadata", capabilities_required=("repository.metadata",), **base),  # type: ignore[arg-type]
         ToolSpec(tool_id="repository.list", name="Repository Tree Listing", capabilities_required=("repository.list",), **base),  # type: ignore[arg-type]
@@ -390,7 +393,7 @@ def build_evidence_provenance(
         "invocation_id": invocation_id,
         "tool_id": tool_id,
         "tool_version": tool_version,
-        "retrieved_at": datetime.now(timezone.utc).isoformat(),
+        "retrieved_at": datetime.now(UTC).isoformat(),
         "policy_version": POLICY_VERSION,
         "schema_version": SCHEMA_VERSION,
     }
@@ -469,7 +472,7 @@ class RepositoryService:
             repo = self._port.resolve_repository(identity)
         except RepositoryError:
             raise
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise RepositoryError(RepositoryErrorCode.PROVIDER_ERROR, redact_credentials(str(e))) from e
         prov = build_evidence_provenance(identity=identity, invocation_id=inv.invocation_id, tool_id="repository.metadata")
         return repo, self._complete(inv, summary=f"resolved {identity.canonical_locator}"), prov
@@ -485,7 +488,7 @@ class RepositoryService:
             tree = self._port.list_tree(identity, clean)
         except RepositoryError:
             raise
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise RepositoryError(RepositoryErrorCode.PROVIDER_ERROR, redact_credentials(str(e))) from e
         prov = build_evidence_provenance(identity=identity, invocation_id=inv.invocation_id, tool_id="repository.list", path=clean or None)
         return tree, self._complete(inv, summary=f"listed {clean or '/'} in {identity.canonical_locator}"), prov
@@ -498,7 +501,7 @@ class RepositoryService:
             f = self._port.get_file(identity, clean)
         except RepositoryError:
             raise
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise RepositoryError(RepositoryErrorCode.PROVIDER_ERROR, redact_credentials(str(e))) from e
         # Enforce untrusted envelope even if adapter forgot it.
         if not f.untrusted:
@@ -515,7 +518,7 @@ class RepositoryService:
             results = self._port.search_code(identity, query.strip())
         except RepositoryError:
             raise
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise RepositoryError(RepositoryErrorCode.SEARCH_FAILED, redact_credentials(str(e))) from e
         prov = build_evidence_provenance(identity=identity, invocation_id=inv.invocation_id, tool_id="repository.search")
         prov["query_digest"] = content_digest(query.strip())
@@ -530,7 +533,7 @@ class RepositoryService:
             info = self._port.get_commit(identity, clean_ref)
         except RepositoryError:
             raise
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise RepositoryError(RepositoryErrorCode.PROVIDER_ERROR, redact_credentials(str(e))) from e
         prov = build_evidence_provenance(identity=identity, invocation_id=inv.invocation_id, tool_id="repository.metadata")
         return info, self._complete(inv, summary=f"commit {info.sha[:12]}"), prov

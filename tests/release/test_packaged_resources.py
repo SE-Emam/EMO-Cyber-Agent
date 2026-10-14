@@ -11,7 +11,6 @@ only release addition is resolving that directory from the wheel.
 from __future__ import annotations
 
 import pytest
-
 from conftest import run_installed
 
 _CATALOG_COUNTS = (

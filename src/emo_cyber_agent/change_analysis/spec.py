@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -149,7 +149,7 @@ class ChangeSet(BaseModel):
     target_snapshot_id: str = Field(..., min_length=1, max_length=160)
     base_revision: str = Field(default="", max_length=120)
     target_revision: str = Field(default="", max_length=120)
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     source_provenance: str = Field(default="", max_length=300)
     files: tuple[ChangedFile, ...] = ()
     symbols: tuple[ChangedSymbol, ...] = ()

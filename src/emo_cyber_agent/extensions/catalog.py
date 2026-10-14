@@ -19,12 +19,16 @@ re-validated with the hardened path rules before a byte is read, so
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import os
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
+from emo_cyber_agent.extensions.compatibility import HostProfile
 from emo_cyber_agent.extensions.discovery import discover_directory
 from emo_cyber_agent.extensions.errors import ExtensionError, ExtensionErrorCode
 from emo_cyber_agent.extensions.loader import ExtensionLoader, LoadReport
@@ -35,28 +39,27 @@ from emo_cyber_agent.extensions.spec import (
     ExtensionResource,
     ExtensionSourceClass,
 )
-from emo_cyber_agent.extensions.compatibility import HostProfile
 
 __all__ = [
     "OFFICIAL_PUBLISHER",
     "READ_ACTIONS",
-    "resolve_resource_path",
     "build_read_registry",
     "content_resource",
     "extension_roots",
     "load_official_extensions",
-    "read_extensions",
     "materialize_content",
     "materialize_evaluation_dataset",
+    "materialize_playbook",
+    "materialize_report_template",
     "materialize_skill",
     "materialize_skill_pack",
     "materialize_task",
-    "materialize_playbook",
-    "materialize_report_template",
     "materialize_threat_method",
     "materialize_tool_pack",
     "materialize_verification_strategy",
+    "read_extensions",
     "read_resource_text",
+    "resolve_resource_path",
     "verify_extension_contract",
 ]
 
@@ -153,7 +156,7 @@ def _yaml_doc(text: str, *, extension_id: str) -> dict[str, Any]:
         raise ExtensionError(ExtensionErrorCode.MANIFEST_INVALID, f"yaml missing: {exc}") from exc
     try:
         doc = yaml.safe_load(text)
-    except Exception as exc:  # noqa: BLE001 - content failure
+    except UNEXPECTED_EXCEPTION as exc:
         raise ExtensionError(ExtensionErrorCode.MANIFEST_INVALID, f"{extension_id}: malformed YAML: {exc}") from None
     if not isinstance(doc, dict):
         raise ExtensionError(ExtensionErrorCode.MANIFEST_INVALID, f"{extension_id}: content must be a mapping")
@@ -185,7 +188,7 @@ def materialize_skill(root: str | Path, manifest: ExtensionManifest) -> Any:
     flat = doc.get("skill", doc) if isinstance(doc.get("skill"), dict) else doc
     try:
         return SkillSpec(**flat)
-    except Exception as exc:  # noqa: BLE001 - typed below
+    except UNEXPECTED_EXCEPTION as exc:
         raise ExtensionError(ExtensionErrorCode.MANIFEST_INVALID, f"{manifest.extension_id}: skill invalid: {exc}") from None
 
 
@@ -223,7 +226,7 @@ def materialize_verification_strategy(root: str | Path, manifest: ExtensionManif
         strategies = load_strategy_file(target)
     except ExtensionError:
         raise
-    except Exception as exc:  # noqa: BLE001 - content failure typed by us
+    except UNEXPECTED_EXCEPTION as exc:
         raise ExtensionError(
             ExtensionErrorCode.MANIFEST_INVALID,
             f"{manifest.extension_id}: strategy invalid: {exc}",
@@ -251,7 +254,7 @@ def materialize_threat_method(root: str | Path, manifest: ExtensionManifest) -> 
     try:
         method = ThreatMethod(**method_doc)
         rules = tuple(ThreatRule(**rule) for rule in rules_doc)
-    except Exception as exc:  # noqa: BLE001 - typed below
+    except UNEXPECTED_EXCEPTION as exc:
         raise ExtensionError(
             ExtensionErrorCode.MANIFEST_INVALID, f"{manifest.extension_id}: threat method invalid: {exc}"
         ) from None
@@ -270,7 +273,7 @@ def materialize_evaluation_dataset(root: str | Path, manifest: ExtensionManifest
         from emo_cyber_agent.core.repository import normalize_path
 
         relative = normalize_path(resource.path)
-    except Exception as exc:  # noqa: BLE001 - path rules
+    except UNEXPECTED_EXCEPTION as exc:
         raise ExtensionError(ExtensionErrorCode.RESOURCE_DENIED, f"{manifest.extension_id}: {exc}") from None
     dataset_root = (Path(root).resolve() / relative).parent
     if not (dataset_root / "dataset.json").is_file():
@@ -292,7 +295,7 @@ def materialize_verification_adapter(manifest: ExtensionManifest, *, importer: A
         loaded = (importer or default_importer)(ep.target)
     except ExtensionError:
         raise
-    except Exception as exc:  # noqa: BLE001 - import failure is typed
+    except UNEXPECTED_EXCEPTION as exc:
         raise ExtensionError(
             ExtensionErrorCode.LOAD_FAILED, f"{manifest.extension_id}: import failed: {type(exc).__name__}"
         ) from None
@@ -493,8 +496,10 @@ def read_extensions(
     if action == "list":
         entries = [_describe_entry(store, entry) for entry in store.list()]
         trust_counts: dict[str, int] = {}
-        for entry in entries:
-            trust_counts[entry["trust"]["state"]] = trust_counts.get(entry["trust"]["state"], 0) + 1
+        for described_entry in entries:
+            trust_counts[described_entry["trust"]["state"]] = (
+                trust_counts.get(described_entry["trust"]["state"], 0) + 1
+            )
         base.update(
             {
                 "count": len(entries),

@@ -10,6 +10,9 @@ closed candidate set.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from pathlib import Path
 from typing import Any
 
@@ -387,7 +390,7 @@ def load_strategy_file(path: Any) -> tuple[VerificationStrategy, ...]:
 
     try:
         doc = _yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise StrategyError(StrategyErrorCode.CATALOG_INVALID, f"malformed strategy YAML: {e}") from e
     if not isinstance(doc, dict):
         raise StrategyError(StrategyErrorCode.CATALOG_INVALID, "strategy YAML must be a mapping")

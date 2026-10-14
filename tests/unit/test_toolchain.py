@@ -7,11 +7,13 @@ and never gate correctness.
 
 import json
 import os
+import re
 import shutil
+from pathlib import Path
 
 import pytest
 
-from emo_cyber_agent.adapters.mock_scanners import MULTI_SEMGREP, SAFE_SEMGREP, port_for
+from emo_cyber_agent.adapters.mock_scanners import MULTI_SEMGREP, port_for
 from emo_cyber_agent.core.execution import (
     ExecutionError,
     ExecutionOutcome,
@@ -113,8 +115,6 @@ def test_stale_mismatched_decision_denied(tmp_path):
 
 def test_cross_project_execution_denied(tmp_path):
     policy = _strict(scope_allows=lambda audit, target: target.startswith("projA:"))
-    reg = _registry_with_scanners()
-    ex = ToolExecutor(registry=reg, policy=policy, port=port_for("SAFE_RESULT"), audit_root=str(tmp_path))
     d = policy.issue_decision("a", "semgrep", "projB:other", "read_only", ["scanner.local.execute"])
     assert not d.allowed
 
@@ -137,7 +137,7 @@ def test_argv_only_shell_injection_neutralized(tmp_path):
     evil = "x; touch pwned"
     (tmp_path / "x; touch pwned").mkdir(exist_ok=True)
     d = _decision(policy, target=evil)
-    parsed, inv, _ = ex.execute(audit_id="audit-t7", tool_id="semgrep", target=evil, capability="scanner.local.execute", policy_decision_id=d.decision_id, argv_builder=SCANNER_ADAPTERS["semgrep"].argv, parse=SCANNER_ADAPTERS["semgrep"].parse)
+    parsed, _inv, _ = ex.execute(audit_id="audit-t7", tool_id="semgrep", target=evil, capability="scanner.local.execute", policy_decision_id=d.decision_id, argv_builder=SCANNER_ADAPTERS["semgrep"].argv, parse=SCANNER_ADAPTERS["semgrep"].parse)
     assert parsed["count"] == 0
     assert len(port.seen) == 1 and isinstance(port.seen[0], tuple)
     assert not (tmp_path / "pwned").exists()  # nothing executed via shell
@@ -189,6 +189,99 @@ def test_oversized_output_truncated_with_metadata():
     assert res.stdout_truncated is True and len(res.stdout) == 1024
 
 
+def test_process_port_bounds_captured_output(tmp_path):
+    import sys
+
+    port = ProcessExecutionPort()
+    res = port.run(ExecutionRequest(
+        argv=(sys.executable, "-c", "import sys; print('x' * 200000); print('y' * 200000, file=sys.stderr)"),
+        cwd=str(tmp_path), timeout_s=10, stdout_limit=2048, stderr_limit=1024,
+    ))
+    assert res.outcome == ExecutionOutcome.SUCCESS
+    assert len(res.stdout.encode()) <= 2048 and res.stdout_truncated
+    assert len(res.stderr.encode()) <= 1024 and res.stderr_truncated
+
+
+@pytest.mark.skipif(os.name != "posix", reason="process-group timeout behavior is POSIX-specific")
+def test_process_timeout_kills_descendant_holding_output_pipe(tmp_path):
+    import sys
+    import time
+
+    port = ProcessExecutionPort()
+    script = (
+        "import subprocess,sys,time; "
+        "subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)']); "
+        "time.sleep(30)"
+    )
+    started = time.monotonic()
+    result = port.run(ExecutionRequest(argv=(sys.executable, "-c", script), cwd=str(tmp_path), timeout_s=1))
+    assert result.outcome == ExecutionOutcome.TIMEOUT
+    assert time.monotonic() - started < 2.5
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX process-group cleanup")
+def test_process_timeout_includes_pipe_drain_after_parent_exits(tmp_path):
+    import signal
+    import sys
+    import time
+
+    child_pid_path = tmp_path / "pipe-holder.pid"
+    child_ready_path = tmp_path / "pipe-holder.ready"
+    heartbeat_path = tmp_path / "pipe-holder.heartbeat"
+    child_code = (
+        "import os,time\n"
+        f"open({str(child_pid_path)!r},'w').write(str(os.getpid()))\n"
+        f"open({str(child_ready_path)!r},'w').close()\n"
+        "while True:\n"
+        f"    open({str(heartbeat_path)!r},'a').write('x')\n"
+        "    time.sleep(.05)\n"
+    )
+    parent_code = (
+        "import os,subprocess,sys,time\n"
+        f"subprocess.Popen([sys.executable,'-c',{child_code!r}])\n"
+        "deadline=time.monotonic()+1\n"
+        f"while not os.path.exists({str(child_ready_path)!r}) and time.monotonic()<deadline:\n"
+        "    time.sleep(.01)\n"
+        "print('parent-exited')\n"
+    )
+    started = time.monotonic()
+    try:
+        result = ProcessExecutionPort().run(ExecutionRequest(
+            argv=(sys.executable, "-c", parent_code), cwd=str(tmp_path), timeout_s=1,
+        ))
+        assert result.outcome == ExecutionOutcome.TIMEOUT, result.stderr
+        assert result.timed_out and "parent-exited" in result.stdout
+        assert time.monotonic() - started < 2.5
+        child_pid = int(child_pid_path.read_text())
+        heartbeat_after_return = heartbeat_path.read_text()
+        time.sleep(0.15)
+        assert heartbeat_path.read_text() == heartbeat_after_return, (
+            f"POSIX timeout left pipe-holding descendant {child_pid} alive"
+        )
+    finally:
+        if child_pid_path.exists():
+            try:
+                os.kill(int(child_pid_path.read_text()), signal.SIGKILL)
+            except (ProcessLookupError, ValueError):
+                pass
+
+
+def test_executor_rejects_truncated_json_output(tmp_path):
+    registry = ToolRegistry()
+    registry.register(SCANNER_ADAPTERS["semgrep"].spec())
+    policy = _strict()
+    decision = policy.issue_decision("audit-t7", "semgrep", ".", "read_only", ["scanner.local.execute"])
+    executor = ToolExecutor(
+        registry=registry, policy=policy, port=port_for("OVERSIZED_OUTPUT"), audit_root=str(tmp_path)
+    )
+    with pytest.raises(ExecutionError, match="output exceeded"):
+        executor.execute(
+            audit_id="audit-t7", tool_id="semgrep", target=".", capability="scanner.local.execute",
+            policy_decision_id=decision.decision_id,
+            argv_builder=SCANNER_ADAPTERS["semgrep"].argv, parse=SCANNER_ADAPTERS["semgrep"].parse,
+        )
+
+
 def test_timeout_failure_unavailable_distinct():
     assert port_for("TIMEOUT").run(ExecutionRequest(argv=("x",), cwd="/tmp")).outcome.value == "timeout"
     assert port_for("TOOL_FAILURE").run(ExecutionRequest(argv=("x",), cwd="/tmp")).outcome.value == "tool_failed"
@@ -225,6 +318,20 @@ def test_semgrep_parse_and_evidence():
     assert ev["tool_id"] == "semgrep"
 
 
+@pytest.mark.parametrize("adapter,body", [
+    (SemgrepAdapter(), "not-json"),
+    (SemgrepAdapter(), "{}"),
+    (TrivyAdapter(), "[]"),
+    (OsvScannerAdapter(), "{}"),
+    (GitleaksAdapter(), "{}"),
+])
+def test_scanner_parsers_reject_malformed_or_ambiguous_output(adapter, body):
+    from emo_cyber_agent.core.scanners import ScannerOutputError
+
+    with pytest.raises(ScannerOutputError):
+        adapter.parse(body)
+
+
 def test_trivy_and_osv_parse():
     trivy_out = json.dumps({"Results": [{"Target": "app/package.json", "Vulnerabilities": [{"VulnerabilityID": "CVE-2024-1", "PkgName": "lodash", "InstalledVersion": "1.0", "FixedVersion": "1.1", "Severity": "HIGH", "Title": "x"}]}]})
     parsed = TrivyAdapter().parse(trivy_out)
@@ -246,6 +353,11 @@ def test_gitleaks_drops_raw_secrets():
     assert obs.rule_id == "generic-api-key" and obs.location.line_start == 7
     ev = observation_to_evidence_fields(obs, audit_id="a", asset_id="asset-1", invocation_id="inv-1", target="repo")
     assert "SUPERSECRETVALUE999" not in json.dumps(ev) and "ghp_REALTOKEN123" not in json.dumps(ev)
+    argv = GitleaksAdapter(binary_path="/opt/gitleaks").argv(GitleaksAdapter().spec(), "/repo")
+    assert argv[0] == "/opt/gitleaks" and "--redact=100" in argv
+    assert "--report-format" in argv and argv[argv.index("--report-path") + 1] == "-"
+    assert argv[argv.index("--exit-code") + 1] == "0"
+    assert "--ignore-gitleaks-allow" in argv
 
 
 def test_tool_output_prompt_injection_stays_data():
@@ -258,14 +370,12 @@ def test_tool_output_prompt_injection_stays_data():
 
 
 def test_no_findings_constructed_by_toolchain():
-    import emo_cyber_agent.core.scanners as m
     import emo_cyber_agent.core.execution as e
-
-    import re
+    import emo_cyber_agent.core.scanners as m
 
     for mod in (m, e):
         assert mod.__file__ is not None
-        src = open(mod.__file__).read()
+        src = Path(mod.__file__).read_text(encoding="utf-8")
         body = src.split('"""', 2)[-1]
         assert "Finding(" not in body
         assert re.search(r"(?m)^\s*severity\s*=", body) is None  # no finding-grade severity assignment (scanner_severity is data)

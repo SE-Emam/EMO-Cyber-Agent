@@ -7,11 +7,14 @@ mutation cannot alter an in-flight audit.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from typing import Any
 
 from emo_cyber_agent.playbooks.registry import PlaybookRegistry
 from emo_cyber_agent.playbooks.resolver import PlaybookResolver
-from emo_cyber_agent.playbooks.spec import ProjectContext, ResolvedPlaybook, ResolutionStatus
+from emo_cyber_agent.playbooks.spec import ProjectContext, ResolutionStatus, ResolvedPlaybook
 from emo_cyber_agent.playbooks.validator import PlaybookValidator
 
 
@@ -39,7 +42,7 @@ class PlaybookService:
             seen.add(parent_id)
             try:
                 parent = self._registry.get(parent_id)
-            except Exception as e:
+            except UNEXPECTED_EXCEPTION as e:
                 raise ValueError(f"extends-missing:{parent_id}") from e
             for cap in parent.denied_capabilities:
                 if cap not in merged_denied:
@@ -79,7 +82,7 @@ class PlaybookService:
     ) -> ResolvedPlaybook:
         try:
             spec = self._registry.get(playbook_id, version)
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             return ResolvedPlaybook(playbook_id=playbook_id, playbook_version=version or "", status=ResolutionStatus.INVALID, reasons=(str(e),))
         try:
             spec = self._apply_inheritance(spec)
@@ -90,7 +93,7 @@ class PlaybookService:
             return ResolvedPlaybook(playbook_id=spec.playbook_id, playbook_version=spec.version, status=ResolutionStatus.INVALID, reasons=tuple(validation.errors), warnings=tuple(validation.warnings))
         resolved = self._resolver.resolve(spec, project_files=project_files or [], project_objective=project_objective, audit_scope=audit_scope, context=context, skill_versions=skill_versions)
         if validation.warnings and resolved.status == ResolutionStatus.RESOLVED:
-            resolved = resolved.model_copy(update={"status": ResolutionStatus.PARTIAL, "warnings": tuple([*resolved.warnings, *validation.warnings])})
+            resolved = resolved.model_copy(update={"status": ResolutionStatus.PARTIAL, "warnings": (*resolved.warnings, *validation.warnings)})
         elif validation.warnings:
-            resolved = resolved.model_copy(update={"warnings": tuple([*resolved.warnings, *validation.warnings])})
+            resolved = resolved.model_copy(update={"warnings": (*resolved.warnings, *validation.warnings)})
         return resolved

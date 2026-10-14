@@ -4,17 +4,24 @@ Schema, registry, validator, resolver, skill/tool integration, security
 (malicious tasks, injection, escalation, cross-audit), composition,
 snapshot, selection, fixtures. No execution, no network.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import pytest
 
 from emo_cyber_agent.skills.builtin.catalog import load_builtin_registry
-from emo_cyber_agent.tasks.library import load_official_registry, normalize_task_dict, spec_from_yaml_text, validate_against_schema
+from emo_cyber_agent.tasks.library import (
+    load_official_registry,
+    normalize_task_dict,
+    spec_from_yaml_text,
+    validate_against_schema,
+)
 from emo_cyber_agent.tasks.registry import TaskRegistry
 from emo_cyber_agent.tasks.resolver import TaskResolver
 from emo_cyber_agent.tasks.service import TaskService
 from emo_cyber_agent.tasks.spec import (
     ResolutionStatus,
-    ResolvedTask,
     TaskError,
     TaskScope,
     TaskSpec,
@@ -38,7 +45,7 @@ def _tools():
 
 
 def _spec(task_id="demo-task", **over):
-    base = dict(task_id=task_id, name="Demo", version="1.0.0", type="audit", objective="answer a scoped question", scope=TaskScope(included=["repository"], target_types=["repo"]), inputs_required=("source-tree",), required_skills=("code-review-security",), required_capabilities=("repository.read",), required_tools=("semgrep",), methodology_phases=("reconnaissance",), evidence_required=("file-evidence",), verification_required=True, verification_methods=("static_confirmation",), stop_conditions=("scope-exhausted",), acceptance_criteria=("facts recorded",), report_template="security-audit")
+    base = {"task_id": task_id, "name": "Demo", "version": "1.0.0", "type": "audit", "objective": "answer a scoped question", "scope": TaskScope(included=["repository"], target_types=["repo"]), "inputs_required": ("source-tree",), "required_skills": ("code-review-security",), "required_capabilities": ("repository.read",), "required_tools": ("semgrep",), "methodology_phases": ("reconnaissance",), "evidence_required": ("file-evidence",), "verification_required": True, "verification_methods": ("static_confirmation",), "stop_conditions": ("scope-exhausted",), "acceptance_criteria": ("facts recorded",), "report_template": "security-audit"}
     base.update(over)
     return TaskSpec(**base)
 
@@ -53,16 +60,17 @@ def _full_env():
 def test_spec_schema_and_versioning():
     s = _spec()
     assert s.version == "1.0.0" and s.type.value == "audit"
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(task_id="Bad_ID")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(task_id="other", version="1.0")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         TaskSpec(**{**_spec().model_dump(), "extends": "Bad!!"})
 
 
 def test_yaml_template_parses_and_validates():
-    text = open("templates/tasks/TASK-TEMPLATE.yaml").read()
+    with open("templates/tasks/TASK-TEMPLATE.yaml") as source_file:
+        text = source_file.read()
     flat = normalize_task_dict(__import__("yaml").safe_load(text) if False else load_yaml_doc(text))
     validate_against_schema(flat)
     spec = spec_from_yaml_text(text)
@@ -227,7 +235,7 @@ def test_snapshot_immutable_after_mutation():
 
 def test_selection_no_match_ambiguous():
     skills, tools = _full_env()
-    reg = load_official_registry(OFFICIAL_DIR, skill_registry=skills, tool_registry=tools)
+    load_official_registry(OFFICIAL_DIR, skill_registry=skills, tool_registry=tools)
     resolver = TaskResolver()
     with pytest.raises(TaskError) as e:
         resolver.suggest([], project_files=["x"], project_objective="zzz-no-match-at-all-q")
@@ -239,7 +247,7 @@ def test_selection_no_match_ambiguous():
 def test_malicious_task_defenses():
     skills, tools = _full_env()
     validator = TaskValidator(skill_registry=skills, tool_registry=tools)
-    base = dict(task_id="mal-task", name="M", version="1.0.0", type="audit", objective="review", scope=TaskScope(included=["repository"], target_types=["repo"]), inputs_required=("source-tree",), required_skills=("code-review-security",), required_capabilities=("repository.read",), required_tools=("semgrep",), methodology_phases=("reconnaissance",), evidence_required=("file-evidence",), stop_conditions=("done",), acceptance_criteria=("facts recorded",), report_template="security-audit")
+    base = {"task_id": "mal-task", "name": "M", "version": "1.0.0", "type": "audit", "objective": "review", "scope": TaskScope(included=["repository"], target_types=["repo"]), "inputs_required": ("source-tree",), "required_skills": ("code-review-security",), "required_capabilities": ("repository.read",), "required_tools": ("semgrep",), "methodology_phases": ("reconnaissance",), "evidence_required": ("file-evidence",), "stop_conditions": ("done",), "acceptance_criteria": ("facts recorded",), "report_template": "security-audit"}
     from emo_cyber_agent.tasks.spec import TaskSpec as _TS
 
     assert any("high-risk" in w for w in validator.validate(_TS(**{**base, "required_capabilities": ("repository.write", "database.write")})).warnings)
@@ -270,11 +278,11 @@ def test_cross_audit_task_reuse_isolated():
 
 
 def test_no_execution_surface_in_tasks():
-    import emo_cyber_agent.tasks.resolver as resolver
-    import emo_cyber_agent.tasks.service as service
+    from emo_cyber_agent.tasks import resolver, service
 
     for mod in (resolver, service):
-        body = open(mod.__file__).read().split('"""', 2)[-1]
+        with open(mod.__file__) as source_file:
+            body = source_file.read().split('"""', 2)[-1]
         for banned in ("subprocess", "os.system", "Finding(", "evaluate_policy("):
             assert banned not in body, (mod.__name__, banned)
 

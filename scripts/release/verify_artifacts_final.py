@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
-import os
-import sys
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
+import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
-REPO_ROOT = SCRIPT_DIR.parent
+REPO_ROOT = SCRIPT_DIR.parent.parent
 
 def main():
     print("=== ECA-T016 Final Artifact Verification ===")
@@ -63,7 +65,7 @@ def main():
     try:
         import tarfile
         with tarfile.open(sdist_path, 'r:gz') as tf:
-            sdist_files = tf.getnames()
+            tf.getnames()
         print("[PASS] Sdist is a valid tar.gz archive")
     except tarfile.ReadError:
         print("[FAIL] Sdist is not a valid tar.gz archive")
@@ -83,7 +85,7 @@ def main():
                 print("[PASS] Manifest version matches: 0.1.0")
             else:
                 print(f"[WARN] Manifest version: {manifest.get('version')}")
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             print(f"[WARN] Could not parse manifest: {e}")
     else:
         print("[OPTIONAL] Release manifest not found (may be optional)")

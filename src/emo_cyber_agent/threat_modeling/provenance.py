@@ -7,7 +7,7 @@ stay DATA.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -30,6 +30,6 @@ def build_threat_provenance(
         "snapshot_id": snapshot_id,
         "subject_id": subject_id,
         "model_digest": model_digest,
-        "observed_at": datetime.now(timezone.utc).isoformat(),
+        "observed_at": datetime.now(UTC).isoformat(),
         "coverage": coverage,
     }

@@ -9,7 +9,6 @@ never NONE.
 
 from __future__ import annotations
 
-
 from emo_cyber_agent.agent_security.provenance import build_agent_provenance
 from emo_cyber_agent.agent_security.spec import (
     AgentAttackSurface,
@@ -64,9 +63,9 @@ def build_agent_attack_surface(
             elements.append(_element("TOOL", f"{sub.subagent_id}-{tool_id}", agent_id=sub.subagent_id, component=tool_id))
     for source in sorted(system.prompt_sources, key=lambda s: s.source_id):
         elements.append(_element("SYSTEM_PROMPT" if "system" in source.kind else "DEVELOPER_INSTRUCTION", source.source_id))
-    for source in sorted(system.context_sources, key=lambda s: s.source_id):
-        kind = {"user": "USER_INPUT", "document": "EXTERNAL_DOCUMENT", "repository": "REPOSITORY_CONTENT"}.get(source.kind, "EXTERNAL_DOCUMENT")
-        elements.append(_element(kind, source.source_id))
+    for context_source in sorted(system.context_sources, key=lambda s: s.source_id):
+        kind = {"user": "USER_INPUT", "document": "EXTERNAL_DOCUMENT", "repository": "REPOSITORY_CONTENT"}.get(context_source.kind, "EXTERNAL_DOCUMENT")
+        elements.append(_element(kind, context_source.source_id))
     for memory in sorted(system.memories, key=lambda m: m.entry_id):
         elements.append(_element("MEMORY", memory.entry_id, agent_id=""))
     for retrieval in sorted(system.retrieval_sources, key=lambda r: r.source_id):

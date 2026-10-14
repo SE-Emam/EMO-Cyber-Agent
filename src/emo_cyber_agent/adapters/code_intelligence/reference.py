@@ -10,6 +10,9 @@ text is DATA: parsed, never executed.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import ast as _ast
 import json as _json
 import re as _re
@@ -132,7 +135,7 @@ class ReferenceLocalProvider(CodeIntelligenceProvider):
     def _requirements(self, path: str, content: str, bundle: dict[str, Any]) -> None:
         for line in content.splitlines():
             line = line.strip()
-            if not line or line.startswith("#") or line.startswith("-"):
+            if not line or line.startswith(("#", "-")):
                 continue
             name = _re.split(r"[=<>!~;\s\[]", line, maxsplit=1)[0].strip()
             version = _re.search(r"([=<>!~]+)\s*([^\s;]+)", line)
@@ -142,7 +145,7 @@ class ReferenceLocalProvider(CodeIntelligenceProvider):
     def _package_json(self, path: str, content: str, bundle: dict[str, Any]) -> None:
         try:
             doc = _json.loads(content)
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             bundle.setdefault("parse_failures", []).append(path)
             return
         deps = {**(doc.get("dependencies", {}) or {}), **(doc.get("devDependencies", {}) or {})}

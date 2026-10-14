@@ -10,20 +10,12 @@ work correctly without that host feature, nothing more.
 
 from __future__ import annotations
 
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from emo_cyber_agent.extensions.spec import (
     SCHEMA_VERSION,
     ExtensionManifest,
     split_constraint,
-)
-
-from emo_cyber_agent.extensions.spec import (
-    ExtensionDependencyType,
-    ExtensionEntrypointKind,
-    NetworkRequirement,
-    ProcessRequirement,
 )
 
 __all__ = [
@@ -84,10 +76,7 @@ def satisfies(version: str, constraint: str) -> bool:
         if operator not in _OPERATORS:
             return False
         try:
-            if operator == "~=":
-                expected = _segments(operand) if operand.count(".") == 1 else _segments(operand)
-            else:
-                expected = _segments(operand)
+            expected = _segments(operand)
         except ValueError:
             return False
         if not _compare(actual, expected, operator):
@@ -139,8 +128,7 @@ def python_satisfies(current: str, specifier: str) -> bool:
         if operator == "~=":
             operand = operand + ".*"
             operator = ">="
-        if operand.endswith(".*"):
-            operand = operand[:-2]
+        operand = operand.removesuffix(".*")
         if operator not in _OPERATORS:
             return False
         try:

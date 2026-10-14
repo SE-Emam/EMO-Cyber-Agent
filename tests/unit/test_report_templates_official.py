@@ -9,6 +9,9 @@ verification-preserving, mandatory fields non-droppable, no authority
 
 from __future__ import annotations
 
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
 from pathlib import Path
 
@@ -242,5 +245,5 @@ def test_mandatory_field_drop_attempt_errors():
         digest="hostile",
         spec=spec.model_copy(update={"preserve_provenance": False}),  # type: ignore[arg-type]
     )
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         apply_report_template(report, hostile_resolved)

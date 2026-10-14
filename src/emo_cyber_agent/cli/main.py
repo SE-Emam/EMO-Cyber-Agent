@@ -14,16 +14,23 @@ Exit codes (documented contract):
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import functools
 import json as _json
 import os
 import shutil
 import sys
 import uuid
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import typer
+
+if TYPE_CHECKING:
+    from emo_cyber_agent.progress.reporter import ProgressReporter
 
 EXIT_SUCCESS = 0
 EXIT_DOMAIN_FAILURE = 1
@@ -50,7 +57,7 @@ def _dist_name() -> str:
                     return name
             except _md.PackageNotFoundError:
                 continue
-    except Exception:
+    except UNEXPECTED_EXCEPTION:
         pass
     return "emo-cyber"
 
@@ -88,7 +95,7 @@ def _redact(text: str) -> str:
     return redact_supabase_secrets(redact_credentials(text))
 
 
-def _fail(code: int, message: str) -> "typer.Exit":
+def _fail(code: int, message: str) -> typer.Exit:
     typer.echo(_redact(message)[:500], err=True)
     return typer.Exit(code=code)
 
@@ -129,7 +136,7 @@ def _safe(fn: Callable[..., None]) -> Callable[..., None]:
             raise typer.Exit(code=EXIT_INTERRUPTED)
         except typer.Exit:
             raise
-        except Exception as e:  # never leak internals
+        except UNEXPECTED_EXCEPTION as e:  # never leak internals
             typer.echo(f"internal error: {type(e).__name__}", err=True)
             raise typer.Exit(code=EXIT_INTERNAL)
 
@@ -153,13 +160,13 @@ def _map_core_error(error: Exception) -> _CliFailure:
         }
         return _CliFailure(mapping.get(error.code, EXIT_INTERNAL), message)
     if isinstance(error, ReportError):
-        mapping = {
+        report_mapping = {
             ReportErrorCode.REPORTABILITY_DENIED: EXIT_POLICY_DENIED,
             ReportErrorCode.INVALID: EXIT_INVALID_INPUT,
             ReportErrorCode.SCHEMA_ERROR: EXIT_INTERNAL,
             ReportErrorCode.SERIALIZATION_ERROR: EXIT_INTERNAL,
         }
-        return _CliFailure(mapping.get(error.code, EXIT_INTERNAL), message)
+        return _CliFailure(report_mapping.get(error.code, EXIT_INTERNAL), message)
     text = message.lower()
     if "policy" in text or "scope" in text or "denied" in text:
         return _CliFailure(EXIT_POLICY_DENIED, message)
@@ -187,7 +194,7 @@ def _cli_progress_ids(prefix: str) -> tuple[str, str]:
 
 
 @contextmanager
-def _cli_progress(command: str, format: str):  # noqa: ANN202 — generator yields ProgressReporter
+def _cli_progress(command: str, format: str) -> Iterator[ProgressReporter]:
     """Lifecycle helper: emits STARTED/RUNNING/FINALIZING + terminal events.
 
     Progress is display-only: it never controls execution and never touches
@@ -228,7 +235,7 @@ def _cli_progress(command: str, format: str):  # noqa: ANN202 — generator yiel
             state.advance(phase="FAILED", status="FAILED", message_code="OPERATION_FAILED", event_type=ProgressEventType.ERROR)
         )
         raise
-    except Exception:
+    except UNEXPECTED_EXCEPTION:
         reporter.report(
             state.advance(phase="FAILED", status="FAILED", message_code="OPERATION_FAILED", event_type=ProgressEventType.ERROR)
         )
@@ -298,20 +305,20 @@ def doctor(format: str = typer.Option("human", "--format", help="Output format: 
     try:
 
         checks["core"] = "OK"
-    except Exception:
+    except UNEXPECTED_EXCEPTION:
         checks["core"] = "INVALID"
     try:
         from emo_cyber_agent.core.resources import resource_origin, validate_packaged_schemas
 
         validate_packaged_schemas()
         checks["schemas"] = f"OK ({resource_origin()})"
-    except Exception:
+    except UNEXPECTED_EXCEPTION:
         checks["schemas"] = "INVALID"
     try:
         from emo_cyber_agent.core.scanners import get_scanner_tool_specs
 
         checks["tool_registry"] = f"OK ({len(get_scanner_tool_specs())} scanner specs)"
-    except Exception:
+    except UNEXPECTED_EXCEPTION:
         checks["tool_registry"] = "INVALID"
     for tool in ("semgrep", "trivy", "osv-scanner", "gitleaks", "git"):
         checks[f"tool:{tool}"] = "AVAILABLE" if shutil.which(tool) else "UNAVAILABLE"
@@ -353,7 +360,7 @@ def audit(
         auditor = FoundationSecurityAuditor()
         try:
             result = asyncio.run(auditor.audit(target=target.strip(), mode=mode, permission_profile="read_only", focus=[f.strip() for f in (focus or "").split(",") if f.strip()]))
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise _map_core_error(e)
         data = result.model_dump(mode="json")
         data["target"] = _redact(str(data.get("target", "")))[:512]  # adapter serialization duty: never echo raw target
@@ -385,7 +392,7 @@ def review(
         auditor = FoundationSecurityAuditor()
         try:
             result = asyncio.run(auditor.review(target=target.strip(), focus=[f.strip() for f in (focus or "").split(",") if f.strip()]))
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise _map_core_error(e)
         data = result.model_dump(mode="json")
         data["target"] = _redact(str(data.get("target", "")))[:512]
@@ -413,7 +420,17 @@ def verify(
     from emo_cyber_agent.core.correlation import EvidenceStore, FindingCandidate
     from emo_cyber_agent.core.policy import StrictPolicyEngine
     from emo_cyber_agent.core.tool_registry import ToolRegistry
-    from emo_cyber_agent.core.verification import VerificationRequest, VerificationService, get_verification_tool_specs
+    from emo_cyber_agent.core.verification import (
+        TargetKind,
+        VerificationExecutorPort,
+        VerificationMethod,
+        VerificationPlan,
+        VerificationRawResult,
+        VerificationRequest,
+        VerificationService,
+        VerificationTarget,
+        get_verification_tool_specs,
+    )
 
     if format not in ("human", "json"):
         raise _fail_silent("invalid format: use human|json")
@@ -424,7 +441,11 @@ def verify(
         raise _fail_silent(f"cannot read candidate file: {e}")
     try:
         cand = FindingCandidate(**raw_candidate)
-        request = VerificationRequest(method=method, target={"kind": kind, "locator": locator}, rationale_summary=rationale)
+        request = VerificationRequest(
+            method=VerificationMethod(method),
+            target=VerificationTarget(kind=TargetKind(kind), locator=locator),
+            rationale_summary=rationale,
+        )
     except ValueError as e:
         raise _fail_silent(f"invalid verification input: {e}")
     if cand.audit_id != audit_id:
@@ -432,6 +453,11 @@ def verify(
     registry = ToolRegistry()
     for spec in get_verification_tool_specs():
         registry.register(spec)
+
+    class _PlanOnlyExecutor(VerificationExecutorPort):
+        def run(self, plan: VerificationPlan) -> VerificationRawResult:
+            raise RuntimeError("verify-via-CLI returns plans; execution is per-audit release integration")
+
     from emo_cyber_agent.core.verification import VerificationError
 
     service = VerificationService(executor=_PlanOnlyExecutor(), policy=StrictPolicyEngine(), registry=registry, store=EvidenceStore(), scope_allows=lambda a, t: a == audit_id and t == locator)
@@ -444,11 +470,6 @@ def verify(
         _emit(_js.dumps({"status": "ok", "result": body}, sort_keys=True), output)
     else:
         _emit(f"plan_id: {plan.plan_id}\nmethod: {request.method.value}\nsafety: {plan.safety_level.value}\ncapabilities: {','.join(plan.required_capabilities)}", output)
-
-
-class _PlanOnlyExecutor:
-    def run(self, plan: Any) -> Any:
-        raise RuntimeError("verify-via-CLI returns plans; execution is per-audit release integration")
 
 
 @app.command()
@@ -577,7 +598,7 @@ def extensions(
         lines.append(f"lifecycle: {view.get('lifecycle', '')}")
         lines.append(f"resolvable: {view.get('resolvable', '')}")
         for reason in (view.get("errors") or view.get("trust_reasons") or view.get("reason") or []):
-            lines.append(f"  note: {reason}" if isinstance(reason, str) else f"  note: {reason}")
+            lines.append(f"  note: {reason}")
     else:
         resolution = body.get("resolution", {})
         lines.append(f"chosen: {resolution.get('chosen', '') or '∅'}")

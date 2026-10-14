@@ -8,7 +8,6 @@ same contract. Core never assumes method == STRIDE.
 
 from __future__ import annotations
 
-
 from emo_cyber_agent.threat_modeling.errors import ThreatModelError, ThreatModelErrorCode
 from emo_cyber_agent.threat_modeling.spec import ThreatMethod, ThreatRule
 

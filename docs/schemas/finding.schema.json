@@ -3,72 +3,42 @@
   "$id": "https://example.invalid/emo-cyber-agent/schemas/finding.schema.json",
   "title": "EMO Cyber Finding",
   "type": "object",
-  "required": [
-    "id", "title", "severity", "confidence", "status", "asset", "evidence", "remediation"
-  ],
+  "required": ["title", "severity", "confidence", "description", "impact", "evidence_ids", "remediation"],
   "properties": {
     "id": {"type": "string", "minLength": 1},
     "title": {"type": "string", "minLength": 1},
     "severity": {"enum": ["critical", "high", "medium", "low", "info"]},
     "confidence": {"type": "number", "minimum": 0, "maximum": 1},
     "status": {"enum": ["suspected", "supported", "confirmed", "refuted", "accepted_risk", "not_reproducible"]},
-    "asset": {
-      "type": "object",
-      "required": ["kind", "locator"],
-      "properties": {
-        "kind": {"type": "string"},
-        "locator": {"type": "string"},
-        "line_start": {"type": ["integer", "null"], "minimum": 1},
-        "line_end": {"type": ["integer", "null"], "minimum": 1}
-      },
-      "additionalProperties": false
-    },
-    "taxonomy": {
-      "type": "object",
-      "properties": {
-        "cwe": {"type": ["string", "null"]},
-        "owasp": {"type": ["string", "null"]},
-        "cvss": {"type": ["number", "null"], "minimum": 0, "maximum": 10}
-      },
-      "additionalProperties": false
-    },
-    "description": {"type": "string"},
-    "impact": {"type": "string"},
+    "asset_id": {"type": ["string", "null"]},
+    "taxonomy": {"type": "object"},
+    "description": {"type": "string", "minLength": 1},
+    "impact": {"type": "string", "minLength": 1},
     "preconditions": {"type": "array", "items": {"type": "string"}},
-    "evidence": {
-      "type": "array",
-      "minItems": 1,
-      "items": {"$ref": "#/$defs/evidence"}
+    "evidence_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "verification": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["finding_id", "method"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "finding_id": {"type": "string", "minLength": 1},
+            "status": {"enum": ["pending", "in_progress", "verified", "refuted", "unresolved"]},
+            "method": {"type": "string", "minLength": 1},
+            "environment": {"type": "string", "minLength": 1},
+            "evidence_ids": {"type": "array", "items": {"type": "string"}},
+            "timestamp": {"type": "string", "format": "date-time"},
+            "residual_uncertainty": {"type": "string"}
+          },
+          "additionalProperties": false
+        }
+      ]
     },
-    "verification": {"$ref": "#/$defs/verification"},
     "remediation": {"type": "string", "minLength": 1},
     "references": {"type": "array", "items": {"type": "string"}},
     "limitations": {"type": "array", "items": {"type": "string"}}
   },
-  "additionalProperties": false,
-  "$defs": {
-    "evidence": {
-      "type": "object",
-      "required": ["id", "type", "source", "summary"],
-      "properties": {
-        "id": {"type": "string"},
-        "type": {"enum": ["source", "scanner", "dependency", "secret", "config", "database", "runtime", "model_observation", "verification"]},
-        "source": {"type": "string"},
-        "locator": {"type": ["string", "null"]},
-        "summary": {"type": "string"},
-        "content_hash": {"type": ["string", "null"]}
-      },
-      "additionalProperties": false
-    },
-    "verification": {
-      "type": "object",
-      "required": ["status"],
-      "properties": {
-        "status": {"enum": ["not_attempted", "blocked_by_policy", "attempted", "confirmed", "refuted", "inconclusive"]},
-        "summary": {"type": ["string", "null"]},
-        "environment": {"type": ["string", "null"]}
-      },
-      "additionalProperties": false
-    }
-  }
+  "additionalProperties": false
 }

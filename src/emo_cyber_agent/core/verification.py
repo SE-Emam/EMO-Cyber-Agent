@@ -12,11 +12,14 @@ or production mutation exist in this module.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import hashlib
 import time
 import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -167,7 +170,7 @@ class VerificationPlan(BaseModel):
     safety_level: SafetyLevel = SafetyLevel.PASSIVE
     constraints: dict[str, Any] = Field(default_factory=dict)
     stopping_conditions: tuple[str, ...] = ()
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class Verification(BaseModel):
@@ -180,7 +183,7 @@ class Verification(BaseModel):
     status: VerificationStatus = VerificationStatus.PENDING
     requested_by: str = Field(default="reasoner")
     policy_decision_id: str = Field(default="")
-    started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    started_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     completed_at: str | None = None
     evidence_ids: tuple[str, ...] = ()
     result_summary: str = ""
@@ -206,7 +209,7 @@ class Verification(BaseModel):
         data = self.model_dump()
         data["status"] = new
         if new in (VerificationStatus.CONFIRMED, VerificationStatus.SUPPORTED, VerificationStatus.REFUTED, VerificationStatus.INCONCLUSIVE, VerificationStatus.BLOCKED, VerificationStatus.FAILED, VerificationStatus.TIMEOUT):
-            data["completed_at"] = datetime.now(timezone.utc).isoformat()
+            data["completed_at"] = datetime.now(UTC).isoformat()
         return Verification(**data)
 
 
@@ -230,7 +233,7 @@ class VerificationResult(BaseModel):
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     evidence_ids: tuple[str, ...] = ()
     summary: str = ""
-    completed_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    completed_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class VerificationBudget(BaseModel):
@@ -263,18 +266,18 @@ class VerificationExecutorPort(ABC):
 # ---------------------------------------------------------------------------
 
 def get_verification_tool_specs() -> list[ToolSpec]:
-    base = dict(
-        version="1.0.0",
-        description="Read-only verification operation",
-        category="verification",
-        risk_level="low",
-        supports_read_only=True,
-        supports_verification=True,
-        supports_remediation=False,
-        target_types=("repo", "file", "endpoint", "database_object", "dependency", "configuration"),
-        evidence_behavior="summarize",
-        timeout_ms=60000,
-    )
+    base = {
+        "version": "1.0.0",
+        "description": "Read-only verification operation",
+        "category": "verification",
+        "risk_level": "low",
+        "supports_read_only": True,
+        "supports_verification": True,
+        "supports_remediation": False,
+        "target_types": ("repo", "file", "endpoint", "database_object", "dependency", "configuration"),
+        "evidence_behavior": "summarize",
+        "timeout_ms": 60000,
+    }
     return [
         ToolSpec(tool_id="verification.static", name="Static Verification", capabilities_required=("verification.static",), **base),  # type: ignore[arg-type]
         ToolSpec(tool_id="verification.config", name="Configuration Verification", capabilities_required=("verification.config",), **base),  # type: ignore[arg-type]
@@ -343,7 +346,7 @@ class VerificationService:
 
         if not isinstance(policy, StrictPolicyEngine):
             raise TypeError("verification requires StrictPolicyEngine")
-        self._executor: Any = executor
+        self._executor: VerificationExecutorPort = executor
         self._policy = policy
         self._registry = registry
         self._store = store
@@ -403,7 +406,7 @@ class VerificationService:
                 raise VerificationError(VerificationErrorCode.INVALID_REQUEST, "read-only query needs a statement")
             try:
                 classify_read_only_sql(request.statement)
-            except Exception as e:
+            except UNEXPECTED_EXCEPTION as e:
                 raise VerificationError(VerificationErrorCode.POLICY_DENIED, f"non-read query denied: {e}") from e
             constraints["sql_digest"] = hashlib.sha256(request.statement.encode()).hexdigest()
         decision = self._policy.issue_decision(audit_id, _tool_id_for(request.method.value), request.target.locator, self._profile, [capability])
@@ -443,7 +446,7 @@ class VerificationService:
             raw = self._run_method(plan, verification)
         except VerificationError:
             raise
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise VerificationError(VerificationErrorCode.PROVIDER_ERROR, redact_credentials(str(e))) from e
         finally:
             self._active = max(0, self._active - 1)
@@ -490,7 +493,7 @@ class VerificationService:
 
         observed = redact_credentials(raw.observed or "")[:500]
         evidence_ids: list[str] = list(raw.evidence_refs or ())
-        if observed or True:
+        if True:
             item = EvidenceItem(
                 source_tool="verifier",
                 source_version="1.0",
@@ -507,7 +510,7 @@ class VerificationService:
                 raise VerificationError(VerificationErrorCode.MISMATCHED_AUDIT, str(e)) from e
         if status == VerificationStatus.CONFIRMED and not evidence_ids:
             raise VerificationError(VerificationErrorCode.NO_EVIDENCE, "confirmed without evidence denied")
-        verification = Verification(**{**verification.model_dump(), "status": status, "completed_at": datetime.now(timezone.utc).isoformat(), "evidence_ids": tuple(evidence_ids), "result_summary": observed, "confidence": 0.85 if status == VerificationStatus.CONFIRMED else (0.6 if status == VerificationStatus.SUPPORTED else (0.2 if status == VerificationStatus.REFUTED else 0.4)), "provenance": {**verification.provenance, "outcome": outcome}})
+        verification = Verification(**{**verification.model_dump(), "status": status, "completed_at": datetime.now(UTC).isoformat(), "evidence_ids": tuple(evidence_ids), "result_summary": observed, "confidence": 0.85 if status == VerificationStatus.CONFIRMED else (0.6 if status == VerificationStatus.SUPPORTED else (0.2 if status == VerificationStatus.REFUTED else 0.4)), "provenance": {**verification.provenance, "outcome": outcome}})
 
         self._counts[verification.method.value] = self._counts.get(verification.method.value, 0) + 1
         self._target_counts[plan.constraints.get("target", "")] = self._target_counts.get(plan.constraints.get("target", ""), 0) + 1

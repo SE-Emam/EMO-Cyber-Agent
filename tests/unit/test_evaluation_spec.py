@@ -4,6 +4,9 @@ Closed vocabularies, digest stability, authority snapshots, subject
 resolution, the full comparison-match matrix, kind-aware ground-truth
 verdicts, and the blind projection that must never leak expected values.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import pytest
 
@@ -27,6 +30,7 @@ from emo_cyber_agent.evaluation import (
     GroundTruthRecord,
     OracleVerdict,
     RunStatus,
+    blind_case,
     capture_authority,
     compare_value,
     diff_authority,
@@ -34,7 +38,6 @@ from emo_cyber_agent.evaluation import (
     evaluation_digest,
     judge_record,
     normalize_case,
-    blind_case,
     resolve_subject,
 )
 from emo_cyber_agent.evaluation.errors import EvaluationError, EvaluationErrorCode
@@ -153,7 +156,7 @@ def test_authority_diff_states_and_closed_grant_keys():
     assert status.state == "FINDING_MUTATED"
     assert status.status_changes == ("f-1",)
 
-    with pytest.raises(Exception) as exc:
+    with pytest.raises(UNEXPECTED_EXCEPTION) as exc:
         AuthoritySnapshot(grants={"root": True})
     assert "root" in str(exc.value)
 

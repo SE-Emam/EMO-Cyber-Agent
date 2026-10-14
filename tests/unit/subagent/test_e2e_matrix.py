@@ -55,7 +55,6 @@ from emo_cyber_agent.subagent.envelope import (
     TaskEnvelope,
 )
 from emo_cyber_agent.subagent.health import check_subagent
-from emo_cyber_agent.subagent.negotiation import negotiate
 from emo_cyber_agent.subagent.session import SubagentLifecycle, SubagentSession
 from emo_cyber_agent.subagent.trust import HostIntegrationError, SecurityDecision
 
@@ -93,32 +92,32 @@ class AllowAllPolicy(PolicyEngine):
 
 
 def _envelope(**overrides: Any) -> TaskEnvelope:
-    base: dict[str, Any] = dict(
-        task_id="task-e2e-alpha",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        requested_task="review-auth-scope",
-        scope=DelegatedScope(included=("src/auth",), target_types=("code",)),
-        assets=("asset-e2e-1",),
-        requested_output=("report",),
-        capabilities=("repo.read",),
-    )
+    base: dict[str, Any] = {
+        "task_id": "task-e2e-alpha",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "requested_task": "review-auth-scope",
+        "scope": DelegatedScope(included=("src/auth",), target_types=("code",)),
+        "assets": ("asset-e2e-1",),
+        "requested_output": ("report",),
+        "capabilities": ("repo.read",),
+    }
     base.update(overrides)
     return TaskEnvelope(**base)
 
 
 def _context(**overrides: Any):
-    base: dict[str, Any] = dict(
-        issuer="core-policy",
-        subject="delegator-e2e-1",
-        audience=HOST,
-        valid_from=100,
-        valid_until=200,
-        scope_ref="scope-e2e-1",
-        authorization_ref="authz-e2e0001",
-    )
+    base: dict[str, Any] = {
+        "issuer": "core-policy",
+        "subject": "delegator-e2e-1",
+        "audience": HOST,
+        "valid_from": 100,
+        "valid_until": 200,
+        "scope_ref": "scope-e2e-1",
+        "authorization_ref": "authz-e2e0001",
+    }
     base.update(overrides)
     return DelegationContext.issue(**base, server=True)
 
@@ -463,7 +462,7 @@ def test_vendor_environment(host_id):
         )
     try:
         proc = subprocess.run(
-            [binary, "--version"], capture_output=True, text=True, timeout=20
+            [binary, "--version"], check=False, capture_output=True, text=True, timeout=20
         )
     except (OSError, subprocess.SubprocessError) as exc:
         pytest.skip(f"NOT EXECUTED: {host_id} binary {binary} not runnable: {exc}")

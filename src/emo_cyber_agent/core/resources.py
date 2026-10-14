@@ -11,6 +11,8 @@ anywhere else in the codebase.
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
+from contextlib import contextmanager
 from importlib import resources
 from pathlib import Path
 from typing import Any
@@ -58,6 +60,33 @@ def load_policy_text(name: str) -> str:
         if candidate.is_file():
             return candidate.read_text(encoding="utf-8")
     raise FileNotFoundError(f"policy not available: {filename}")
+
+
+@contextmanager
+def gitleaks_policy_paths() -> Iterator[tuple[Path, Path]]:
+    """Yield packaged, trusted Gitleaks configuration and empty ignore file.
+
+    Keeping these paths outside the target repository prevents repo-controlled
+    config and ignore files from silently weakening a mandatory scan.
+    """
+    names = ("gitleaks-default.toml", "empty-gitleaksignore")
+    try:
+        package = resources.files("emo_cyber_agent.data.policies")
+        config = package.joinpath(names[0])
+        ignore = package.joinpath(names[1])
+        if config.is_file() and ignore.is_file():
+            with resources.as_file(config) as config_path, resources.as_file(ignore) as ignore_path:
+                yield Path(config_path), Path(ignore_path)
+            return
+    except (ModuleNotFoundError, FileNotFoundError, AttributeError):
+        pass
+    root = _source_tree_root()
+    if root is None:
+        raise FileNotFoundError("trusted Gitleaks policy resources are unavailable")
+    config_path, ignore_path = (root / "docs" / "policies" / name for name in names)
+    if not config_path.is_file() or not ignore_path.is_file():
+        raise FileNotFoundError("trusted Gitleaks policy resources are unavailable")
+    yield config_path, ignore_path
 
 
 def validate_packaged_schemas() -> dict[str, str]:

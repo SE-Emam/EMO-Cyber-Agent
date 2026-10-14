@@ -10,10 +10,13 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from emo_cyber_agent.code_intelligence.errors import CodeIntelligenceError, CodeIntelligenceErrorCode
+from emo_cyber_agent.code_intelligence.errors import (
+    CodeIntelligenceError,
+    CodeIntelligenceErrorCode,
+)
 from emo_cyber_agent.code_intelligence.graph import CodeGraph
 from emo_cyber_agent.code_intelligence.spec import QueryProvenance, normalize_code_path
 
@@ -70,7 +73,7 @@ class CodeGraphQueryPort:
             query_type=query_type, target=target, provider=self._graph.snapshot.provider,
             provider_version=self._graph.snapshot.provider_version,
             snapshot_digest=self._graph.snapshot.source_digest,
-            timestamp=datetime.now(timezone.utc).isoformat(), result_digest=_digest(result),
+            timestamp=datetime.now(UTC).isoformat(), result_digest=_digest(result),
         )
         self.history.append(prov)
         return prov

@@ -22,6 +22,9 @@ Rules (all fail closed):
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from collections.abc import Mapping
 from typing import Any
 
@@ -29,7 +32,7 @@ from emo_cyber_agent.subagent.trust import HostErrorCode, HostIntegrationError
 
 try:  # Tie to discovery subsets when the module is present.
     from emo_cyber_agent.subagent import discovery as _discovery
-except Exception:  # pragma: no cover - import-time fallback only
+except UNEXPECTED_EXCEPTION:  # pragma: no cover - import-time fallback only
     _discovery = None  # type: ignore[assignment]
 
 # NOTE (fallback): inline minimal mirror of discovery.TASK_TOOL_SUBSETS,
@@ -168,7 +171,7 @@ def _task_subset(task_kind: str) -> tuple[str, ...]:
             tools = _discovery.tools_for_task(key)
         except HostIntegrationError:
             raise
-        except Exception as exc:  # pragma: no cover - defensive
+        except UNEXPECTED_EXCEPTION as exc:  # pragma: no cover - defensive
             raise HostIntegrationError(
                 HostErrorCode.COMPAT_UNKNOWN, f"unknown task kind: {key}"
             ) from exc
@@ -185,7 +188,7 @@ def _full_tool_list() -> tuple[str, ...]:
     if _discovery is not None:
         try:
             return tuple(_discovery.list_tools())
-        except Exception:  # pragma: no cover - defensive
+        except UNEXPECTED_EXCEPTION:  # pragma: no cover - defensive
             pass
     return _FALLBACK_FULL_TOOLS
 
@@ -248,7 +251,7 @@ def tools_for_session(session_scope: Any, task_kind: str) -> dict[str, Any]:
         # truly unknown names are preserved so filter_tools reports them
         # as unknown instead of silently dropping them. Known tools
         # outside the task boundary stay out of allow -> "not-allowed".
-        requested = set(a for a in session_allow if "*" not in a)
+        requested = {a for a in session_allow if "*" not in a}
         wildcards = tuple(sorted({a for a in session_allow if "*" in a}))
         in_scope = requested & subset_set
         unknown = requested - full_set

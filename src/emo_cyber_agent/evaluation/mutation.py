@@ -10,8 +10,9 @@ they never touch Core state — a mutation only produces a new
 from __future__ import annotations
 
 import copy
+from collections.abc import Iterable, Mapping, Sequence
 from enum import StrEnum
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -21,11 +22,11 @@ from emo_cyber_agent.evaluation.ground_truth import GroundTruthRecord
 from emo_cyber_agent.evaluation.spec import evaluation_digest
 
 __all__ = [
-    "MutationOperation",
-    "SecurityMutationKind",
-    "SecurityMutation",
-    "apply_mutation",
     "MUTATION_KINDS",
+    "MutationOperation",
+    "SecurityMutation",
+    "SecurityMutationKind",
+    "apply_mutation",
 ]
 
 

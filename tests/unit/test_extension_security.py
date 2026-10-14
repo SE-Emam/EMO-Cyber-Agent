@@ -273,7 +273,6 @@ FORBIDDEN_IMPORTS = frozenset(
         "signal",
         "smtplib",
         "socket",
-        "smtplib",
         "subprocess",
         "telnetlib",
         "urllib",

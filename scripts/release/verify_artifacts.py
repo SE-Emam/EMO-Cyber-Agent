@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
-import os
-import sys
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
+import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
-REPO_ROOT = SCRIPT_DIR.parent
+REPO_ROOT = SCRIPT_DIR.parent.parent
 
 def main():
     print("=== ECA-T016 Final Artifact Verification ===")
@@ -75,7 +77,7 @@ def main():
     import tarfile
     try:
         with tarfile.open(sdist_path, 'r:gz') as tf:
-            sdist_files = tf.getnames()
+            tf.getnames()
         print("[PASS] Sdist is a valid tar.gz archive")
     except tarfile.ReadError:
         print("[FAIL] Sdist is not a valid tar.gz archive")
@@ -97,7 +99,7 @@ def main():
                 print("[PASS] Manifest version matches: 0.1.0")
             else:
                 print(f"[WARN] Manifest version: {manifest.get('version')}")
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             print(f"[WARN] Could not parse manifest: {e}")
     else:
         print("[OPTIONAL] Release manifest not found (may be optional)")
@@ -179,39 +181,39 @@ def main():
     markdown_path = REPO_ROOT / "reports" / "development" / "ECA-T016-artifact-verification.md"
     print(f"[MANDATORY] Generating human-readable report: {markdown_path}")
     
-    mkdir -p markdown_path.parent
+    markdown_path.parent.mkdir(parents=True, exist_ok=True)
     
     with open(markdown_path, 'w') as f:
-        f.write(f"# ECA-T016 Final Artifact Verification\n\n")
-        f.write(f"## Verification Results\n\n")
-        f.write(f"**Status:** PASS\n\n")
-        f.write(f"**Package:** emo-cyber-agent\n\n")
-        f.write(f"**Version:** 0.1.0\n\n")
-        f.write(f"### Artifacts\n\n")
-        f.write(f"| Artifact | Path | Size | Status |\n")
-        f.write(f"|----------|------|------|--------|\n")
+        f.write("# ECA-T016 Final Artifact Verification\n\n")
+        f.write("## Verification Results\n\n")
+        f.write("**Status:** PASS\n\n")
+        f.write("**Package:** emo-cyber-agent\n\n")
+        f.write("**Version:** 0.1.0\n\n")
+        f.write("### Artifacts\n\n")
+        f.write("| Artifact | Path | Size | Status |\n")
+        f.write("|----------|------|------|--------|\n")
         f.write(f"| Wheel | {wheel_path} | {wheel_size} | PASS |\n")
         f.write(f"| Sdist | {sdist_path} | {sdist_size} | PASS |\n")
-        f.write(f"\n")
-        f.write(f"### Verification Checks\n\n")
-        f.write(f"- [x] Metadata consistency\n")
-        f.write(f"- [x] RECORD validation\n")
-        f.write(f"- [x] Package resources\n")
-        f.write(f"- [x] Python API\n")
-        f.write(f"- [x] CLI\n")
-        f.write(f"- [x] MCP\n")
-        f.write(f"- [x] Extensions\n")
-        f.write(f"- [x] Source-tree independence\n")
-        f.write(f"- [x] Secret scan\n")
-        f.write(f"- [x] Manifest\n")
-        f.write(f"- [x] Checksums\n")
-        f.write(f"\n")
-        f.write(f"### Additional Artifacts\n\n")
+        f.write("\n")
+        f.write("### Verification Checks\n\n")
+        f.write("- [x] Metadata consistency\n")
+        f.write("- [x] RECORD validation\n")
+        f.write("- [x] Package resources\n")
+        f.write("- [x] Python API\n")
+        f.write("- [x] CLI\n")
+        f.write("- [x] MCP\n")
+        f.write("- [x] Extensions\n")
+        f.write("- [x] Source-tree independence\n")
+        f.write("- [x] Secret scan\n")
+        f.write("- [x] Manifest\n")
+        f.write("- [x] Checksums\n")
+        f.write("\n")
+        f.write("### Additional Artifacts\n\n")
         f.write(f"- [x] release-manifest.json: {manifest_path}\n")
         f.write(f"- [x] SHA256SUMS.txt: {checksums_path}\n")
-        f.write(f"\n")
-        f.write(f"### Final Decision\n\n")
-        f.write(f"PASS\n")
+        f.write("\n")
+        f.write("### Final Decision\n\n")
+        f.write("PASS\n")
     
     print(f"[PASS] Human-readable report generated: {markdown_path}")
     
@@ -219,7 +221,7 @@ def main():
     print("All mandatory artifact validation checks passed")
     print(f"Wheel: {wheel_path}")
     print(f"Sdist: {sdist_path}")
-    print("")
+    print()
     print("Release artifacts are ready for production deployment.")
     
     sys.exit(0)

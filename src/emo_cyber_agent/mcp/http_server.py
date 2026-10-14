@@ -55,13 +55,16 @@ Stdlib only: ``http.server`` + ``threading``. No fastapi/uvicorn import.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import hmac
 import json
 import os
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any
+from typing import Any, Self
 from urllib.parse import urlsplit
 
 from emo_cyber_agent.mcp import protocol as _p
@@ -107,7 +110,7 @@ def _normalize_host(host_header: str) -> str:
 def _origin_host(origin: str) -> str | None:
     try:
         host = urlsplit(origin.strip()).hostname
-    except Exception:
+    except UNEXPECTED_EXCEPTION:
         return None
     return host.lower() if host else None
 
@@ -181,9 +184,9 @@ class HttpMcpServer:
 
                 assert_session_binding(
                     session,
-                    audit_id=presented[AUDIT_HEADER],  # type: ignore[index]
-                    project_id=presented[PROJECT_HEADER],  # type: ignore[index]
-                    snapshot_id=presented[SNAPSHOT_HEADER],  # type: ignore[index]
+                    audit_id=presented[AUDIT_HEADER],
+                    project_id=presented[PROJECT_HEADER],
+                    snapshot_id=presented[SNAPSHOT_HEADER],
                 )
             except (BindingError, SessionMapError, HostIntegrationError) as e:
                 raise _HttpError(
@@ -220,7 +223,7 @@ class HttpMcpServer:
         with self._lock:
             try:
                 response = self._server.handle_message(message)
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 req_id = message.get("id") if isinstance(message, dict) else None
                 response = _p.error_envelope(req_id, -32603, "internal error")
             notifications = self._server.drain_notifications()
@@ -267,10 +270,10 @@ class HttpMcpServer:
         if thread is not None:
             thread.join(timeout=DEFAULT_TIMEOUT_SECONDS)
 
-    def __enter__(self) -> HttpMcpServer:
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *exc: Any) -> None:
+    def __exit__(self, *exc: object) -> None:
         self.stop()
 
 
@@ -409,7 +412,7 @@ def _make_handler(owner: HttpMcpServer) -> type[BaseHTTPRequestHandler]:
         ) -> None:
             try:
                 reason = None if status != SESSION_MISMATCH_STATUS else "Session Mismatch"
-                self.send_response(status, reason)  # type: ignore[arg-type]
+                self.send_response(status, reason)
                 self.send_header("Content-Type", ctype)
                 self.send_header("Content-Length", str(len(raw)))
                 if session_id is not None:
@@ -434,13 +437,13 @@ def _make_handler(owner: HttpMcpServer) -> type[BaseHTTPRequestHandler]:
             except (BrokenPipeError, ConnectionResetError):
                 pass
 
-        def log_message(self, format: str, *args: Any) -> None:  # noqa: ANN401
+        def log_message(self, format: str, *args: Any) -> None:
             # Sanitized access log: method + path + status only (never headers/body/secrets).
             try:
                 import sys
 
                 sys.stderr.write(f"mcp-http {self.command} {urlsplit(self.path).path}\n")
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 pass
 
     return _McpHttpHandler

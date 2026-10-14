@@ -8,10 +8,8 @@ prompt-injection-as-data) / fixtures for the 8 mandated scenarios.
 import pytest
 
 from emo_cyber_agent.core.correlation import (
-    AssetGraph,
     CandidateStatus,
     CorrelationEngine,
-    EvidenceConflict,
     EvidenceStore,
     ObservationTaxonomy,
     RelationKind,
@@ -167,7 +165,7 @@ def fx_cross_project_evidence():
 
 def test_authorization_risk_github_plus_supabase():
     s = store_with(*fx_authorization_risk(), audit="A")
-    obs, cands, conflicts = CorrelationEngine(s).correlate(audit_id="A")
+    obs, cands, _conflicts = CorrelationEngine(s).correlate(audit_id="A")
     assert any(o.taxonomy == ObservationTaxonomy.AUTHORIZATION for o in obs)
     cand = next(c for c in cands if c.rule_id.startswith("R1-"))
     assert "authorization" in cand.hypothesis and cand.status == CandidateStatus.CORRELATED
@@ -197,7 +195,7 @@ def test_secret_exposure():
 
 def test_supabase_rls_risk_facts_not_verdict():
     s = store_with(*fx_supabase_rls_risk(), audit="A")
-    obs, cands, _ = CorrelationEngine(s).correlate(audit_id="A")
+    _obs, cands, _ = CorrelationEngine(s).correlate(audit_id="A")
     cand = next(c for c in cands if c.rule_id.startswith("R4-"))
     assert "not a verdict" in cand.hypothesis
     assert cand.status in (CandidateStatus.CORRELATED, CandidateStatus.NEEDS_VERIFICATION)
@@ -283,7 +281,8 @@ def test_relations_typed_scoped_auditable():
 def test_correlation_has_no_side_effects():
     import emo_cyber_agent.core.correlation as m
 
-    src = open(m.__file__).read()
+    with open(m.__file__) as source_file:
+        src = source_file.read()
     body = src.split('"""', 2)[-1]
     for banned in ("subprocess", "os.system", "urllib", "socket", "shutil", "PolicyEngine(", "evaluate_policy(", "Finding("):
         assert banned not in body, banned
@@ -374,7 +373,8 @@ def test_candidate_lifecycle_and_promotion_contract():
     # PROMOTED is terminal handoff: no Finding object is ever built here
     import emo_cyber_agent.core.correlation as m
 
-    assert "Finding(" not in open(m.__file__).read().split('"""', 2)[-1]
+    with open(m.__file__) as source_file:
+        assert "Finding(" not in source_file.read().split('"""', 2)[-1]
 
 
 def test_taxonomy_extensible_not_verdict():

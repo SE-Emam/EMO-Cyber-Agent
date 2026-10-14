@@ -71,9 +71,7 @@ class TaskScope(BaseModel):
         """True if self fits inside outer (narrowing only, never widening)."""
         if outer.target_types and any(t not in outer.target_types for t in self.target_types):
             return False
-        if outer.included and any(i not in outer.included for i in self.included):
-            return False
-        return True
+        return not (outer.included and any(i not in outer.included for i in self.included))
 
 
 class TaskSpec(BaseModel):

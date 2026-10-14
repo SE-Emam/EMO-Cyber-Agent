@@ -12,6 +12,9 @@ logic is duplicated here.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from pathlib import Path
 from typing import Any
 
@@ -42,7 +45,7 @@ def load_yaml_text(text: str) -> dict[str, Any]:
     yaml = _require_yaml()
     try:
         doc = yaml.safe_load(text)
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise ToolPackError(ToolPackErrorCode.INVALID, f"malformed YAML: {e}") from e
     if not isinstance(doc, dict) or "pack" not in doc:
         raise ToolPackError(ToolPackErrorCode.INVALID, "YAML must contain a top-level pack mapping")
@@ -122,12 +125,12 @@ def validate_against_schema(flat: dict[str, Any], schema: dict[str, Any] | None 
                 from emo_cyber_agent.core.resources import load_schema_text
 
                 schema = _json.loads(load_schema_text("tool-pack"))
-            except Exception as e:
+            except UNEXPECTED_EXCEPTION as e:
                 raise ToolPackError(ToolPackErrorCode.INVALID, f"tool pack schema unavailable: {e}") from e
     assert isinstance(schema, dict), "schema unavailable"
     try:
         _js.validate(flat, schema)
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise ToolPackError(ToolPackErrorCode.INVALID, f"schema validation failed: {e}") from e
 
 

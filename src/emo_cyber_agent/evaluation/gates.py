@@ -16,7 +16,7 @@ the moment any gate fails, and the evaluation report says so in words.
 
 from __future__ import annotations
 
-from typing import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,10 +31,10 @@ from emo_cyber_agent.evaluation.metrics import (
 from emo_cyber_agent.evaluation.spec import GateName, GateStatus
 
 __all__ = [
-    "GateResult",
-    "GateEvaluation",
-    "evaluate_gates",
     "AGGREGATE_NOTE",
+    "GateEvaluation",
+    "GateResult",
+    "evaluate_gates",
 ]
 
 AGGREGATE_NOTE = (

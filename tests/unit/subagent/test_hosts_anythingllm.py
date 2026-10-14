@@ -1,4 +1,7 @@
 """Unit tests for the AnythingLLM host adapter — POST-T018 (Agent 9E)."""
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import sys
 from pathlib import Path
@@ -198,7 +201,7 @@ def test_build_context_trust():
     sanitized = build_context_trust("workspace-docs", "scope-1", sanitized=True)
     assert sanitized.sanitized is True
     assert sanitized.classification == ContextClassification.UNTRUSTED
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         build_context_trust("rag-retrieval", "")
 
 

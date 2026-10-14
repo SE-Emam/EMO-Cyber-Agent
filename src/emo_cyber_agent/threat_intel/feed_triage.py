@@ -27,16 +27,16 @@ from typing import Any, Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = [
-    "SPEC_VERSION",
     "IOC_KINDS",
-    "IoC",
+    "SPEC_VERSION",
     "FeedFinding",
-    "TriageVerdict",
+    "IoC",
     "ThreatFeedTriage",
+    "TriageVerdict",
     "ioc_ref",
-    "normalize_value",
     "match",
     "match_ioc",
+    "normalize_value",
     "prioritize",
 ]
 
@@ -61,7 +61,7 @@ def normalize_value(kind: str, value: str) -> str:
     return text
 
 
-def ioc_ref(ioc: "IoC") -> str:
+def ioc_ref(ioc: IoC) -> str:
     """Stable human-readable reference ``<kind>:<normalized-value>``."""
     return f"{ioc.kind}:{normalize_value(ioc.kind, ioc.value)}"
 
@@ -185,7 +185,7 @@ def match(ioc: IoC | dict[str, Any], findings: Any) -> TriageVerdict:
     if isinstance(ioc, dict):
         ioc = IoC.model_validate(ioc)
     if not isinstance(ioc, IoC):
-        raise ValueError("ioc must be an IoC or IoC dict")
+        raise TypeError("ioc must be an IoC or IoC dict")
     want = normalize_value(ioc.kind, ioc.value)
     matched: list[str] = []
     reasons: list[str] = []
@@ -211,10 +211,14 @@ def match(ioc: IoC | dict[str, Any], findings: Any) -> TriageVerdict:
                 matched.append(ref)
                 reasons.append(f"cidr-containment:{ref}")
                 continue
-        if ioc.kind == "domain" and _looks_like_bare_domain(want) and _looks_like_bare_domain(got):
-            if want.endswith("." + got) or got.endswith("." + want):
-                matched.append(ref)
-                reasons.append(f"domain-suffix-match:{ref}")
+        if (
+            ioc.kind == "domain"
+            and _looks_like_bare_domain(want)
+            and _looks_like_bare_domain(got)
+            and (want.endswith("." + got) or got.endswith("." + want))
+        ):
+            matched.append(ref)
+            reasons.append(f"domain-suffix-match:{ref}")
     matched = sorted(set(matched))
     reasons = sorted(set(reasons))
     return TriageVerdict(
@@ -242,9 +246,9 @@ def _item_severity(item: Any) -> float:
     if isinstance(item, dict):
         raw = item.get("severity", item.get("score", 0.0))
     elif hasattr(item, "severity"):
-        raw = getattr(item, "severity")
+        raw = item.severity
     try:
-        return max(0.0, float(raw))  # type: ignore[arg-type]
+        return max(0.0, float(raw))
     except (TypeError, ValueError):
         return 0.0
 

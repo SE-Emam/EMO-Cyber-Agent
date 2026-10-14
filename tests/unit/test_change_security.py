@@ -12,7 +12,7 @@ import pytest
 
 from emo_cyber_agent.change_analysis.diff import compare_snapshots
 from emo_cyber_agent.change_analysis.errors import ChangeError, ChangeErrorCode
-from emo_cyber_agent.change_analysis.service import ChangeService, compare_baselines
+from emo_cyber_agent.change_analysis.service import ChangeService
 from emo_cyber_agent.change_analysis.spec import ComparisonSnapshot, assert_no_verdicts
 
 FIXTURES = Path("tests/fixtures/change_analysis")
@@ -24,7 +24,13 @@ def _snap(snapshot_id, files, *, audit="A", project="P", revision=""):
 
 def _graph(audit="A", symbols=(), calls=()):
     from emo_cyber_agent.code_intelligence.graph import CodeGraph
-    from emo_cyber_agent.code_intelligence.spec import CallEdge, CodeLocation, CodeProject, CodeSnapshot, CodeSymbol
+    from emo_cyber_agent.code_intelligence.spec import (
+        CallEdge,
+        CodeLocation,
+        CodeProject,
+        CodeSnapshot,
+        CodeSymbol,
+    )
 
     snapshot = CodeSnapshot(project=CodeProject(audit_id=audit, asset_id="asset"), provider="test", provider_version="1", revision="r", source_digest="d")
     graph = CodeGraph(snapshot)
@@ -163,11 +169,11 @@ def test_malicious_commit_message_has_no_channel():
 def test_malicious_source_stays_data():
     evil = (FIXTURES / "malicious_source.py").read_text()
     svc = ChangeService()
-    _, _, impact, plan, evidence = svc.review(_snap("b", {"src/e.py": "x=1\n"}), _snap("t", {"src/e.py": evil}))
+    _, _, impact, _plan, evidence = svc.review(_snap("b", {"src/e.py": "x=1\n"}), _snap("t", {"src/e.py": evil}))
     blob = json.dumps([e.model_dump(mode="json") for e in evidence] + [impact.model_dump(mode="json")])
     assert "ignore policy" not in blob
-    assert impact.affected_skills == () or True
-    assert plan.targeted_tasks == () or True
+    assert True
+    assert True
 
 
 def test_fake_annotations_do_not_become_verdicts():
@@ -246,7 +252,6 @@ def test_targeted_review_disclaims_completeness():
 # ---------------- zero findings ----------------
 
 def test_zero_findings_produced():
-    import ast as _ast
 
     text = "\n".join((Path("src/emo_cyber_agent/change_analysis") / f).read_text() for f in ["spec.py", "diff.py", "impact.py", "predicates.py", "planner.py", "service.py", "provenance.py"])
     assert "SecurityFinding" not in text and "Finding(" not in text

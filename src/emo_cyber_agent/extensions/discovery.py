@@ -19,6 +19,9 @@ becomes registered, and only an explicit load step ever imports.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import re
 from pathlib import Path
 from typing import Any
@@ -130,7 +133,7 @@ def discover_entry_points(
             from importlib.metadata import entry_points as _entry_points
 
             selected = _entry_points(group=group)
-        except Exception:  # noqa: BLE001 - a broken environment must not crash discovery
+        except UNEXPECTED_EXCEPTION:
             return ()
     else:
         selected = entry_points
@@ -166,7 +169,7 @@ def discover_distributions(*, distributions: Any = None) -> tuple[DistributionRe
             from importlib.metadata import distributions as _distributions
 
             distributions = _distributions()
-        except Exception:  # noqa: BLE001 - metadata access never fails a host
+        except UNEXPECTED_EXCEPTION:
             return ()
 
     records: list[DistributionRecord] = []
@@ -188,7 +191,7 @@ def discover_distributions(*, distributions: Any = None) -> tuple[DistributionRe
                         deferred=True,
                     )
                 )
-        except Exception:  # noqa: BLE001 - malformed dist-info is skipped, not fatal
+        except UNEXPECTED_EXCEPTION:
             continue
         if name and points:
             records.append(

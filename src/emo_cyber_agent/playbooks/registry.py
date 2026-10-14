@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from emo_cyber_agent.playbooks.spec import PlaybookError, PlaybookErrorCode, PlaybookSpec, PlaybookTrust
+import builtins
+
+from emo_cyber_agent.playbooks.spec import (
+    PlaybookError,
+    PlaybookErrorCode,
+    PlaybookSpec,
+    PlaybookTrust,
+)
 
 
 class PlaybookRegistry:
@@ -41,7 +48,7 @@ class PlaybookRegistry:
     def list(self) -> list[PlaybookSpec]:
         return [self._playbooks[key] for key in sorted(self._playbooks)]
 
-    def versions(self, playbook_id: str) -> list[str]:
+    def versions(self, playbook_id: str) -> builtins.list[str]:
         return sorted(ver for (pid, ver) in self._playbooks if pid == playbook_id)
 
     def trust_of(self, playbook_id: str, version: str) -> PlaybookTrust:
@@ -50,14 +57,14 @@ class PlaybookRegistry:
         except KeyError:
             raise PlaybookError(PlaybookErrorCode.NOT_FOUND, f"playbook not registered: {playbook_id}@{version}") from None
 
-    def dependencies(self, playbook_id: str, version: str | None = None) -> list[str]:
+    def dependencies(self, playbook_id: str, version: str | None = None) -> builtins.list[str]:
         spec = self.get(playbook_id, version)
         deps = list(spec.dependencies)
         if spec.extends and spec.extends not in deps:
             deps.append(spec.extends)
         return sorted(deps)
 
-    def check_cycles(self) -> list[str]:
+    def check_cycles(self) -> builtins.list[str]:
         cycles: list[str] = []
         visited: dict[str, str] = {}
 

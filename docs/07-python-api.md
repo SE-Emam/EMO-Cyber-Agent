@@ -15,6 +15,10 @@ result = await service.audit(
 )
 ```
 
+`mode` accepts `quick`, `standard`, or `deep`. `permission_profile` accepts
+`read_only`, `verify`, or `remediate`; unsupported values are rejected by the
+domain request/result models, consistent with the published JSON Schemas.
+
 ## API principles
 
 - Return domain objects, not MCP-specific or CLI-specific structures.

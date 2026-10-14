@@ -5,6 +5,9 @@ evidence mapping, compat identity with T007 adapters, skill-pack
 integration, end-to-end chains. No network, no real binaries
 (shutil.which monkeypatched; ScriptedPort doubles).
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import json
 import shutil
@@ -23,7 +26,11 @@ from emo_cyber_agent.tools.packs.catalog import (
 from emo_cyber_agent.tools.packs.errors import ToolPackError, ToolPackErrorCode
 from emo_cyber_agent.tools.packs.executor import PackExecutor, validate_inputs
 from emo_cyber_agent.tools.packs.provenance import build_tool_provenance
-from emo_cyber_agent.tools.packs.resolver import ToolPackResolver, check_tool_health, satisfies_range
+from emo_cyber_agent.tools.packs.resolver import (
+    ToolPackResolver,
+    check_tool_health,
+    satisfies_range,
+)
 from emo_cyber_agent.tools.packs.spec import (
     ALLOWED_PACK_CAPABILITIES,
     MaintenanceStatus,
@@ -55,13 +62,13 @@ def _env(monkeypatch=None):
 
 
 def _definition(definition_id="demo-def", **over):
-    base = dict(definition_id=definition_id, tool_id="semgrep", tool_capability="scanner.local.execute", mode="scan", version_range=">=1.0.0", adapter="semgrep", capabilities=["STATIC_ANALYSIS", "LOCAL_REPOSITORY_SCAN"], inputs=ToolInputContract(fields=()), outputs=ToolOutputContract(record_kinds=["observation"]), runtime=ToolRuntimeProfile(entrypoint="semgrep"), network=NetworkRequirement.NONE, supported_targets=["repo"], snapshot_binding=False, executable=True, fixed_args=[], value_flags=[])
+    base = {"definition_id": definition_id, "tool_id": "semgrep", "tool_capability": "scanner.local.execute", "mode": "scan", "version_range": ">=1.0.0", "adapter": "semgrep", "capabilities": ["STATIC_ANALYSIS", "LOCAL_REPOSITORY_SCAN"], "inputs": ToolInputContract(fields=()), "outputs": ToolOutputContract(record_kinds=["observation"]), "runtime": ToolRuntimeProfile(entrypoint="semgrep"), "network": NetworkRequirement.NONE, "supported_targets": ["repo"], "snapshot_binding": False, "executable": True, "fixed_args": [], "value_flags": []}
     base.update(over)
     return ToolDefinition(**base)
 
 
 def _pack(pack_id="demo-pack", **over):
-    base = dict(pack_id=pack_id, name="Demo", version="1.0.0", vendor="Demo", description="Read-only fact producer for tests.", tool_version_range=">=1.0.0", maintenance_status=MaintenanceStatus.ACTIVE, license="MIT", source_provenance="fixture", entrypoint="semgrep", supported_platforms=["linux", "darwin"], supported_targets=["repo"], definitions=[_definition()], network_default=NetworkRequirement.NONE, filesystem_read_only=True, resource_limits={}, secret_handling="redact-and-never-persist", redaction_rules=["credential-patterns"], evidence_mapping={"observation": "observation_to_evidence_fields"}, limitations=["untrusted data"], provenance={"source": "external"})
+    base = {"pack_id": pack_id, "name": "Demo", "version": "1.0.0", "vendor": "Demo", "description": "Read-only fact producer for tests.", "tool_version_range": ">=1.0.0", "maintenance_status": MaintenanceStatus.ACTIVE, "license": "MIT", "source_provenance": "fixture", "entrypoint": "semgrep", "supported_platforms": ["linux", "darwin"], "supported_targets": ["repo"], "definitions": [_definition()], "network_default": NetworkRequirement.NONE, "filesystem_read_only": True, "resource_limits": {}, "secret_handling": "redact-and-never-persist", "redaction_rules": ["credential-patterns"], "evidence_mapping": {"observation": "observation_to_evidence_fields"}, "limitations": ["untrusted data"], "provenance": {"source": "external"}}
     base.update(over)
     return ToolPack(**base)  # type: ignore[arg-type]
 
@@ -70,23 +77,23 @@ def _pack(pack_id="demo-pack", **over):
 
 def test_spec_ids_versions_entrypoint_ranges():
     assert _pack().pack_id == "demo-pack"
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _pack(pack_id="Bad_ID")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _pack(pack_id="other-ok", version="1.0")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _pack(pack_id="other-ok", entrypoint="/bin/evil")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _pack(pack_id="other-ok", entrypoint="evil;rm")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _definition(definition_id="Bad_Def")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _definition(definition_id="ok-def", version_range="sometime-later")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ToolInputField(name="argv", type="string")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ToolInputField(name="extra_args", type="string")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ToolInputField(name="ok_name", type="blob")
     assert ToolPack.digest_of(_pack()) == ToolPack.digest_of(_pack())
 
@@ -95,9 +102,9 @@ def test_capability_taxonomy_closed():
     assert set(ALLOWED_PACK_CAPABILITIES) == {"CODE_PATTERN_SCAN", "DEPENDENCY_SCAN", "VULNERABILITY_LOOKUP", "MISCONFIGURATION_SCAN", "SECRET_DETECTION", "SBOM_SCAN", "STATIC_ANALYSIS", "LOCAL_REPOSITORY_SCAN"}
     from emo_cyber_agent.tools.packs.spec import ToolCapability
 
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ToolCapability(name="WRITE")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ToolCapability(name="FIX")
 
 
@@ -170,7 +177,6 @@ def test_compat_identity_with_t007_adapters(monkeypatch):
     assert set(adapters) == set(SCANNER_ADAPTERS)
     from emo_cyber_agent.adapters.mock_scanners import ScriptedPort
     from emo_cyber_agent.core.policy import StrictPolicyEngine
-    from emo_cyber_agent.tools.packs.executor import PackExecutor
 
     pe = PackExecutor(tool_registry=tools, policy=StrictPolicyEngine(), port=ScriptedPort(stdout="{}"), audit_root="/tmp", pack_registry=reg, adapters=adapters)
     res = ToolPackResolver(reg, tool_registry=tools)

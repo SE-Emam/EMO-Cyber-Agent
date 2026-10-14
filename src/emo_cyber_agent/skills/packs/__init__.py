@@ -5,7 +5,11 @@ Code Intelligence. Skill = HOW. Packs grant nothing, execute
 nothing, confirm nothing.
 """
 
-from emo_cyber_agent.skills.packs.catalog import PackRegistry, build_known_capabilities, load_official_packs
+from emo_cyber_agent.skills.packs.catalog import (
+    PackRegistry,
+    build_known_capabilities,
+    load_official_packs,
+)
 from emo_cyber_agent.skills.packs.errors import PackError, PackErrorCode
 from emo_cyber_agent.skills.packs.pack import (
     CheckCoverage,

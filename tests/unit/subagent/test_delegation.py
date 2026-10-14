@@ -1,4 +1,7 @@
 """Delegation pipeline tests — POST-T018 (Agent 3A)."""
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import sys
 from pathlib import Path
@@ -31,18 +34,18 @@ ALLOWED = ("repository.read", "verification.static")
 
 
 def _envelope(**over: Any) -> TaskEnvelope:
-    base: dict[str, Any] = dict(
-        task_id="task-alpha",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        requested_task="review repository metadata",
-        scope=DelegatedScope(included=("src/auth",), target_types=("code",)),
-        assets=("asset-1",),
-        requested_output=("report",),
-        capabilities=("repository.read", "verification.static"),
-    )
+    base: dict[str, Any] = {
+        "task_id": "task-alpha",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "requested_task": "review repository metadata",
+        "scope": DelegatedScope(included=("src/auth",), target_types=("code",)),
+        "assets": ("asset-1",),
+        "requested_output": ("report",),
+        "capabilities": ("repository.read", "verification.static"),
+    }
     base.update(over)
     return TaskEnvelope(**base)
 
@@ -62,7 +65,7 @@ def _context(**over: Any) -> DelegationContext:
 
 
 def _pipeline(**over: Any) -> DelegationPipeline:
-    base: dict[str, Any] = dict(allowed_capabilities=ALLOWED)
+    base: dict[str, Any] = {"allowed_capabilities": ALLOWED}
     base.update(over)
     return DelegationPipeline(StrictPolicyEngine(), **base)
 
@@ -73,7 +76,7 @@ def _evaluate(
     ctx: DelegationContext | None = None,
     **over: Any,
 ) -> DelegationOutcome:
-    kwargs: dict[str, Any] = dict(now=NOW, audit_id=AUDIT, project_id=PROJECT, snapshot_id=SNAPSHOT)
+    kwargs: dict[str, Any] = {"now": NOW, "audit_id": AUDIT, "project_id": PROJECT, "snapshot_id": SNAPSHOT}
     kwargs.update(over)
     return pipe.evaluate(env, ctx or _context(), **kwargs)
 
@@ -115,7 +118,7 @@ def test_empty_effective_grant_denied():
 
 
 def test_policy_engine_refusal_denies():
-    pipe = _pipeline()  # engine default-denies unknown caps
+    _pipeline()  # engine default-denies unknown caps
     env = _envelope(capabilities=("repository.read", "scanner.network.read"))
     pipe2 = DelegationPipeline(
         StrictPolicyEngine(),  # no granted_network → network refused
@@ -222,7 +225,7 @@ def test_expired_context_denied_not_allowed():
     import pytest
 
     ctx = _context()
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ctx.assert_authorized_for(_envelope(), now=999)
     outcome = _evaluate(_pipeline(), _envelope(), ctx=ctx, now=999)
     assert outcome.decision.decision == SecurityDecision.DENY

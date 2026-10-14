@@ -29,7 +29,6 @@ from emo_cyber_agent.core.repository import (
 from emo_cyber_agent.core.service import DefaultPolicyEngine
 from emo_cyber_agent.core.tool_registry import ToolRegistry
 
-
 AUDIT = "audit-1"
 PROJECT = "proj-1"
 IDENT = RepositoryIdentity(provider="github", owner="acme", repo="web", ref="main")

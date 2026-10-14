@@ -37,7 +37,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from emo_cyber_agent.subagent.sanitizer import MAX_INPUT_CHARS, sanitize
 from emo_cyber_agent.subagent.session import SubagentSession
-from emo_cyber_agent.subagent.trust import ContextClassification, SecurityDecision, scan_secret_markers
+from emo_cyber_agent.subagent.trust import (
+    ContextClassification,
+    SecurityDecision,
+    scan_secret_markers,
+)
 
 MAX_CHUNK_CHARS: int = MAX_INPUT_CHARS  # 64 KiB chars per chunk
 MAX_STREAM_CHARS: int = 256 * 1024  # 256 KiB admitted chars per stream

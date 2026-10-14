@@ -22,8 +22,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
+from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,6 +31,30 @@ from emo_cyber_agent.core.repository import mark_untrusted, redact_credentials
 from emo_cyber_agent.core.tool_registry import ToolSpec
 
 SECRET_VALUE_KEYS = ("secret", "token", "value", "password", "key", "credentials", "match")
+
+
+class ScannerOutputError(ValueError):
+    """Scanner output was malformed or outside its verified adapter shape."""
+
+
+def _json_object_with_list(stdout: str, key: str, tool_id: str) -> list[Any]:
+    try:
+        body = json.loads(stdout)
+    except (json.JSONDecodeError, TypeError) as exc:
+        raise ScannerOutputError(f"{tool_id} returned invalid JSON") from exc
+    if not isinstance(body, dict) or not isinstance(body.get(key), list):
+        raise ScannerOutputError(f"{tool_id} output must contain a {key} array")
+    return cast(list[Any], body[key])
+
+
+def _json_list(stdout: str, tool_id: str) -> list[Any]:
+    try:
+        body = json.loads(stdout)
+    except (json.JSONDecodeError, TypeError) as exc:
+        raise ScannerOutputError(f"{tool_id} returned invalid JSON") from exc
+    if not isinstance(body, list):
+        raise ScannerOutputError(f"{tool_id} output must be a JSON array")
+    return body
 
 
 def _digest(text: str) -> str:
@@ -81,7 +105,7 @@ class ScannerObservation(BaseModel):
     artifact: ScannerArtifact = Field(default_factory=ScannerArtifact)
     references: tuple[ScannerReference, ...] = ()
     raw_digest: str = ""
-    collected_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    collected_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class ScannerResult(BaseModel):
@@ -165,18 +189,24 @@ class SemgrepAdapter(ScannerAdapterBase):
         return [self.binary, "scan", "--json", "--quiet", confined_target]
 
     def parse(self, stdout: str) -> dict[str, Any]:
-        try:
-            body = json.loads(stdout or "{}")
-        except Exception:
-            body = {}
+        results = _json_object_with_list(stdout, "results", self.tool_id)
         obs: list[ScannerObservation] = []
-        for item in body.get("results", []) if isinstance(body, dict) else []:
+        for item in results:
+            if not isinstance(item, dict):
+                raise ScannerOutputError("semgrep result entries must be objects")
             path = str(item.get("path", ""))[:512]
-            start = (item.get("start") or {}).get("line")
-            end = (item.get("end") or {}).get("line")
+            start_obj = item.get("start") or {}
+            end_obj = item.get("end") or {}
+            if not isinstance(start_obj, dict) or not isinstance(end_obj, dict):
+                raise ScannerOutputError("semgrep result locations must be objects")
+            start = start_obj.get("line")
+            end = end_obj.get("line")
             rule = str(item.get("check_id", ""))[:200]
-            msg = redact_credentials(str(item.get("extra", {}).get("message", "")))[:500] if isinstance(item.get("extra"), dict) else ""
-            sev = str(item.get("extra", {}).get("severity", ""))[:20] if isinstance(item.get("extra"), dict) else ""
+            extra = item.get("extra") or {}
+            if not isinstance(extra, dict):
+                raise ScannerOutputError("semgrep result extra field must be an object")
+            msg = redact_credentials(str(extra.get("message", "")))[:500]
+            sev = str(extra.get("severity", ""))[:20]
             obs.append(
                 ScannerObservation(
                     tool_id=self.tool_id,
@@ -200,15 +230,18 @@ class TrivyAdapter(ScannerAdapterBase):
         return [self.binary, "fs", "--format", "json", "--quiet", confined_target]
 
     def parse(self, stdout: str) -> dict[str, Any]:
-        try:
-            body = json.loads(stdout or "{}")
-        except Exception:
-            body = {}
+        results = _json_object_with_list(stdout, "Results", self.tool_id)
         obs: list[ScannerObservation] = []
-        results = body.get("Results", []) if isinstance(body, dict) else []
         for res in results:
+            if not isinstance(res, dict):
+                raise ScannerOutputError("trivy result entries must be objects")
             target = str(res.get("Target", ""))[:300]
-            for vuln in res.get("Vulnerabilities", []) or []:
+            vulns = res.get("Vulnerabilities", []) or []
+            if not isinstance(vulns, list):
+                raise ScannerOutputError("trivy Vulnerabilities must be an array")
+            for vuln in vulns:
+                if not isinstance(vuln, dict):
+                    raise ScannerOutputError("trivy vulnerability entries must be objects")
                 vid = str(vuln.get("VulnerabilityID", ""))[:80]
                 pkg = str(vuln.get("PkgName", ""))[:200]
                 obs.append(
@@ -236,15 +269,24 @@ class OsvScannerAdapter(ScannerAdapterBase):
         return [self.binary, "--format", "json", confined_target]
 
     def parse(self, stdout: str) -> dict[str, Any]:
-        try:
-            body = json.loads(stdout or "{}")
-        except Exception:
-            body = {}
+        results = _json_object_with_list(stdout, "results", self.tool_id)
         obs: list[ScannerObservation] = []
-        for res in body.get("results", []) if isinstance(body, dict) else []:
-            for pkg in res.get("packages", []) or []:
+        for res in results:
+            if not isinstance(res, dict):
+                raise ScannerOutputError("osv result entries must be objects")
+            packages = res.get("packages", []) or []
+            if not isinstance(packages, list):
+                raise ScannerOutputError("osv packages must be an array")
+            for pkg in packages:
+                if not isinstance(pkg, dict):
+                    raise ScannerOutputError("osv package entries must be objects")
                 info = pkg.get("package", {}) if isinstance(pkg.get("package"), dict) else {}
-                for vuln in pkg.get("vulnerabilities", []) or []:
+                vulns = pkg.get("vulnerabilities", []) or []
+                if not isinstance(vulns, list):
+                    raise ScannerOutputError("osv vulnerabilities must be an array")
+                for vuln in vulns:
+                    if not isinstance(vuln, dict):
+                        raise ScannerOutputError("osv vulnerability entries must be objects")
                     vid = str(vuln.get("id", ""))[:80]
                     obs.append(
                         ScannerObservation(
@@ -265,17 +307,32 @@ class GitleaksAdapter(ScannerAdapterBase):
     tool_id = "gitleaks"
     binary = "gitleaks"
 
+    def __init__(self, binary_path: str | None = None, *, config_path: str | None = None, ignore_path: str | None = None) -> None:
+        if binary_path:
+            self.binary = binary_path
+        self.config_path = config_path
+        self.ignore_path = ignore_path
+
     def argv(self, spec: ToolSpec, confined_target: str) -> list[str]:
-        return [self.binary, "detect", "--source", confined_target, "--no-git", "--format", "json"]
+        # Findings are represented by JSON observations while the process exits
+        # successfully; every secret is redacted by the scanner before stdout.
+        argv = [
+            self.binary, "detect", "--source", confined_target, "--no-git",
+            "--report-format", "json", "--report-path", "-",
+            "--redact=100", "--exit-code", "0", "--ignore-gitleaks-allow",
+        ]
+        if self.config_path:
+            argv.extend(("--config", self.config_path))
+        if self.ignore_path:
+            argv.extend(("--gitleaks-ignore-path", self.ignore_path))
+        return argv
 
     def parse(self, stdout: str) -> dict[str, Any]:
-        try:
-            body = json.loads(stdout or "[]")
-        except Exception:
-            body = []
-        items = body if isinstance(body, list) else []
+        items = _json_list(stdout, self.tool_id)
         obs: list[ScannerObservation] = []
         for item in items:
+            if not isinstance(item, dict):
+                raise ScannerOutputError("gitleaks result entries must be objects")
             # DROP raw secret material: only fingerprint/rule/path/line/digest survive.
             rule = redact_credentials(str(item.get("RuleID", "")))[:120]
             path = redact_credentials(str(item.get("File", "")))[:512]

@@ -49,9 +49,9 @@ from emo_cyber_agent.subagent.trust import (
 )
 
 __all__ = [
+    "ALLOWED_TRANSITIONS",
     "SUBAGENT_API_VERSION",
     "SUBAGENT_CONTRACT_VERSION",
-    "ALLOWED_TRANSITIONS",
     "TERMINAL_STATES",
     "AuditHandoff",
     "Budget",

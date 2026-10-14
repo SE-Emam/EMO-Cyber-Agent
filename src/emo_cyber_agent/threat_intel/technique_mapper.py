@@ -30,15 +30,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = [
     "TABLE_VERSION",
-    "VALID_TACTICS",
     "TECHNIQUES",
+    "VALID_TACTICS",
     "AttackTechnique",
-    "TechniqueRef",
     "AttackTechniqueMapper",
+    "TechniqueRef",
     "all_technique_ids",
     "get_technique",
-    "technique_known",
     "map_finding",
+    "technique_known",
 ]
 
 TABLE_VERSION = "1.0.0"
@@ -476,15 +476,13 @@ def map_finding(
     if tokens:
         scored: list[tuple[float, str]] = []
         for tech in TECHNIQUES:
-            haystack = " ".join(
-                (tech.name, tech.description, tech.detection_guidance, tech.tactic)
-            ).lower()
+            haystack = f"{tech.name} {tech.description} {tech.detection_guidance} {tech.tactic}".lower()
             count = sum(1 for token in tokens if token in haystack)
             if count:
                 scored.append((float(count), tech.id))
         scored.sort(key=lambda item: (-item[0], item[1]))
-        for count, tid in scored:
-            hits.append(TechniqueRef(technique_id=tid, basis="keyword", score=count))
+        for score, tid in scored:
+            hits.append(TechniqueRef(technique_id=tid, basis="keyword", score=score))
     return hits
 
 

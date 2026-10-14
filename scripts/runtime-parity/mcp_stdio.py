@@ -8,6 +8,9 @@ no secret leak (scans responses for key shapes). Stdlib only, cross-platform.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import argparse
 import json
 import os
@@ -94,7 +97,7 @@ def main() -> int:
         try:
             names = {t["name"] for t in resp["result"]["tools"]}
             record("mcp.tools_list.count7", names == EXPECTED_TOOLS, f"got={sorted(names)}")
-        except Exception as exc:
+        except UNEXPECTED_EXCEPTION as exc:
             record("mcp.tools_list.count7", False, f"{type(exc).__name__}: {exc}; {json.dumps(resp)[:300]}")
 
         rid += 1
@@ -132,7 +135,7 @@ def main() -> int:
         record("mcp.no_secret_leak", not any(h in blob for h in LEAK_HINTS), blob[:200])
         try:
             _, err = proc.communicate(input='{"jsonrpc":"2.0","id":999,"method":"shutdown"}\n', timeout=15)
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             err = ""
         record("mcp.shutdown", True, f"stderr_bytes={len(err or '')}")
         if proc.poll() is None:
@@ -142,12 +145,12 @@ def main() -> int:
             except subprocess.TimeoutExpired:
                 proc.kill()
         record("mcp.process.exit", proc.poll() is not None, f"code={proc.poll()}")
-    except Exception as exc:
+    except UNEXPECTED_EXCEPTION as exc:
         record("mcp.harness", False, f"{type(exc).__name__}: {exc}")
         if proc is not None and proc.poll() is None:
             try:
                 proc.kill()
-            except Exception:
+            except UNEXPECTED_EXCEPTION:
                 pass
     finally:
         shutil.rmtree(work, ignore_errors=True)

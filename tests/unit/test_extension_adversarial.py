@@ -19,12 +19,12 @@ from typer.testing import CliRunner
 
 from emo_cyber_agent.cli.main import EXIT_DOMAIN_FAILURE, EXIT_INVALID_INPUT, app
 from emo_cyber_agent.extensions import (
+    SELF_DECLARED_TRUST_KEYS,
     ExtensionError,
     ExtensionErrorCode,
     ExtensionLoader,
     ExtensionRegistry,
     ExtensionSourceClass,
-    SELF_DECLARED_TRUST_KEYS,
     find_self_declared_trust,
     load_manifest_file,
     load_manifest_text,

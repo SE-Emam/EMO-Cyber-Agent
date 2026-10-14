@@ -34,7 +34,7 @@ def _check_bounded_tokens(values: tuple[str, ...], *, field: str) -> tuple[str, 
         raise ValueError(f"invalid: {field} exceeds {MAX_ENVELOPE_ITEMS} items ({len(values)})")
     for v in values:
         if not isinstance(v, str):
-            raise ValueError(f"invalid: {field} entries must be str")
+            raise TypeError(f"invalid: {field} entries must be str")
         if len(v) > MAX_ENVELOPE_TOKEN_CHARS:
             raise ValueError(f"invalid: {field} entry exceeds {MAX_ENVELOPE_TOKEN_CHARS} chars")
     return values
@@ -61,9 +61,7 @@ class DelegatedScope(BaseModel):
             return False
         # Shrinking exclusions is widening (L1): every outer exclusion must
         # still be excluded inside.
-        if any(e not in self.excluded for e in outer.excluded):
-            return False
-        return True
+        return not any(e not in self.excluded for e in outer.excluded)
 
     def assert_narrowed_by(self, outer: DelegatedScope) -> None:
         if not self.narrowed_by(outer):

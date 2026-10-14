@@ -6,7 +6,7 @@ text, commit messages, or source content. Those stay DATA.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -31,6 +31,6 @@ def build_change_provenance(
         "target_snapshot_id": target_snapshot_id,
         "changed_object": changed_object,
         "change_digest": change_digest,
-        "observed_at": datetime.now(timezone.utc).isoformat(),
+        "observed_at": datetime.now(UTC).isoformat(),
         "coverage": coverage,
     }

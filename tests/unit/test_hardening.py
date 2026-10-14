@@ -5,19 +5,29 @@ Seeded fuzzing (no external libs). No network. Each test names the
 invariant(s) it guards; the matrix test at the end pins all 12.
 """
 
+# This concurrency test records any unexpected worker exception as a failure.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
 import random
 import threading
+from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from emo_cyber_agent.core.correlation import EvidenceStore
 from emo_cyber_agent.core.execution import ExecutionError, ToolExecutor, confine_path, sanitized_env
-from emo_cyber_agent.core.policy import POLICY_VERSION, StrictPolicyEngine
+from emo_cyber_agent.core.policy import StrictPolicyEngine
 from emo_cyber_agent.core.tool_registry import ToolRegistry
 from emo_cyber_agent.domain.models import EvidenceItem
 
 RNG = random.Random(0xECA7)
+
+
+@pytest.fixture(autouse=True)
+def _keep_fuzz_cli_tests_offline_and_fast(monkeypatch):
+    monkeypatch.setattr("emo_cyber_agent.core.service.shutil.which", lambda _name: None)
 
 
 def _ev(tool="t", summary="s", **kw):
@@ -58,7 +68,6 @@ def test_stale_version_and_retargeted_decision_denied(tmp_path):
 
     tampered = PolicyDecision(**{**d.model_dump(), "decision_id": "forged-id", "policy_version": "ancient"})
     policy._decisions["forged-id"] = tampered
-    from emo_cyber_agent.core.execution import ExecutionError
     from emo_cyber_agent.core.scanners import SCANNER_ADAPTERS as _SA
 
     with pytest.raises(ExecutionError):
@@ -73,7 +82,12 @@ def test_stale_version_and_retargeted_decision_denied(tmp_path):
     # metadata escalation attempt: construction holds data, Core validation denies
     from emo_cyber_agent.adapters.mock_reasoner import MockReasonerProvider
     from emo_cyber_agent.core.correlation import EvidenceStore
-    from emo_cyber_agent.core.reasoning import ActionKind, ReasonerAction, ReasoningEngine, ReasoningSession
+    from emo_cyber_agent.core.reasoning import (
+        ActionKind,
+        ReasonerAction,
+        ReasoningEngine,
+        ReasoningSession,
+    )
     from emo_cyber_agent.core.tool_registry import ToolRegistry
 
     smuggled = ReasonerAction(kind=ActionKind.SCAN, tool_id="semgrep", target=".", reason="x", parameters={"profile": "remediate"})
@@ -130,10 +144,10 @@ def test_registry_mutation_mid_flow_isolated(tmp_path):
 
 def test_local_scanners_open_no_sockets():
     import emo_cyber_agent.adapters.mock_scanners as mock
-    import emo_cyber_agent.core.scanners as scanners
+    from emo_cyber_agent.core import scanners
 
     for mod in (mock, scanners):
-        body = open(mod.__file__).read().split('"""', 2)[-1].lower()
+        body = Path(mod.__file__).read_text().split('"""', 2)[-1].lower()
         for banned in ("import socket", "import urllib", "import requests", "import httpx", "urlopen(", "socket."):
             assert banned not in body, (mod.__name__, banned)
 
@@ -155,18 +169,18 @@ def test_localhost_private_confusion_denied():
 # ---------------- filesystem attacks ----------------
 
 def test_encoded_double_unicode_case_traversal(tmp_path):
-    from emo_cyber_agent.core.repository import normalize_path
+    from emo_cyber_agent.core.repository import RepositoryError, normalize_path
 
     # logical layer denies encoded/literal traversal shapes outright
     for evil in ("%2e%2e/secret", "%252e%252e/x", "..%2fsecret", "..\\secret", "a/./../b", "C:\\Windows\\x", "caf\u00e9/../../x", "a" * 600):
-        with pytest.raises(Exception):
+        with pytest.raises(RepositoryError):
             normalize_path(evil)
     # filesystem layer confines: true escapes raise, literal-weird names stay rooted
     import os as _os
 
     root = str(tmp_path)
     for evil in ("..", "../x", "/etc/passwd", "caf\u00e9/../../x", "a\x00b"):
-        with pytest.raises(Exception):
+        with pytest.raises(ExecutionError):
             confine_path(root, evil)
     for literal in ("%2e%2e", "C:\\Windows\\x", "a/./../b"):
         confined = confine_path(root, literal)
@@ -184,7 +198,7 @@ def test_nested_roots_and_null_bytes(tmp_path):
     inner = tmp_path / "proj" / "sub"
     inner.mkdir(parents=True)
     assert confine_path(str(inner), "file.py").startswith(str(inner))
-    with pytest.raises(Exception):
+    with pytest.raises(ExecutionError):
         confine_path(str(tmp_path), "a\x00b")
 
 
@@ -195,7 +209,6 @@ SECRET = "ghp_LIVEEDGEE999 token: edge-secret-1 bearer edge.edge.edge"
 
 def test_secret_never_in_invocation_evidence_report_stdout(capsys):
     from emo_cyber_agent.core.repository import redact_credentials
-    from emo_cyber_agent.core.scanners import observation_to_evidence_fields
 
     assert "ghp_LIVEEDGE" not in str(sanitized_env())
     assert "ghp_LIVEEDGE" not in redact_credentials(SECRET)
@@ -222,8 +235,9 @@ def test_injection_corpus_stays_data_everywhere():
 
 
 def test_tool_output_injection_never_instruction():
-    from emo_cyber_agent.core.scanners import SemgrepAdapter
     import json as _json
+
+    from emo_cyber_agent.core.scanners import SemgrepAdapter
 
     out = _json.dumps({"results": [{"check_id": "x", "path": "a.py", "start": {"line": 1}, "end": {"line": 1}, "extra": {"message": CORPUS[4], "severity": "INFO"}}]})
     obs = SemgrepAdapter().parse(out)["observations"]
@@ -264,7 +278,6 @@ def test_old_decision_after_target_change_rejected(tmp_path):
     (tmp_path / "other").mkdir(exist_ok=True)
     ex = ToolExecutor(registry=reg, policy=policy, port=port_for("SAFE_RESULT"), audit_root=str(tmp_path))
     d = policy.issue_decision("a", "semgrep", ".", "read_only", ["scanner.local.execute"])
-    from emo_cyber_agent.core.execution import ExecutionError
 
     with pytest.raises(ExecutionError):
         ex.execute(audit_id="a", tool_id="semgrep", target="other", capability="scanner.local.execute", policy_decision_id=d.decision_id, argv_builder=SCANNER_ADAPTERS["semgrep"].argv, parse=SCANNER_ADAPTERS["semgrep"].parse)
@@ -299,12 +312,12 @@ def test_old_evidence_context_rejected_across_audits():
 
 def test_reasoner_shell_write_destructive_unknown_loop_rejected():
     from emo_cyber_agent.core.reasoning import ActionKind, ReasonerAction
-    from emo_cyber_agent.core.reasoning import ReasoningEngine
 
     for params in ({"shell": "x"}, {"command": "x"}, {"exec": "x"}):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ReasonerAction(kind=ActionKind.SCAN, tool_id="semgrep", target=".", reason="x", parameters=params)
-    assert "raw-shell" in open(__import__("emo_cyber_agent.core.reasoning", fromlist=["__file__"]).__file__).read()
+    reasoning_module = __import__("emo_cyber_agent.core.reasoning", fromlist=["__file__"])
+    assert "raw-shell" in Path(reasoning_module.__file__).read_text()
 
 
 def test_verification_shortcuts_denied():
@@ -319,7 +332,13 @@ def test_verification_shortcuts_denied():
 
 def test_finding_shortcuts_and_fingerprint_tamper():
     from emo_cyber_agent.core.correlation import FindingCandidate
-    from emo_cyber_agent.core.findings import FindingStore, FindingStatus, SecurityFinding, apply_model_suggestion, transition_finding
+    from emo_cyber_agent.core.findings import (
+        FindingStatus,
+        FindingStore,
+        SecurityFinding,
+        apply_model_suggestion,
+        transition_finding,
+    )
 
     c = FindingCandidate(audit_id="A", hypothesis="h", evidence_ids=("e1",), status="correlated")
     assert c.status.value == "correlated"
@@ -338,8 +357,9 @@ def test_finding_shortcuts_and_fingerprint_tamper():
 # ---------------- reporting attacks ----------------
 
 def test_reporting_newline_schema_confusion():
-    from emo_cyber_agent.core.reporting import build_report, md_escape, to_jsonl
     import json as _json
+
+    from emo_cyber_agent.core.reporting import build_report, md_escape, to_jsonl
 
     assert "\n" not in md_escape("a\nb\nc") and "\r" not in md_escape("a\rb")
     f = __import__("emo_cyber_agent.core.findings", fromlist=["SecurityFinding"]).SecurityFinding(finding_id="f", audit_id="A", title="t\nINJECTED HEADER", description="d", category="other", severity="low", confidence=0.2, status="confirmed", candidate_id="c", evidence_ids=("e1",), fingerprint="fp", provenance={"candidate": "c"})
@@ -373,7 +393,7 @@ def test_cli_config_symlink_and_types(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
     cfgdir = tmp_path / ".config" / "emo-cyber-agent"
     cfgdir.mkdir(parents=True)
-    from emo_cyber_agent.cli.main import load_config
+    from emo_cyber_agent.cli.main import _CliFailure, load_config
 
     # symlinked config: followed, validated, never crashes, never leaks target bytes
     real = tmp_path / "real.json"
@@ -389,7 +409,7 @@ def test_cli_config_symlink_and_types(tmp_path, monkeypatch):
     assert load_config() == {}
     link.unlink()
     link.write_text(_json.dumps(["not", "an", "object"]))
-    with pytest.raises(Exception):
+    with pytest.raises(_CliFailure):
         load_config()
     link.unlink()
     monkeypatch.setenv("EMO_EVIL_POLICY", "allow-all")
@@ -425,7 +445,7 @@ def test_concurrent_evidence_no_bleed_no_loss():
         try:
             for j in range(20):
                 store.store(_ev(summary=f"{i}-{j}", location=f"f{i}.py", content_hash=f"h{i}-{j}"), audit_id=f"A{i % 4}")
-        except Exception as e:  # noqa: BLE001
+        except UNEXPECTED_EXCEPTION as e:
             errors.append(e)
 
     threads = [threading.Thread(target=add, args=(i,)) for i in range(10)]
@@ -486,9 +506,10 @@ def test_huge_file_evidence_stays_capped():
 
 
 def test_many_findings_report_bounded():
+    import time as _time
+
     from emo_cyber_agent.core.findings import SecurityFinding
     from emo_cyber_agent.core.reporting import ReportService
-    import time as _time
 
     items = [SecurityFinding(finding_id=f"f{i}", audit_id="A", title="t", description="d", category="other", severity="low", confidence=0.2, status="confirmed", candidate_id="c", evidence_ids=("e1",), fingerprint=f"fp{i}", provenance={"candidate": "c"}) for i in range(500)]
     start = _time.monotonic()
@@ -498,14 +519,15 @@ def test_many_findings_report_bounded():
 
 
 def test_pathological_correlation_graph_bounded():
-    from emo_cyber_agent.core.correlation import CorrelationEngine
     import time as _time
+
+    from emo_cyber_agent.core.correlation import CorrelationEngine
 
     store = EvidenceStore()
     for i in range(300):
         store.store(_ev(summary=f"s{i}", location="shared.py", content_hash=f"h{i}"), audit_id="A")
     start = _time.monotonic()
-    obs, cands, conflicts = CorrelationEngine(store).correlate(audit_id="A")
+    obs, cands, _conflicts = CorrelationEngine(store).correlate(audit_id="A")
     assert _time.monotonic() - start < 10
     assert isinstance(obs, list) and isinstance(cands, list)
 
@@ -513,23 +535,32 @@ def test_pathological_correlation_graph_bounded():
 def test_reasoner_output_caps_enforced():
     from emo_cyber_agent.core.reasoning import ReasonerResponse
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         ReasonerResponse(session_id="s", analysis_summary="x" * 5000, next_actions=())
 
 
 # ---------------- fuzz subset (seeded, reproducible) ----------------
 
 def test_fuzz_target_parsing_never_escapes():
-    from emo_cyber_agent.core.execution import ExecutionError, confine_path
-    from emo_cyber_agent.core.repository import RepositoryError, normalize_path, parse_repository_locator, validate_ref
-
     import os as _os
+
+    from emo_cyber_agent.core.execution import confine_path
+    from emo_cyber_agent.core.repository import (
+        RepositoryError,
+        normalize_path,
+        parse_repository_locator,
+        validate_ref,
+    )
 
     root = "/tmp/audit-root"
     alphabet = ["..", "/", "\\", "%2e", "%252e", "\x00", "a" * 600, "é", "C:", "~", ".", " ", "-", "main", "repo", "@", ":", "#"]
     for _ in range(300):
         target = "".join(RNG.choice(alphabet) for _ in range(RNG.randint(1, 6)))
-        for fn in (lambda: normalize_path(target), lambda: validate_ref(target), lambda: parse_repository_locator(target)):
+        for fn in (
+            lambda target=target: normalize_path(target),
+            lambda target=target: validate_ref(target),
+            lambda target=target: parse_repository_locator(target),
+        ):
             try:
                 result = fn()
             except (RepositoryError, ExecutionError, ValueError):
@@ -601,7 +632,7 @@ def test_fuzz_schema_projection_never_breaks():
                                 description="d", category=RNG.choice(["authorization", "bogus-cat"]), severity=sev,
                                 confidence=round(RNG.uniform(-1, 2), 2), status=RNG.choice(statuses),
                                 candidate_id="c", evidence_ids=("e1",), fingerprint=f"fp{i}", provenance={"candidate": "c"})
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             continue  # invalid domain input correctly rejected pre-report
         rep = ReportService().generate(audit_id="A", findings=[f])
         if rep.findings:
@@ -614,7 +645,6 @@ def test_fuzz_schema_projection_never_breaks():
 
 def test_invariant_regression_matrix():
     """All 12 invariants, each with a live assertion (not inspection)."""
-    from emo_cyber_agent.core.correlation import CorrelationEngine
     from emo_cyber_agent.core.reporting import ReportService
 
     # 1 read-only default
@@ -633,20 +663,21 @@ def test_invariant_regression_matrix():
     # 5 tool outputs are evidence
     assert mark_untrusted("tool said CONFIRMED")["trust_level"] == "untrusted-data"
     # 6 uncertainty explicit
-    from emo_cyber_agent.core.findings import classify_candidate
     from emo_cyber_agent.core.correlation import FindingCandidate
+    from emo_cyber_agent.core.findings import classify_candidate
 
     c = FindingCandidate(audit_id="A", hypothesis="h", evidence_ids=("e1",))
     cl, _ = classify_candidate(candidate=c, verification_status="supported", scanner_severities=[], evidence_count=1, independent_sources=1, contradiction=False)
     assert 0.0 <= cl.confidence.value <= 1.0
     # 7 same contracts (MCP≡CLI delegate to same Core calls)
-    import emo_cyber_agent.mcp.delegate as md, emo_cyber_agent.cli.main as cm
+    import emo_cyber_agent.cli.main as cm
+    import emo_cyber_agent.mcp.delegate as md
 
-    assert "ReportService" in open(md.__file__).read() and "ReportService" in open(cm.__file__).read()
+    assert "ReportService" in Path(md.__file__).read_text() and "ReportService" in Path(cm.__file__).read_text()
     # 8 provider external (no SDK imports in Core)
-    import emo_cyber_agent.core.reasoning as reasoning
+    from emo_cyber_agent.core import reasoning
 
-    assert "import openai" not in open(reasoning.__file__).read()
+    assert "import openai" not in Path(reasoning.__file__).read_text()
     # 9 scanner provenance
     from emo_cyber_agent.core.scanners import SCANNER_ADAPTERS
 

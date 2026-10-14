@@ -6,6 +6,9 @@ fetchers, frozen-model shape, and a no-network AST guard.
 
 from __future__ import annotations
 
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import ast
 import hashlib
 import re
@@ -165,9 +168,9 @@ def test_triage_accepts_dict_form_and_ignores_bad_scope() -> None:
 
 def test_finding_model_frozen_and_forbidding() -> None:
     finding = parse_hibp_response(HIBP_FIXTURE)[0]
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         finding.name = "mutated"  # type: ignore[misc]
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         LeakFinding.model_validate({**finding.to_dict(), "raw_secret": "x"})
     clone = LeakFinding.from_dict(finding.to_dict())
     assert clone.to_canonical_json() == finding.to_canonical_json()

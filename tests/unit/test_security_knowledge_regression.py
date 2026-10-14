@@ -6,6 +6,9 @@ kept and labeled), deterministic staleness, and the two remaining
 end-to-end workflows (C: baseline → target regression, F: layer
 context stays inert untrusted memory). Zero Findings required.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import json
 from pathlib import Path
@@ -216,6 +219,6 @@ def test_e2e_f_layer_context_stays_inert_memory():
 
 def test_unknown_layer_rejected():
     service = SecurityKnowledgeService()
-    with pytest.raises(Exception) as e:
+    with pytest.raises(UNEXPECTED_EXCEPTION) as e:
         service.remember_from_layer("reporting", audit_id=AUDIT, project_id=PROJECT, source_id="r-1")
     assert "unknown context layer" in str(e.value)

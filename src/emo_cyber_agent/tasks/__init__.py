@@ -4,9 +4,9 @@ from .registry import TaskRegistry
 from .resolver import TaskResolver
 from .service import TaskService
 from .spec import (
+    ResolutionStatus,
     ResolvedSkill,
     ResolvedTask,
-    ResolutionStatus,
     TaskError,
     TaskErrorCode,
     TaskScope,
@@ -17,9 +17,9 @@ from .spec import (
 from .validator import TaskValidation, TaskValidator
 
 __all__ = [
+    "ResolutionStatus",
     "ResolvedSkill",
     "ResolvedTask",
-    "ResolutionStatus",
     "TaskError",
     "TaskErrorCode",
     "TaskRegistry",

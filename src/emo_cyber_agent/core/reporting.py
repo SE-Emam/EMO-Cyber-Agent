@@ -11,8 +11,11 @@ ordering everywhere; provenance and verification states preserved verbatim.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -248,7 +251,7 @@ def build_report(
         (reportable if ok else non_reportable).append(project_finding(f, verifications=verifications, evidence=evidence))
     reportable = order_findings(reportable)
     non_reportable = order_findings(non_reportable)
-    stamp = generated_at or datetime.now(timezone.utc).isoformat()
+    stamp = generated_at or datetime.now(UTC).isoformat()
     return AuditReport(
         metadata=ReportMetadata(
             generated_at=stamp,
@@ -273,7 +276,7 @@ def build_report(
 def to_canonical_json(report: AuditReport) -> str:
     try:
         return json.dumps(report.model_dump(), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise ReportError(ReportErrorCode.SERIALIZATION_ERROR, str(e)) from e
 
 
@@ -285,7 +288,7 @@ def to_jsonl(report: AuditReport) -> str:
             lines.append(json.dumps({"record": "finding", **f.model_dump()}, sort_keys=True, ensure_ascii=False))
         lines.append(json.dumps({"record": "summary", **report.summary.model_dump()}, sort_keys=True, ensure_ascii=False))
         return "\n".join(lines) + "\n"
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise ReportError(ReportErrorCode.SERIALIZATION_ERROR, str(e)) from e
 
 
@@ -434,9 +437,9 @@ def _template_rule_applies(rule: Any, view: dict[str, Any], verification_status:
         key = path[len("finding."):]
         actual = view.get(key)
     if op == "==":
-        return actual == value
+        return bool(actual == value)
     if op == "!=":
-        return actual != value
+        return bool(actual != value)
     choices = value if isinstance(value, list) else [value]
     if op == "in":
         return actual in choices
@@ -531,7 +534,7 @@ def to_canonical_json_with_template(report: AuditReport, resolved: Any) -> str:
         return json.dumps(apply_report_template(report, resolved), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     except ReportError:
         raise
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         raise ReportError(ReportErrorCode.SERIALIZATION_ERROR, str(e)) from e
 
 

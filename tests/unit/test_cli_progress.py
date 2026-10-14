@@ -14,13 +14,19 @@ ProgressState + ProgressReporter without breaking output contracts:
 
 import json
 
+import pytest
 from typer.testing import CliRunner
 
-from emo_cyber_agent.cli.main import EXIT_INVALID_INPUT, EXIT_INTERRUPTED, app
+from emo_cyber_agent.cli.main import EXIT_INTERRUPTED, EXIT_INVALID_INPUT, app
 from emo_cyber_agent.progress.events import ProgressEvent, ProgressEventType
 from emo_cyber_agent.progress.reporter import ProgressReporter
 
 runner = CliRunner()
+
+
+@pytest.fixture(autouse=True)
+def _disable_external_scanners(monkeypatch):
+    monkeypatch.setattr("emo_cyber_agent.core.service.shutil.which", lambda _name: None)
 
 _ALLOWED_PHASES = {"STARTED", "RUNNING", "FINALIZING", "COMPLETED", "FAILED", "CANCELLED"}
 _ALLOWED_CODES = {"RUN_STARTED", "PHASE_STARTED", "OPERATION_COMPLETE", "OPERATION_FAILED", "OPERATION_CANCELLED"}

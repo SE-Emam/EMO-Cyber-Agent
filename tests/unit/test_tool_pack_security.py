@@ -11,7 +11,11 @@ from pathlib import Path
 
 import pytest
 
-from emo_cyber_agent.tools.packs.catalog import compat_adapters, load_official_tool_packs, spec_from_yaml_text
+from emo_cyber_agent.tools.packs.catalog import (
+    compat_adapters,
+    load_official_tool_packs,
+    spec_from_yaml_text,
+)
 from emo_cyber_agent.tools.packs.errors import ToolPackError, ToolPackErrorCode
 from emo_cyber_agent.tools.packs.executor import PackExecutor
 from emo_cyber_agent.tools.packs.resolver import ToolPackResolver
@@ -59,7 +63,7 @@ def test_no_arbitrary_argv_surface():
 
 
 def test_shell_injection_via_inputs_never_reaches_argv(monkeypatch, tmp_path):
-    executor, _, port, audit_root, resolver = _stack(monkeypatch, tmp_path, stdout="{}")
+    executor, _, _, _, resolver = _stack(monkeypatch, tmp_path, stdout="{}")
     resolved = resolver.resolve_by_tool("semgrep", capability="CODE_PATTERN_SCAN")
     argv = executor.build_argv(resolved, confined_target="repo", inputs={})
     assert argv[0] == "semgrep" and all(isinstance(a, str) for a in argv)
@@ -129,13 +133,12 @@ def test_symlink_and_cwd_escape_denied(monkeypatch, tmp_path):
 
 def test_oversized_output_truncated_with_limitation(monkeypatch, tmp_path):
     from emo_cyber_agent.adapters.mock_scanners import OVERSIZED_CHUNK
+    from emo_cyber_agent.core.execution import ExecutionError
 
     executor, _, _, _, resolver = _stack(monkeypatch, tmp_path, stdout=OVERSIZED_CHUNK)
     resolved = resolver.resolve_by_tool("semgrep", capability="CODE_PATTERN_SCAN")
-    normalized, _, _, result = executor.execute(resolved, audit_id="A", project_id="P", snapshot_id="S", target="repo", inputs={})
-    assert result.stdout_truncated is True
-    assert any("output-truncated" in lim for lim in normalized.limitations)
-    assert len(result.stdout) <= 300000
+    with pytest.raises(ExecutionError, match="output exceeded"):
+        executor.execute(resolved, audit_id="A", project_id="P", snapshot_id="S", target="repo", inputs={})
 
 
 def test_timeout_surfaces_as_error(monkeypatch, tmp_path):
@@ -184,8 +187,7 @@ def test_network_required_fails_closed_offline(monkeypatch, tmp_path):
 def test_missing_and_forged_policy_decisions_rejected(monkeypatch, tmp_path):
     from emo_cyber_agent.core.execution import ExecutionError
 
-    executor, _, _, _, resolver = _stack(monkeypatch, tmp_path, stdout="{}")
-    resolved = resolver.resolve_by_tool("semgrep", capability="CODE_PATTERN_SCAN")
+    executor, _, _, _, _resolver = _stack(monkeypatch, tmp_path, stdout="{}")
     with pytest.raises(ExecutionError):
         executor._executor.execute(audit_id="A", tool_id="semgrep", target="repo", capability="scanner.local.execute", profile="read_only", policy_decision_id=None, argv_builder=lambda spec, confined: ["semgrep", "scan", confined])
     with pytest.raises(ExecutionError):
@@ -287,7 +289,7 @@ def test_skill_secret_detection_to_redacted_evidence(monkeypatch, tmp_path):
 def test_skill_injection_to_semgrep_evidence(monkeypatch, tmp_path):
     from emo_cyber_agent.adapters.mock_scanners import MULTI_SEMGREP
 
-    normalized, evidence, _, _ = _e2e(monkeypatch, tmp_path, "semgrep", "CODE_PATTERN_SCAN", MULTI_SEMGREP)
+    _normalized, evidence, _, _ = _e2e(monkeypatch, tmp_path, "semgrep", "CODE_PATTERN_SCAN", MULTI_SEMGREP)
     assert len(evidence) == 2
     assert all(e["tool_id"] == "semgrep" for e in evidence)
     assert all("provenance" in e and "content_digest" in e for e in evidence)
@@ -295,13 +297,13 @@ def test_skill_injection_to_semgrep_evidence(monkeypatch, tmp_path):
 
 def test_skill_dependency_to_trivy_evidence(monkeypatch, tmp_path):
     stdout = json.dumps({"Results": [{"Target": "requirements.txt", "Vulnerabilities": [{"VulnerabilityID": "CVE-2024-1", "PkgName": "flask", "InstalledVersion": "2.0.0", "FixedVersion": "2.1.0", "Severity": "HIGH", "Title": "issue"}]}]})
-    normalized, evidence, _, _ = _e2e(monkeypatch, tmp_path, "trivy", "VULNERABILITY_LOOKUP", stdout)
+    _normalized, evidence, _, _ = _e2e(monkeypatch, tmp_path, "trivy", "VULNERABILITY_LOOKUP", stdout)
     assert evidence[0]["tool_id"] == "trivy" and "CVE-2024-1" in json.dumps(evidence)
 
 
 def test_skill_dependency_to_osv_evidence_granted_network(monkeypatch, tmp_path):
     stdout = json.dumps({"results": [{"source": "requirements.txt", "packages": [{"package": {"name": "flask", "version": "2.0.0", "ecosystem": "PyPI"}, "vulnerabilities": [{"id": "GHSA-1", "summary": "issue", "aliases": ["CVE-2024-2"]}]}]}]})
-    normalized, evidence, _, _ = _e2e(monkeypatch, tmp_path, "osv-scanner", "VULNERABILITY_LOOKUP", stdout, network_granted=True)
+    _normalized, evidence, _, _ = _e2e(monkeypatch, tmp_path, "osv-scanner", "VULNERABILITY_LOOKUP", stdout, network_granted=True)
     assert evidence[0]["tool_id"] == "osv-scanner" and "GHSA-1" in json.dumps(evidence)
 
 

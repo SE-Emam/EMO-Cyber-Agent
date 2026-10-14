@@ -36,7 +36,7 @@ EXPECTED_REQUIRED = {
 }
 
 
-def _all_present_evidence(checks=tuple()) -> dict:
+def _all_present_evidence(checks=()) -> dict:
     return {name: True for name in EXPECTED_ORDER}
 
 

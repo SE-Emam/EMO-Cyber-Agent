@@ -7,8 +7,12 @@ Process boundary guarantees:
 - argv arrays only (never shell strings, never shell=True);
 - explicit confined cwd (audit root; traversal/absolute/symlink escapes denied);
 - environment allowlist (default: NO SECRET ENVIRONMENT);
-- timeout, stdout/stderr byte limits with truncation metadata;
+- execution timeout, stdout/stderr byte limits with truncation metadata;
 - exit-code/signal capture; distinct UNAVAILABLE/TIMEOUT/DENIED/FAILED states.
+
+POSIX timeouts terminate the process group. Descendants that retain output
+pipes after the direct child exits remain an unresolved cleanup limitation.
+Non-POSIX timeout handling kills only the direct child.
 
 ToolExecutor is the only orchestrator: registry resolve → strict-policy
 decision → argv build (from trusted ToolSpec + fixed adapter logic, NEVER
@@ -19,11 +23,18 @@ so the legacy allow-all DefaultPolicyEngine can never become a workaround.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import hashlib
 import os
+import selectors
+import signal
 import subprocess
+import threading
+import time
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -80,6 +91,117 @@ class ExecutionResult(BaseModel):
     env_fingerprint: str = ""  # sorted key names only, never values
 
 
+def _run_posix_process(
+    process: subprocess.Popen[bytes], request: ExecutionRequest, started: str
+) -> ExecutionResult:
+    """Drain a POSIX process tree to one absolute deadline with bounded cleanup."""
+    captured = {"stdout": bytearray(), "stderr": bytearray()}
+    seen = {"stdout": 0, "stderr": 0}
+    streams = (
+        (process.stdout, "stdout", request.stdout_limit),
+        (process.stderr, "stderr", request.stderr_limit),
+    )
+    selector: selectors.BaseSelector | None = None
+    timed_out = False
+    cleanup_failed = False
+    lifecycle_complete = False
+    exit_code: int | None = None
+
+    def retain(name: str, chunk: bytes, limit: int) -> None:
+        seen[name] += len(chunk)
+        room = max(0, limit - len(captured[name]))
+        if room:
+            captured[name].extend(chunk[:room])
+
+    try:
+        selector = selectors.DefaultSelector()
+        for stream, name, limit in streams:
+            if stream is None:
+                continue
+            os.set_blocking(stream.fileno(), False)
+            selector.register(stream, selectors.EVENT_READ, (name, limit))
+
+        deadline = time.monotonic() + request.timeout_s
+        cleanup_deadline: float | None = None
+        while selector.get_map() or process.poll() is None:
+            now = time.monotonic()
+            if cleanup_deadline is None and now >= deadline and (process.poll() is None or selector.get_map()):
+                timed_out = True
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                cleanup_deadline = now + 0.5
+            if cleanup_deadline is not None and now >= cleanup_deadline:
+                break
+            if not selector.get_map() and process.poll() is not None:
+                break
+
+            wait_until = cleanup_deadline if cleanup_deadline is not None else deadline
+            timeout = max(0.0, min(0.05, wait_until - now))
+            for key, _ in selector.select(timeout=timeout):
+                ready_fd = key.fd
+                name, limit = key.data
+                try:
+                    chunk = os.read(ready_fd, 64 * 1024)
+                except BlockingIOError:
+                    continue
+                if chunk:
+                    retain(name, chunk, limit)
+                else:
+                    selector.unregister(key.fileobj)
+        lifecycle_complete = not timed_out
+    finally:
+        # Any failure after Popen must still terminate the isolated process
+        # group, reap its leader with a bound, and close our pipe descriptors.
+        if process.poll() is None or not lifecycle_complete:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            except OSError:
+                cleanup_failed = True
+            try:
+                process.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                cleanup_failed = True
+        exit_code = process.poll()
+        if selector is not None:
+            for key in list(selector.get_map().values()):
+                try:
+                    selector.unregister(key.fileobj)
+                except (KeyError, ValueError):
+                    pass
+            try:
+                selector.close()
+            except OSError:
+                cleanup_failed = True
+        for stream, _, _ in streams:
+            if stream is not None:
+                try:
+                    stream.close()
+                except OSError:
+                    cleanup_failed = True
+
+    if cleanup_failed:
+        timed_out = True
+    return ExecutionResult(
+        exit_code=exit_code,
+        stdout=bytes(captured["stdout"]).decode("utf-8", errors="replace"),
+        stderr=bytes(captured["stderr"]).decode("utf-8", errors="replace"),
+        stdout_truncated=seen["stdout"] > request.stdout_limit,
+        stderr_truncated=seen["stderr"] > request.stderr_limit,
+        timed_out=timed_out,
+        outcome=ExecutionOutcome.TIMEOUT if timed_out else (
+            ExecutionOutcome.SUCCESS if exit_code == 0 else ExecutionOutcome.TOOL_FAILED
+        ),
+        started_at=started,
+        completed_at=datetime.now(UTC).isoformat(),
+        argv_digest=_digest_argv(request.argv),
+        env_fingerprint=_env_fingerprint(request.env),
+    )
+
+
 def sanitized_env(extra: dict[str, str] | None = None) -> dict[str, str]:
     """Build the subprocess environment from the allowlist only."""
     env: dict[str, str] = {}
@@ -134,36 +256,76 @@ class ProcessExecutionPort(ToolExecutionPort):
             raise ExecutionError(ExecutionOutcome.POLICY_DENIED, "argv must be a non-empty string array")
         if any("\x00" in a for a in request.argv):
             raise ExecutionError(ExecutionOutcome.POLICY_DENIED, "null byte in argv")
-        started = datetime.now(timezone.utc).isoformat()
+        started = datetime.now(UTC).isoformat()
         try:
-            completed = subprocess.run(  # noqa: S603 — argv array, shell=False, confined cwd
+            process = subprocess.Popen(
                 list(request.argv),
                 shell=False,
                 cwd=request.cwd,
                 env=dict(request.env),
-                capture_output=True,
-                timeout=request.timeout_s,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                start_new_session=(os.name == "posix"),
             )
+            if os.name == "posix":
+                return _run_posix_process(process, request, started)
+
+            captured: dict[str, bytearray] = {"stdout": bytearray(), "stderr": bytearray()}
+            seen = {"stdout": 0, "stderr": 0}
+
+            def drain(name: str, stream: Any, limit: int) -> None:
+                while True:
+                    chunk = stream.read(64 * 1024)
+                    if not chunk:
+                        break
+                    seen[name] += len(chunk)
+                    room = max(0, limit - len(captured[name]))
+                    if room:
+                        captured[name].extend(chunk[:room])
+
+            readers = [
+                threading.Thread(target=drain, args=("stdout", process.stdout, request.stdout_limit), daemon=True),
+                threading.Thread(target=drain, args=("stderr", process.stderr, request.stderr_limit), daemon=True),
+            ]
+            for reader in readers:
+                reader.start()
+            try:
+                exit_code = process.wait(timeout=request.timeout_s)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+                for reader in readers:
+                    reader.join(timeout=1)
+                return ExecutionResult(
+                    outcome=ExecutionOutcome.TIMEOUT,
+                    timed_out=True,
+                    stdout=bytes(captured["stdout"]).decode("utf-8", errors="replace"),
+                    stderr=bytes(captured["stderr"]).decode("utf-8", errors="replace"),
+                    stdout_truncated=seen["stdout"] > request.stdout_limit,
+                    stderr_truncated=seen["stderr"] > request.stderr_limit,
+                    started_at=started,
+                    completed_at=datetime.now(UTC).isoformat(),
+                    argv_digest=_digest_argv(request.argv),
+                    env_fingerprint=_env_fingerprint(request.env),
+                )
+            for reader in readers:
+                reader.join()
         except FileNotFoundError:
-            return ExecutionResult(outcome=ExecutionOutcome.TOOL_UNAVAILABLE, started_at=started, completed_at=datetime.now(timezone.utc).isoformat(), argv_digest=_digest_argv(request.argv), env_fingerprint=_env_fingerprint(request.env), stderr=f"tool unavailable: {request.argv[0][:60]}"[:500])
-        except subprocess.TimeoutExpired as e:
-            out = (e.stdout or b"").decode("utf-8", errors="replace") if isinstance(e.stdout, bytes) else ""
-            err = (e.stderr or b"").decode("utf-8", errors="replace") if isinstance(e.stderr, bytes) else ""
-            return ExecutionResult(outcome=ExecutionOutcome.TIMEOUT, timed_out=True, stdout=out[: request.stdout_limit], stderr=err[: request.stderr_limit], stdout_truncated=len(out) > request.stdout_limit, stderr_truncated=len(err) > request.stderr_limit, started_at=started, completed_at=datetime.now(timezone.utc).isoformat(), argv_digest=_digest_argv(request.argv), env_fingerprint=_env_fingerprint(request.env))
+            return ExecutionResult(outcome=ExecutionOutcome.TOOL_UNAVAILABLE, started_at=started, completed_at=datetime.now(UTC).isoformat(), argv_digest=_digest_argv(request.argv), env_fingerprint=_env_fingerprint(request.env), stderr=f"tool unavailable: {request.argv[0][:60]}"[:500])
         except OSError as e:
-            return ExecutionResult(outcome=ExecutionOutcome.TOOL_FAILED, started_at=started, completed_at=datetime.now(timezone.utc).isoformat(), argv_digest=_digest_argv(request.argv), env_fingerprint=_env_fingerprint(request.env), stderr=f"execution failed: {e}"[:500])
-        stdout = completed.stdout.decode("utf-8", errors="replace")
-        stderr = completed.stderr.decode("utf-8", errors="replace")
-        outcome = ExecutionOutcome.SUCCESS if completed.returncode == 0 else ExecutionOutcome.TOOL_FAILED
+            return ExecutionResult(outcome=ExecutionOutcome.TOOL_FAILED, started_at=started, completed_at=datetime.now(UTC).isoformat(), argv_digest=_digest_argv(request.argv), env_fingerprint=_env_fingerprint(request.env), stderr=f"execution failed: {e}"[:500])
+        stdout = bytes(captured["stdout"]).decode("utf-8", errors="replace")
+        stderr = bytes(captured["stderr"]).decode("utf-8", errors="replace")
+        outcome = ExecutionOutcome.SUCCESS if exit_code == 0 else ExecutionOutcome.TOOL_FAILED
         return ExecutionResult(
-            exit_code=completed.returncode,
-            stdout=stdout[: request.stdout_limit],
-            stderr=stderr[: request.stderr_limit],
-            stdout_truncated=len(stdout) > request.stdout_limit,
-            stderr_truncated=len(stderr) > request.stderr_limit,
+            exit_code=exit_code,
+            stdout=stdout,
+            stderr=stderr,
+            stdout_truncated=seen["stdout"] > request.stdout_limit,
+            stderr_truncated=seen["stderr"] > request.stderr_limit,
             outcome=outcome,
             started_at=started,
-            completed_at=datetime.now(timezone.utc).isoformat(),
+            completed_at=datetime.now(UTC).isoformat(),
             argv_digest=_digest_argv(request.argv),
             env_fingerprint=_env_fingerprint(request.env),
         )
@@ -228,7 +390,12 @@ class ToolExecutor:
             inv = inv.transition_to(state)
         result = self._port.run(ExecutionRequest(argv=argv, cwd=self._audit_root, env=sanitized_env(), timeout_s=timeout_s))
         if result.outcome == ExecutionOutcome.SUCCESS:
-            parsed = parse(result.stdout) if parse else {"stdout_digest": hashlib.sha256(result.stdout.encode(errors="replace")).hexdigest()}
+            if result.stdout_truncated or result.stderr_truncated:
+                raise ExecutionError(ExecutionOutcome.TOOL_FAILED, f"{tool_id} output exceeded the configured limit")
+            try:
+                parsed = parse(result.stdout) if parse else {"stdout_digest": hashlib.sha256(result.stdout.encode(errors="replace")).hexdigest()}
+            except UNEXPECTED_EXCEPTION as exc:
+                raise ExecutionError(ExecutionOutcome.TOOL_FAILED, f"{tool_id} output could not be validated") from exc
             return parsed, inv.update_output(f"{tool_id} exit=0 observations recorded", evidence_ids=()), result
         if result.outcome == ExecutionOutcome.TOOL_UNAVAILABLE:
             raise ExecutionError(ExecutionOutcome.TOOL_UNAVAILABLE, result.stderr[:200])

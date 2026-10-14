@@ -13,7 +13,6 @@ import hashlib
 import zipfile
 from pathlib import Path
 
-
 from conftest import DIST, ROOT, SDIST, WHEEL, run_installed
 
 SUMS = ROOT / "release" / "SHA256SUMS"

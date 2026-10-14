@@ -8,7 +8,11 @@ FAILURE, CONFLICT, CROSS_SCOPE, UNSAFE_REQUEST, MALFORMED_RESULT.
 
 from __future__ import annotations
 
-from emo_cyber_agent.core.verification import VerificationPlan, VerificationRawResult, VerificationExecutorPort
+from emo_cyber_agent.core.verification import (
+    VerificationExecutorPort,
+    VerificationPlan,
+    VerificationRawResult,
+)
 
 
 class MockVerificationProvider(VerificationExecutorPort):

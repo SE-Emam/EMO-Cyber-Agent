@@ -56,6 +56,8 @@ dev = [
   "mypy>=1.15,<2",
   "jsonschema>=4.23,<5",
   "pyyaml>=6.0,<7",
+  "types-jsonschema>=4.23,<5",
+  "types-PyYAML>=6.0,<7",
 ]
 all = [
   "mcp>=1.15,<2",
@@ -67,6 +69,8 @@ all = [
   "mypy>=1.15,<2",
   "jsonschema>=4.23,<5",
   "pyyaml>=6.0,<7",
+  "types-jsonschema>=4.23,<5",
+  "types-PyYAML>=6.0,<7",
 ]
 
 [project.scripts]

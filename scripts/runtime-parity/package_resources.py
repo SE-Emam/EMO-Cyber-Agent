@@ -8,6 +8,9 @@ Stdlib only, cross-platform.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import argparse
 import json
 import subprocess
@@ -76,13 +79,13 @@ def main() -> int:
         checks.append({"name": name, "ok": bool(ok), "detail": str(detail)[:500]})
 
     try:
-        proc = subprocess.run([sys.executable, "-c", PROBE], capture_output=True, text=True,
+        proc = subprocess.run([sys.executable, "-c", PROBE], check=False, capture_output=True, text=True,
                               timeout=TIMEOUT)
         record("resources.probe_ran", proc.returncode == 0, f"exit={proc.returncode} stderr={proc.stderr[-300:]}")
         if proc.returncode == 0:
             try:
                 out = json.loads(proc.stdout)
-            except Exception as exc:
+            except UNEXPECTED_EXCEPTION as exc:
                 record("resources.probe_json", False, f"unparseable: {exc}")
                 out = {"probes": []}
             record("resources.installed_file", True, str(out.get("file", ""))[:200])
@@ -92,7 +95,7 @@ def main() -> int:
             record("resources.probe_json", False, proc.stderr[-500:])
     except subprocess.TimeoutExpired:
         record("resources.probe_ran", False, "timeout")
-    except Exception as exc:
+    except UNEXPECTED_EXCEPTION as exc:
         record("resources.harness", False, f"{type(exc).__name__}: {exc}")
 
     ok = all(c["ok"] for c in checks) and bool(checks)

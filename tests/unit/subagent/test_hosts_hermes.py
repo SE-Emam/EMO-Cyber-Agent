@@ -126,7 +126,7 @@ def test_per_task_filtering_guidance_never_expose_all():
     allowlists = get_per_task_allowlists()
     assert allowlists == TASK_ALLOWLISTS and allowlists is not TASK_ALLOWLISTS
     assert set(allowlists) >= {"security-review", "status-only"}
-    for task, tools in allowlists.items():
+    for tools in allowlists.values():
         assert tools and isinstance(tools, tuple)
         assert "cyber_extensions" not in tools
         assert "cyber_threat_intel" not in tools

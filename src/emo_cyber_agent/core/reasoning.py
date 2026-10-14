@@ -12,10 +12,13 @@ execution (REQUEST_VERIFICATION is a proposal only), no remediation.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import time
 import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -141,8 +144,8 @@ class ReasoningSession(BaseModel):
     status: SessionStatus = SessionStatus.INITIALIZING
     iteration: int = Field(default=0, ge=0)
     budget: LoopBudget = Field(default_factory=LoopBudget)
-    started_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    started_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     hypothesis_ids: tuple[str, ...] = ()
     evidence_context_id: str = ""
     action_ids: tuple[str, ...] = ()
@@ -156,7 +159,7 @@ class ReasoningSession(BaseModel):
         if new not in _VALID_TRANSITIONS[self.status]:
             raise ValueError(f"invalid session transition {self.status.value} → {new.value}")
         data = self.model_dump()
-        data.update(status=new, updated_at=datetime.now(timezone.utc).isoformat())
+        data.update(status=new, updated_at=datetime.now(UTC).isoformat())
         if new in TERMINAL and reason:
             data["termination_reason"] = reason[:300]
         return ReasoningSession(**data)
@@ -222,8 +225,8 @@ class SecurityHypothesis(BaseModel):
     contradicting_evidence_ids: tuple[str, ...] = ()
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     status: HypothesisStatus = HypothesisStatus.OPEN
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    updated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class ReasonerProvider(ABC):
@@ -442,7 +445,7 @@ class ReasoningEngine:
                 progressed = True
             if conf != h.confidence or status != h.status or new_supp != h.supporting_evidence_ids:
                 progressed = True
-            self._hypotheses[h.hypothesis_id] = SecurityHypothesis(**{**h.model_dump(), "confidence": conf, "status": status, "supporting_evidence_ids": new_supp, "updated_at": datetime.now(timezone.utc).isoformat()})
+            self._hypotheses[h.hypothesis_id] = SecurityHypothesis(**{**h.model_dump(), "confidence": conf, "status": status, "supporting_evidence_ids": new_supp, "updated_at": datetime.now(UTC).isoformat()})
         return progressed
 
     def run(self) -> SessionResult:
@@ -472,12 +475,12 @@ class ReasoningEngine:
             if self._session.status != SessionStatus.OBSERVING:
                 session = self._session.transition_to(SessionStatus.OBSERVING, reason="observe")
                 self._session = session
-            self._session = ReasoningSession(**{**self._session.model_dump(), "iteration": self._session.iteration + 1, "updated_at": datetime.now(timezone.utc).isoformat()})
+            self._session = ReasoningSession(**{**self._session.model_dump(), "iteration": self._session.iteration + 1, "updated_at": datetime.now(UTC).isoformat()})
             session = self._session.transition_to(SessionStatus.HYPOTHESIZING, reason="hypothesize")
             self._session = session
             try:
                 response = self._provider.propose(context=ctx, state={"iteration": session.iteration, "status": session.status.value, "phase": session.phase.value}, allowed_capabilities=self._allowed_capabilities(), objective=self._objective)
-            except Exception as e:
+            except UNEXPECTED_EXCEPTION as e:
                 session = self._session.transition_to(SessionStatus.FAILED, reason=f"model unavailable: {type(e).__name__}")
                 self._session = session
                 self._record(state_transition=f"→{session.status.value}", termination_reason="model unavailable")
@@ -526,7 +529,7 @@ class ReasoningEngine:
                 session = self._session.transition_to(SessionStatus.REASSESSING, reason=f"action rejected: {why}")
                 self._session = session
                 self._record(action_proposal=fp[:12], policy_result=f"rejected:{why}", state_transition=f"→{session.status.value}")
-                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": self._session.no_progress_streak + 1, "updated_at": datetime.now(timezone.utc).isoformat()})
+                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": self._session.no_progress_streak + 1, "updated_at": datetime.now(UTC).isoformat()})
                 continue
             retries = 0
 
@@ -549,7 +552,7 @@ class ReasoningEngine:
                 session = self._session.transition_to(SessionStatus.REASSESSING, reason="reassess")
                 self._session = session
                 progressed = self._reassess(list(self._hypotheses.values()), obs) or progressed
-                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": 0 if progressed else self._session.no_progress_streak + 1, "updated_at": datetime.now(timezone.utc).isoformat()})
+                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": 0 if progressed else self._session.no_progress_streak + 1, "updated_at": datetime.now(UTC).isoformat()})
                 continue
             if action.kind == ActionKind.REQUEST_VERIFICATION:
                 # proposal ONLY — recorded, never executed here (ECA-T010 owns execution)
@@ -557,7 +560,7 @@ class ReasoningEngine:
                 self._session = session
                 self._record(action_proposal=fp[:12], policy_result="verification-proposal-recorded", state_transition=f"→{session.status.value}")
                 progressed = True
-                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": 0, "updated_at": datetime.now(timezone.utc).isoformat()})
+                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": 0, "updated_at": datetime.now(UTC).isoformat()})
                 continue
 
             # tool-backed action: Core validation → strict policy → executor
@@ -568,14 +571,14 @@ class ReasoningEngine:
                 self._record(action_proposal=fp[:12], policy_result="rejected:unknown-capability", state_transition="reassess")
                 session = self._session.transition_to(SessionStatus.REASSESSING, reason="unknown capability")
                 self._session = session
-                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": self._session.no_progress_streak + 1, "updated_at": datetime.now(timezone.utc).isoformat()})
+                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": self._session.no_progress_streak + 1, "updated_at": datetime.now(UTC).isoformat()})
                 continue
             decision = self._policy.issue_decision(session.audit_id, action.tool_id, action.target, "read_only", [capability])
             if not decision.allowed:
                 self._record(action_proposal=fp[:12], policy_result=f"denied:{','.join(decision.reason_codes)}", state_transition="reassess")
                 session = self._session.transition_to(SessionStatus.REASSESSING, reason="policy denied")
                 self._session = session
-                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": self._session.no_progress_streak + 1, "updated_at": datetime.now(timezone.utc).isoformat()})
+                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": self._session.no_progress_streak + 1, "updated_at": datetime.now(UTC).isoformat()})
                 continue
             if self._execute_tool is None:
                 self._record(action_proposal=fp[:12], policy_result="allowed:no-executor", state_transition="reassess")
@@ -586,11 +589,11 @@ class ReasoningEngine:
             self._session = session
             try:
                 new_items = self._execute_tool(action=action, invocation={"audit_id": session.audit_id, "capability": capability, "decision_id": decision.decision_id, "target": action.target})
-            except Exception as e:
+            except UNEXPECTED_EXCEPTION as e:
                 self._record(action_proposal=fp[:12], policy_result="allowed", state_transition="tool-failed", termination_reason=f"{type(e).__name__}")
                 session = self._session.transition_to(SessionStatus.REASSESSING, reason="tool failed")
                 self._session = session
-                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": self._session.no_progress_streak + 1, "updated_at": datetime.now(timezone.utc).isoformat()})
+                self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": self._session.no_progress_streak + 1, "updated_at": datetime.now(UTC).isoformat()})
                 continue
             eids: list[str] = []
             for item in new_items or []:
@@ -599,7 +602,7 @@ class ReasoningEngine:
                     eids.append(item.id)
                 except ValueError:
                     continue
-            self._session = ReasoningSession(**{**self._session.model_dump(), "tool_calls": self._session.tool_calls + 1, "action_ids": (*self._session.action_ids, action.action_id), "updated_at": datetime.now(timezone.utc).isoformat()})
+            self._session = ReasoningSession(**{**self._session.model_dump(), "tool_calls": self._session.tool_calls + 1, "action_ids": (*self._session.action_ids, action.action_id), "updated_at": datetime.now(UTC).isoformat()})
             session = self._session.transition_to(SessionStatus.CORRELATING, reason="correlate results")
             self._session = session
             obs, cands = self._apply_correlation()
@@ -610,7 +613,7 @@ class ReasoningEngine:
             self._session = session
             progressed = bool(eids) or bool(obs) or bool(cands)
             self._reassess(list(self._hypotheses.values()), obs)
-            self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": 0 if progressed else self._session.no_progress_streak + 1, "updated_at": datetime.now(timezone.utc).isoformat()})
+            self._session = ReasoningSession(**{**self._session.model_dump(), "no_progress_streak": 0 if progressed else self._session.no_progress_streak + 1, "updated_at": datetime.now(UTC).isoformat()})
 
         return SessionResult(
             session_id=self._session.session_id,

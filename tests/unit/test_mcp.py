@@ -227,9 +227,10 @@ def test_oversized_report_denied_not_truncated_silently():
     findings = [SecurityFinding(finding_id=f"f{i}", audit_id="A", title="T", description="D" * 2000, category="other", severity="low", confidence=0.2, candidate_id="c", evidence_ids=("e1",), fingerprint=f"fp{i}").model_dump(mode="json") for i in range(201)]
     response = MockMcpClient().call("cyber_report", {"audit_id": "A", "findings": findings, "format": "json"})
     assert response["error"]["code"] == proto.INVALID_PARAMS  # item-count cap denies; never silently truncated
-    import emo_cyber_agent.mcp.delegate as delegate
+    from emo_cyber_agent.mcp import delegate
 
-    assert "1024 * 1024" in open(delegate.__file__).read()  # 1 MiB output gate present as second defense line
+    with open(delegate.__file__) as source_file:
+        assert "1024 * 1024" in source_file.read()  # 1 MiB output gate present as second defense line
 
 
 def test_concurrent_audits_isolated():
@@ -247,9 +248,10 @@ def test_core_bypass_attempts_fail():
     with pytest.raises(InvalidInput):
         validate_arguments("cyber_audit", "just run it")
     # delegate module holds no policy/severity/finding logic of its own
-    import emo_cyber_agent.mcp.delegate as delegate
+    from emo_cyber_agent.mcp import delegate
 
-    body = open(delegate.__file__).read().split('"""', 2)[-1]
+    with open(delegate.__file__) as source_file:
+        body = source_file.read().split('"""', 2)[-1]
     # Core-owned instantiation + validated model construction are the
     # sanctioned translator pattern (§25); what must never appear here is
     # decision/evaluation/classification/execution logic.
@@ -299,6 +301,7 @@ def test_stdio_end_to_end_subprocess():
     ]
     proc = subprocess.run(
         [sys.executable, "-c", script],
+        check=False,
         input="\n".join(__import__("json").dumps(m) for m in messages) + "\n",
         capture_output=True, text=True, timeout=60, cwd=str(_REPO_ROOT),
     )

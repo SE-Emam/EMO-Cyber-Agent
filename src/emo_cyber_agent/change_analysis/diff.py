@@ -15,13 +15,13 @@ from typing import Any
 from emo_cyber_agent.change_analysis.errors import ChangeError, ChangeErrorCode
 from emo_cyber_agent.change_analysis.spec import (
     ChangeClassification,
-    ChangeSet,
     ChangedDatabaseRelation,
     ChangedDependency,
     ChangedFile,
     ChangedRegion,
     ChangedRoute,
     ChangedSymbol,
+    ChangeSet,
     ComparisonSnapshot,
     canonical_digest,
 )

@@ -10,6 +10,9 @@ describe itself into a trusted state.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
 from pathlib import Path
 from typing import Any
@@ -113,7 +116,7 @@ def manifest_from_dict(data: dict[str, Any]) -> ExtensionManifest:
         return ExtensionManifest(**normalize_manifest_dict(data))
     except ExtensionError:
         raise
-    except Exception as exc:  # noqa: BLE001 - pydantic ValidationError and friends
+    except UNEXPECTED_EXCEPTION as exc:
         raise ExtensionError(ExtensionErrorCode.MANIFEST_INVALID, f"{exc}") from None
 
 
@@ -143,7 +146,7 @@ def load_manifest_text(text: str, *, source: str = "") -> ExtensionManifest:
             doc = yaml.safe_load(text)
     except ExtensionError:
         raise
-    except Exception as exc:  # noqa: BLE001 - parse failures are content failures
+    except UNEXPECTED_EXCEPTION as exc:
         raise ExtensionError(ExtensionErrorCode.MANIFEST_INVALID, f"parse failed for {source}: {exc}") from None
     if not isinstance(doc, dict):
         raise ExtensionError(ExtensionErrorCode.MANIFEST_INVALID, f"manifest root must be a mapping: {source}")
@@ -177,10 +180,10 @@ def validate_against_schema(data: dict[str, Any], schema: dict[str, Any] | None 
                 from emo_cyber_agent.core.resources import load_schema_text
 
                 schema = json.loads(load_schema_text("extension-manifest"))
-            except Exception as exc:  # noqa: BLE001 - schema unavailability is typed
+            except UNEXPECTED_EXCEPTION as exc:
                 raise ExtensionError(ExtensionErrorCode.SCHEMA_INVALID, f"extension manifest schema unavailable: {exc}") from None
     assert isinstance(schema, dict), "schema unavailable"
     try:
         _js.validate(data, schema)
-    except Exception as exc:  # noqa: BLE001 - jsonschema raises many types
+    except UNEXPECTED_EXCEPTION as exc:
         raise ExtensionError(ExtensionErrorCode.SCHEMA_INVALID, f"schema validation failed: {exc}") from None

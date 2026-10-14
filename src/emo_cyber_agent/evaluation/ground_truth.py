@@ -14,26 +14,27 @@ record when the system reports uncertainty instead of inventing an answer.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from emo_cyber_agent.evaluation.errors import EvaluationError, EvaluationErrorCode
 from emo_cyber_agent.evaluation.spec import (
+    SECURITY_GROUND_TRUTH_KINDS,
     ComparisonMatch,
     GroundTruthKind,
     OracleVerdict,
-    SECURITY_GROUND_TRUTH_KINDS,
     evaluation_digest,
 )
 
 __all__ = [
     "GroundTruthRecord",
-    "resolve_subject",
     "compare_value",
-    "judge_record",
     "is_security_relevant",
+    "judge_record",
     "record_identity",
+    "resolve_subject",
 ]
 
 
@@ -229,7 +230,7 @@ def _contains(actual: Any, expected: Any) -> bool:
         if isinstance(expected, (list, tuple, set, frozenset)):
             return _list_contains(items, list(expected))
         return expected in items
-    return actual == expected
+    return bool(actual == expected)
 
 
 def compare_value(actual: Any, expected: Any, match: ComparisonMatch) -> bool | None:

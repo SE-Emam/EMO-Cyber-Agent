@@ -21,7 +21,23 @@ _EVIDENCE = ("file-evidence", "tool-evidence")
 _STOP = ("scope-exhausted", "budget-exhausted", "no-progress")
 
 
-def _skill(skill_id: str, name: str, domain: str, description: str, *, triggers=(), objectives=(), inputs=(), caps=_READ, tools=("repository.read",), methodology=(), evidence=_EVIDENCE, verification="passive confirmation via evidence re-observation", deps=(), constraints=("read-only", "no-write", "untrusted-content")) -> SkillSpec:
+def _skill(
+    skill_id: str,
+    name: str,
+    domain: str,
+    description: str,
+    *,
+    triggers: tuple[str, ...] = (),
+    objectives: tuple[str, ...] = (),
+    inputs: tuple[str, ...] = (),
+    caps: tuple[str, ...] = _READ,
+    tools: tuple[str, ...] = ("repository.read",),
+    methodology: tuple[str, ...] = (),
+    evidence: tuple[str, ...] = _EVIDENCE,
+    verification: str = "passive confirmation via evidence re-observation",
+    deps: tuple[str, ...] = (),
+    constraints: tuple[str, ...] = ("read-only", "no-write", "untrusted-content"),
+) -> SkillSpec:
     return SkillSpec(
         skill_id=skill_id,
         name=name,
@@ -61,11 +77,11 @@ BUILTIN_SKILLS: list[SkillSpec] = [
     _skill("race-conditions", "Race Condition Review", "concurrency", "Review TOCTOU, check-then-act, and idempotency gaps visible statically.", triggers=("payment", "workflow"), objectives=("list shared-state writes",), inputs=("source tree",), caps=(*_READ,), tools=("repository.read",), deps=("business-logic",)),
     _skill("cryptography", "Cryptography Review", "cryptography", "Check algorithm choice, randomness, key handling, and JWT validation.", triggers=("cipher", "jwt"), objectives=("list crypto primitives",), inputs=("source tree",), caps=(*_READ, *_SEARCH), tools=("repository.search",)),
     _skill("data-exposure", "Data Exposure Review", "data-exposure", "Find over-exposed fields, logs, errors, and storage policies.", triggers=("s3", "bucket"), objectives=("list exposure points",), inputs=("source tree", "schema facts"), caps=(*_READ, *_DB), tools=("repository.read",)),
-    _skill("cloud-security", "Cloud Security Review", "cloud", "Review IAM, storage, network exposure, and secrets in cloud config.", triggers=(".tf", "s3"), objectives=("list cloud resources",), inputs=("iac files",), caps=(*_READ,), tools=("repository.read"), deps=("configuration",)),
+    _skill("cloud-security", "Cloud Security Review", "cloud", "Review IAM, storage, network exposure, and secrets in cloud config.", triggers=(".tf", "s3"), objectives=("list cloud resources",), inputs=("iac files",), caps=(*_READ,), tools=("repository.read",), deps=("configuration",)),
     _skill("container-security", "Container Security Review", "container", "Review base images, users, secrets, and runtime flags.", triggers=("Dockerfile", "docker-compose"), objectives=("list image/user/secret facts",), inputs=("container files",), caps=(*_READ,), tools=("repository.read",), deps=("configuration",)),
     _skill("infrastructure-as-code", "IaC Security Review", "iac", "Review Terraform and IaC for open ingress, encryption, and drift.", triggers=(".tf",), objectives=("list misconfigurations",), inputs=("iac files",), caps=(*_READ,), tools=("repository.read",), deps=("cloud-security",)),
     _skill("frontend-security", "Frontend Security Review", "frontend", "Review XSS sinks, sinks-to-DOM flows, CSP, and client trust.", triggers=("package.json", ".tsx", ".ts", "next.config"), objectives=("list sinks",), inputs=("frontend tree",), caps=(*_READ, *_SEARCH), tools=("repository.search",)),
-    _skill("backend-security", "Backend Security Review", "backend", "Review handlers, middleware ordering, and server trust boundaries.", triggers=(".py", ".ts", "tsconfig.json", "next.config"), objectives=("list handlers",), inputs=("backend tree",), caps=(*_READ,), tools=("repository.read"), deps=("api-security",)),
+    _skill("backend-security", "Backend Security Review", "backend", "Review handlers, middleware ordering, and server trust boundaries.", triggers=(".py", ".ts", "tsconfig.json", "next.config"), objectives=("list handlers",), inputs=("backend tree",), caps=(*_READ,), tools=("repository.read",), deps=("api-security",)),
     _skill("ai-security", "AI Application Security", "ai", "Review prompt handling, output trust, RAG boundaries, and tool use.", triggers=("prompt", "agent"), objectives=("list AI trust boundaries",), inputs=("source tree",), caps=(*_READ,), tools=("repository.read",)),
     _skill("agent-security", "Agent Security Review", "agent", "Review agent planning, tool delegation, memory, and agency limits.", triggers=("agent", "mcp"), objectives=("list agency boundaries",), inputs=("agent config",), caps=(*_READ,), tools=("repository.read",), deps=("ai-security",)),
     _skill("mcp-security", "MCP Server Security Review", "mcp", "Review MCP tool surface, scopes, descriptions, and token handling.", triggers=("mcp",), objectives=("list tools and scopes",), inputs=("mcp config",), caps=(*_READ,), tools=("repository.read",), deps=("agent-security",)),

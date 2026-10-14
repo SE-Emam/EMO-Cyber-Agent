@@ -12,7 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -277,7 +277,7 @@ class ResolvedTool(BaseModel):
     health: ToolHealth = ToolHealth.AVAILABLE
     degraded: bool = False
     reason: str = ""
-    resolved_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    resolved_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class ToolHealthReport(BaseModel):
@@ -288,7 +288,7 @@ class ToolHealthReport(BaseModel):
     status: ToolHealth = ToolHealth.MISSING
     installed_version: str = ""
     reason: str = ""
-    checked_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    checked_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class NormalizedToolResult(BaseModel):
@@ -299,7 +299,7 @@ class NormalizedToolResult(BaseModel):
     audit_id: str = ""
     project_id: str = ""
     snapshot_id: str = ""
-    observed_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    observed_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     status: str = "completed"
     raw_digest: str = ""
     normalized_records: tuple[dict[str, Any], ...] = ()

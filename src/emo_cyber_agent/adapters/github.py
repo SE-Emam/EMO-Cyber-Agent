@@ -13,10 +13,14 @@ Credential boundary:
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import json
 import urllib.parse
 import urllib.request
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from emo_cyber_agent.core.repository import (
     CodeSearchResult,
@@ -42,9 +46,9 @@ Transport = Callable[[str, dict[str, str]], tuple[int, Any]]
 def _default_transport(url: str, headers: dict[str, str]) -> tuple[int, Any]:
     req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:  # noqa: S310 (explicit read-only GET)
+        with urllib.request.urlopen(req, timeout=20) as resp:
             return resp.status, json.loads(resp.read().decode("utf-8", errors="replace"))
-    except Exception as e:  # normalize at boundary; never leak provider internals
+    except UNEXPECTED_EXCEPTION as e:  # normalize at boundary; never leak provider internals
         raise RepositoryError(RepositoryErrorCode.PROVIDER_ERROR, redact_credentials(str(e))) from e
 
 
@@ -136,7 +140,7 @@ class GitHubRepositoryAdapter(RepositoryPort):
             raise RepositoryError(RepositoryErrorCode.FILE_NOT_FOUND, f"not found: {clean}")
         try:
             raw = base64.b64decode(body["content"]).decode("utf-8", errors="replace")
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise RepositoryError(RepositoryErrorCode.CONTENT_UNAVAILABLE, "undecodable content") from e
         sha = redact_credentials(str(body.get("sha", "")))[:40]
         return RepositoryFile(

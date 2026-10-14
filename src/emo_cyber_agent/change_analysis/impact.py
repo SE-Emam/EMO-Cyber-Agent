@@ -8,6 +8,10 @@ explained. Limits produce partial coverage, never false completeness.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
+import itertools
 from collections import deque
 from typing import Any
 
@@ -65,7 +69,7 @@ def propagate(
         _link(edge.from_id, edge.to_id)
     for path in (getattr(target_graph, "taint_paths", {}) or {}).values():
         nodes = list(path.node_ids)
-        for a, b in zip(nodes, nodes[1:]):
+        for a, b in itertools.pairwise(nodes):
             _link(a, b)
 
     visited = set(reached_symbols)
@@ -156,7 +160,7 @@ def analyze_impact(
         try:
             for skill_id in skills:
                 tools.extend(t for t in skill_registry.get(skill_id).allowed_tools if t not in tools)
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             limitations.append("tool-derivation-unavailable: skill registry lookup failed")
     else:
         limitations.append("tool-derivation-unavailable: no skill registry wired")

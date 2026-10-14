@@ -115,7 +115,7 @@ def test_provenance_present_audit_snapshot_digest():
 
 
 def test_digest_stable():
-    kwargs = dict(authorization_ref="authz-handoff-01", now=789)
+    kwargs = {"authorization_ref": "authz-handoff-01", "now": 789}
     first = assemble(_session(), _data(), ["V-001"], "none", **kwargs)
     second = assemble(_session(), _data(), ["V-001"], "none", **kwargs)
     assert first.status == GateStatus.COMPLETED == second.status

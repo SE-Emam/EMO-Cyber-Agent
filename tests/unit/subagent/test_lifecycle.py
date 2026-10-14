@@ -1,4 +1,7 @@
 """Lifecycle coordinator tests — POST-T018 (Agent 6A scope only)."""
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import sys
 from pathlib import Path
@@ -23,15 +26,15 @@ SCOPE = DelegatedScope(included=("src/auth",), target_types=("code",))
 
 
 def _session(**over) -> SubagentSession:
-    base = dict(
-        session_id="sess-01",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        created=100,
-        expires=9999,
-    )
+    base = {
+        "session_id": "sess-01",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "created": 100,
+        "expires": 9999,
+    }
     base.update(over)
     return SubagentSession(**base)
 
@@ -76,7 +79,7 @@ def test_start_rejects_non_starting_and_expired():
     ready = _to(_session(), SubagentLifecycle.READY)
     with pytest.raises(HostIntegrationError):
         coord.start(ready, scope=SCOPE, delegation_id="del-1", now=100)
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         coord.start(_session(), scope=SCOPE, delegation_id="del-1", now=10000)  # expired
     with pytest.raises(HostIntegrationError):
         coord.start(_session(), scope=SCOPE, delegation_id="  ", now=100)  # empty delegation

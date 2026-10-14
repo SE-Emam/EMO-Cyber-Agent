@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-import sys
+
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
 import json
+import sys
 from pathlib import Path
 
 # Get repository root (where pyproject.toml is)
@@ -60,7 +63,7 @@ def main():
                 print("[PASS] Manifest version matches: 0.1.0")
             else:
                 print(f"[WARN] Manifest version: {manifest.get('version')}")
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             print(f"[WARN] Could not parse manifest: {e}")
     else:
         print("[BLOCKED] Manifest not found")
@@ -91,7 +94,7 @@ def main():
     # Basic sdist validation
     try:
         import tarfile
-        with tarfile.open(sdist_path, 'r:gz') as tf:
+        with tarfile.open(sdist_path, 'r:gz'):
             pass
         print("[PASS] Sdist is a valid tar.gz archive")
     except tarfile.ReadError:

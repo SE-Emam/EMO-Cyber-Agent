@@ -12,10 +12,11 @@ interface for ECA-T009, but the engine runs fully without any model.
 
 from __future__ import annotations
 
+import builtins
 import hashlib
 import uuid
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -91,7 +92,7 @@ class EvidenceRelation(BaseModel):
     kind: RelationKind
     deterministic: bool = True
     reason: str = ""
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class SecurityObservation(BaseModel):
@@ -228,9 +229,9 @@ def _trust(item: EvidenceItem) -> str:
     tool = (item.source_tool or "").lower()
     if tool in ("semgrep", "trivy", "osv-scanner", "gitleaks"):
         return EvidenceTrust.DETERMINISTIC_TOOL.value
-    if tool.startswith("github") or tool.startswith("repository"):
+    if tool.startswith(("github", "repository")):
         return EvidenceTrust.REPOSITORY_FACT.value
-    if tool.startswith("supabase") or tool.startswith("database"):
+    if tool.startswith(("supabase", "database")):
         return EvidenceTrust.DATABASE_FACT.value
     return EvidenceTrust.PROVIDER_METADATA.value
 
@@ -342,8 +343,8 @@ class EvidenceStore(EvidenceStoreABC):
             raise KeyError(evidence_id)
         return item
 
-    def query(self, *, audit_id: str, asset_id: str | None = None, tool: str | None = None, locator: str | None = None, digest: str | None = None, label: str | None = None) -> list[EvidenceItem]:
-        out = []
+    def query(self, *, audit_id: str, asset_id: str | None = None, tool: str | None = None, locator: str | None = None, digest: str | None = None, label: str | None = None) -> builtins.list[EvidenceItem]:
+        out: builtins.list[EvidenceItem] = []
         for item in self._scoped(audit_id):
             if asset_id is not None and item.target_asset_id != asset_id:
                 continue
@@ -358,7 +359,7 @@ class EvidenceStore(EvidenceStoreABC):
             out.append(item)
         return out
 
-    def related(self, evidence_id: str, relations: list[EvidenceRelation], *, audit_id: str) -> list[EvidenceItem]:
+    def related(self, evidence_id: str, relations: builtins.list[EvidenceRelation], *, audit_id: str) -> builtins.list[EvidenceItem]:
         ids: set[str] = set()
         for r in relations:
             if r.audit_id != audit_id:
@@ -454,7 +455,7 @@ class CorrelationEngine:
             buckets: dict[str, list[EvidenceItem]] = {}
             for item in items:
                 buckets.setdefault(item.target_asset_id or item.location or "global", []).append(item)
-            for bucket, group in buckets.items():
+            for group in buckets.values():
                 have = {label for item in group for label in _labels(item)}
                 if not required.issubset(have):
                     continue

@@ -29,14 +29,14 @@ __all__ = [
     "TABLE_VERSION",
     "TOOL_CATEGORIES",
     "TOOL_NAMES",
-    "KaliTool",
-    "ExposureReport",
     "CoverageReport",
+    "ExposureReport",
+    "KaliTool",
     "KaliToolDetectorPack",
     "all_tool_names",
-    "get_tool",
-    "detect_exposure",
     "coverage",
+    "detect_exposure",
+    "get_tool",
 ]
 
 TABLE_VERSION = "1.0.0"
@@ -385,8 +385,8 @@ def _evaluate(tool: KaliTool, facts: dict[str, Any]) -> tuple[bool, list[str]]:
         if secrets_present:
             reasons.append("cleartext-sensitive-data-observable")
     elif name == "aircrack-ng":
-        markers = ("wep", "wpa", "open", "wps")
-        if banner_text and any(m in banner_text for m in markers):
+        wireless_markers = ("wep", "wpa", "open", "wps")
+        if banner_text and any(m in banner_text for m in wireless_markers):
             reasons.append("weak-wireless-configuration-indicated")
     elif name in ("metasploit-framework", "empire"):
         if ports_open and not auth_enforced:
@@ -399,9 +399,8 @@ def _evaluate(tool: KaliTool, facts: dict[str, Any]) -> tuple[bool, list[str]]:
     elif name in ("netcat", "socat"):
         if ports_open:
             reasons.append("unexpected-egress-or-listener-surface")
-    elif name in ("theharvester", "maltego"):
-        if secrets_present:
-            reasons.append("leaked-credentials-visible-in-public-records")
+    elif name in ("theharvester", "maltego") and secrets_present:
+        reasons.append("leaked-credentials-visible-in-public-records")
 
     if reasons:
         return True, sorted(set(reasons))

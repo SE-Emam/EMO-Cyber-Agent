@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import builtins
+
 from emo_cyber_agent.tools.packs.errors import ToolPackError, ToolPackErrorCode
 from emo_cyber_agent.tools.packs.spec import PackTrust, ToolDefinition, ToolPack
 
@@ -39,7 +41,7 @@ class ToolPackRegistry:
     def list(self) -> list[ToolPack]:
         return [self._packs[key] for key in sorted(self._packs)]
 
-    def versions(self, pack_id: str) -> list[str]:
+    def versions(self, pack_id: str) -> builtins.list[str]:
         return sorted(ver for (pid, ver) in self._packs if pid == pack_id)
 
     def trust_of(self, pack_id: str, version: str) -> PackTrust:
@@ -48,7 +50,7 @@ class ToolPackRegistry:
         except KeyError:
             raise ToolPackError(ToolPackErrorCode.NOT_FOUND, f"pack not registered: {pack_id}@{version}") from None
 
-    def definitions_for_tool(self, tool_id: str) -> list[tuple[ToolPack, ToolDefinition]]:
+    def definitions_for_tool(self, tool_id: str) -> builtins.list[tuple[ToolPack, ToolDefinition]]:
         """All definitions driving one tool_id, deterministic order."""
         out = []
         for pack in self.list():
@@ -57,7 +59,7 @@ class ToolPackRegistry:
                     out.append((pack, definition))
         return out
 
-    def definitions_for_capability(self, capability: str) -> list[tuple[ToolPack, ToolDefinition]]:
+    def definitions_for_capability(self, capability: str) -> builtins.list[tuple[ToolPack, ToolDefinition]]:
         """All definitions offering one pack capability, deterministic order."""
         out = []
         for pack in self.list():

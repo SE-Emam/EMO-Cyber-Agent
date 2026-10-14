@@ -1,4 +1,7 @@
 """Security review checklist tests — POST-T020 (checklist owner scope only)."""
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import ast
 import json
@@ -135,17 +138,17 @@ def test_checklist_schema_valid():
 
 def test_models_are_frozen():
     item = ChecklistItem(**_good_item_kwargs())
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         item.check = "mutated"  # type: ignore[misc]
     checklist = get_checklist("secure-code-review")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         checklist.version = "9.9.9"  # type: ignore[misc]
 
 
 def test_extra_fields_forbidden():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ChecklistItem(**{**_good_item_kwargs(), "severity": "high"})
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         Checklist(
             id="secure-code-review",
             version="1.0.0",
@@ -156,35 +159,35 @@ def test_extra_fields_forbidden():
 
 
 def test_bad_ids_versions_scopes_rejected():
-    with pytest.raises(Exception):
-        ChecklistItem(**{**_good_item_kwargs(item_id="UPPER")})
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
+        ChecklistItem(**_good_item_kwargs(item_id="UPPER"))
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         Checklist(
             id="BAD",
             version="1.0.0",
             scope="source-code-change",
             items=(ChecklistItem(**_good_item_kwargs()),),
         )
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         Checklist(
             id="secure-code-review",
             version="not-semver",
             scope="source-code-change",
             items=(ChecklistItem(**_good_item_kwargs()),),
         )
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         Checklist(
             id="secure-code-review",
             version="1.0.0",
             scope="Has Space",
             items=(ChecklistItem(**_good_item_kwargs()),),
         )
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         ChecklistItem(**{**_good_item_kwargs(), "check": "   "})
 
 
 def test_duplicate_item_ids_rejected():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         Checklist(
             id="secure-code-review",
             version="1.0.0",
@@ -205,7 +208,7 @@ def test_blank_item_fields_rejected():
     ):
         kwargs = _good_item_kwargs()
         kwargs[field_name] = "  "
-        with pytest.raises(Exception):
+        with pytest.raises(UNEXPECTED_EXCEPTION):
             ChecklistItem(**kwargs)
 
 

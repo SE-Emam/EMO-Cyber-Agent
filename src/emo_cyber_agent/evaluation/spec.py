@@ -13,39 +13,40 @@ fixture can never silently pass through a metric.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from collections.abc import Iterable, Mapping
+from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any, Iterable, Mapping
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from emo_cyber_agent.threat_modeling.spec import canonical_digest
 
 __all__ = [
+    "ALL_STAGES",
     "EVALUATION_VERSION",
-    "EvaluationStage",
-    "EvaluationTrack",
-    "CaseSplit",
-    "CaseVisibility",
-    "EvaluationTaxonomy",
-    "GroundTruthKind",
-    "ComparisonMatch",
-    "OracleVerdict",
-    "GateName",
-    "GateStatus",
-    "RunStatus",
     "PIPELINE_STAGES",
     "PROTOCOL_STAGES",
-    "ALL_STAGES",
     "SECURITY_GROUND_TRUTH_KINDS",
+    "AuthorityDiff",
+    "AuthoritySnapshot",
+    "CaseSplit",
+    "CaseVisibility",
+    "ComparisonMatch",
     "EvaluationEvent",
     "EvaluationObservation",
-    "AuthoritySnapshot",
-    "AuthorityDiff",
+    "EvaluationStage",
+    "EvaluationTaxonomy",
+    "EvaluationTrack",
+    "GateName",
+    "GateStatus",
+    "GroundTruthKind",
+    "OracleVerdict",
+    "RunStatus",
     "capture_authority",
     "diff_authority",
-    "evaluation_digest",
     "digest_records",
+    "evaluation_digest",
     "utc_now",
 ]
 
@@ -53,7 +54,7 @@ EVALUATION_VERSION = "post-rc-013-v1"
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 # ---------------------------------------------------------------------------

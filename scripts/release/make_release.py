@@ -21,7 +21,7 @@ import platform
 import subprocess
 import sys
 import tomllib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -61,7 +61,7 @@ def source_tree_digest() -> str:
 def git_revision() -> str:
     try:
         proc = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=30, cwd=str(ROOT)
+            ["git", "rev-parse", "HEAD"], check=False, capture_output=True, text=True, timeout=30, cwd=str(ROOT)
         )
         return proc.stdout.strip() if proc.returncode == 0 else "untracked-tree"
     except (OSError, subprocess.SubprocessError):
@@ -70,7 +70,7 @@ def git_revision() -> str:
 
 def build_tool() -> dict:
     try:
-        uv = subprocess.run(["uv", "--version"], capture_output=True, text=True, timeout=30)
+        uv = subprocess.run(["uv", "--version"], check=False, capture_output=True, text=True, timeout=30)
         uv_version = uv.stdout.strip() or "unknown"
     except (OSError, subprocess.SubprocessError):
         uv_version = "unknown"
@@ -136,7 +136,7 @@ def main(argv: list[str] | None = None) -> int:
         "schema_version": "1.0",
         "git_revision": git_revision(),
         "source_tree_digest": source_tree_digest(),
-        "build_timestamp": datetime.now(timezone.utc).isoformat(),
+        "build_timestamp": datetime.now(UTC).isoformat(),
         "python_versions": ["3.11", "3.12"],
         "platform": f"{platform.system()}-{platform.machine()}",
         "artifacts": {

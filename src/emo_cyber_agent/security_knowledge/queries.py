@@ -7,6 +7,7 @@ filter language exists. The caller cannot change enforced scope.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC
 from typing import Any
 
@@ -90,7 +91,7 @@ class KnowledgeQueryPort:
         return records, self._record("get_prior_verification", scope, canonical_digest({"records": [r.record_id for r in records]}))
 
     def run_named(self, query_type: str, **kwargs: Any) -> tuple[Any, dict[str, Any]]:
-        dispatch = {
+        dispatch: dict[str, Callable[[], tuple[Any, dict[str, Any]]]] = {
             "get_record": lambda: self.get_record(kwargs.get("record_id", ""), audit_id=kwargs.get("audit_id", ""), project_id=kwargs.get("project_id", "")),
             "find_by_regression_key": lambda: self.find_by_regression_key(kwargs.get("regression_key", ""), audit_id=kwargs.get("audit_id", ""), project_id=kwargs.get("project_id", "")),
             "find_related_observations": lambda: self.find_related_observations(kwargs.get("object_id", ""), audit_id=kwargs.get("audit_id", ""), project_id=kwargs.get("project_id", "")),

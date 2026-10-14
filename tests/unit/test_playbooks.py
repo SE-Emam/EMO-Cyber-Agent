@@ -6,6 +6,9 @@ isolation, version drift, budgets, malicious battery, prompt injection,
 capability escalation, scope expansion, determinism. No execution,
 no network, no LLM.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import ast
 import json
@@ -54,18 +57,18 @@ def _env():
 
 
 def _spec(playbook_id="demo-playbook", **over):
-    base = dict(
-        playbook_id=playbook_id, title="Demo", version="1.0.0", type="security",
-        objective="answer a scoped security question with read-only methods",
-        required_tasks=["secret-audit"], optional_tasks=[], required_skills=["secrets"], optional_skills=[],
-        required_tools=["gitleaks"], optional_tools=[], requested_capabilities=["repository.read"],
-        denied_capabilities=["repository.write", "database.write", "destructive"],
-        execution_order=["secret-audit"], conditions=[], max_tasks=12, max_iterations=1,
-        evidence_required=["file-evidence"], verification_methods=["static_confirmation"],
-        report_template="security-audit", stop_conditions=list(STOPS),
-        acceptance_criteria=["All in-scope entry points inspected."],
-        provenance={"source": "external"},
-    )
+    base = {
+        "playbook_id": playbook_id, "title": "Demo", "version": "1.0.0", "type": "security",
+        "objective": "answer a scoped security question with read-only methods",
+        "required_tasks": ["secret-audit"], "optional_tasks": [], "required_skills": ["secrets"], "optional_skills": [],
+        "required_tools": ["gitleaks"], "optional_tools": [], "requested_capabilities": ["repository.read"],
+        "denied_capabilities": ["repository.write", "database.write", "destructive"],
+        "execution_order": ["secret-audit"], "conditions": [], "max_tasks": 12, "max_iterations": 1,
+        "evidence_required": ["file-evidence"], "verification_methods": ["static_confirmation"],
+        "report_template": "security-audit", "stop_conditions": list(STOPS),
+        "acceptance_criteria": ["All in-scope entry points inspected."],
+        "provenance": {"source": "external"},
+    }
     base.update(over)
     return PlaybookSpec(**base)  # type: ignore[arg-type]
 
@@ -76,7 +79,7 @@ def _service(env, **over):
 
 
 def _rich_context(**over):
-    base = dict(technologies=["supabase", "python"], asset_types=["repository"], evidence_categories=["authorization"], candidate_statuses=["NEEDS_VERIFICATION"])
+    base = {"technologies": ["supabase", "python"], "asset_types": ["repository"], "evidence_categories": ["authorization"], "candidate_statuses": ["NEEDS_VERIFICATION"]}
     base.update(over)
     return ProjectContext(**base)
 
@@ -86,20 +89,20 @@ def _rich_context(**over):
 def test_spec_ids_versions_refs():
     s = _spec()
     assert s.playbook_id == "demo-playbook" and s.version == "1.0.0"
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(playbook_id="Bad_ID")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(playbook_id="other", version="1.0")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(playbook_id="other", required_tasks=["Bad_Ref"])
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _spec(playbook_id="other", extends="Bad_Parent")
 
 
 def test_spec_condition_allowlist():
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         PlaybookCondition(when_field="exec(os.system)", operator="==", value="x", select_tasks=[])
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         PlaybookCondition(when_field="technology", operator="contains", value="x", select_tasks=[])
     ok = PlaybookCondition(when_field="technology", operator="==", value="supabase", select_tasks=["supabase-security-review"])
     assert ok.when_field == "technology"
@@ -350,7 +353,7 @@ def test_cross_audit_isolation():
     ra = svc.plan("deep-security-audit", project_files=RICH_FILES, project_objective="audit A", audit_scope=scope_a)
     rb = svc.plan("deep-security-audit", project_files=RICH_FILES, project_objective="audit B", audit_scope=scope_b)
     assert "audit B" not in ra.model_dump_json() and "audit A" not in rb.model_dump_json()
-    assert ra.digest == rb.digest or True  # digests cover content, not prose; isolation is about state
+    assert True  # digests cover content, not prose; isolation is about state
     env["tasks"].register(env["tasks"].get("secret-audit").model_copy(update={"version": "9.9.9"}))
     assert all("9.9.9" not in t.pinned_ref for t in ra.tasks)
 
@@ -397,7 +400,7 @@ def test_malicious_battery_reject_or_constrain():
     assert svc.plan("evil-shell", project_files=RICH_FILES, project_objective=RICH_OBJECTIVE).status in (ResolutionStatus.INVALID, ResolutionStatus.BLOCKED)
     svc._registry.register(_spec("evil-net", security_external_targets="allow"))
     assert svc.plan("evil-net", project_files=RICH_FILES, project_objective=RICH_OBJECTIVE).status == ResolutionStatus.INVALID
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         PlaybookSpec(**_spec("evil-field").model_dump() | {"finding_status": "confirmed"})
 
 

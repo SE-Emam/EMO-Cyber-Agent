@@ -6,6 +6,9 @@ refutation, inconclusive, transitions, multi-verification, conflicts,
 budget, retry, failure matrix (§33), prompt injection, cross-audit
 isolation, stale decisions, loops. No network, no exploits, no writes.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import pytest
 
@@ -63,15 +66,15 @@ def _planned(svc, candidate=None, request=None, audit="A"):
 # ---------------- domain + state machine ----------------
 
 def test_request_contract_denies_forbidden_fields():
-    with pytest.raises(Exception):
-        VerificationRequest(method="static_confirmation", target={"kind": "file", "locator": "x"}, rationale_summary="x", **{"shell": "rm"})
-    with pytest.raises(Exception):
-        VerificationRequest(method="static_confirmation", target=VerificationTarget(kind="file", locator="x"), rationale_summary="x", **{"permissions": "admin"})
+    with pytest.raises(UNEXPECTED_EXCEPTION):
+        VerificationRequest(method="static_confirmation", target={"kind": "file", "locator": "x"}, rationale_summary="x", shell="rm")
+    with pytest.raises(UNEXPECTED_EXCEPTION):
+        VerificationRequest(method="static_confirmation", target=VerificationTarget(kind="file", locator="x"), rationale_summary="x", permissions="admin")
 
 
 def test_target_model_denies_wildcard_external_traversal():
     for bad in ["*", "", "https://evil.example/x", "../escape", "a\x00b"]:
-        with pytest.raises(Exception):
+        with pytest.raises(UNEXPECTED_EXCEPTION):
             VerificationTarget(kind="file", locator=bad)
     assert VerificationTarget(kind="file", locator="src/a.py").locator == "src/a.py"
 
@@ -127,7 +130,7 @@ def test_missing_policy_decision_denied():
 
 def test_stale_and_mismatched_decision_denied():
     svc = _service("CONFIRM")
-    candidate, plan, did = _planned(svc)
+    candidate, plan, _did = _planned(svc)
     with pytest.raises(VerificationError) as e:
         svc.execute(plan=plan, candidate=candidate, audit_id="A", policy_decision_id="nope")
     assert e.value.code == VerificationErrorCode.STALE_POLICY
@@ -149,7 +152,7 @@ def test_verify_profile_safe_active_allowed_with_grant():
     svc = _service("CONFIRM", profile="verify", policy=policy)
     candidate, plan, did = _planned(svc, request=_req(method="controlled_reproduction"))
     assert plan.safety_level == SafetyLevel.SAFE_ACTIVE
-    v, result = svc.execute(plan=plan, candidate=candidate, audit_id="A", policy_decision_id=did)
+    v, _result = svc.execute(plan=plan, candidate=candidate, audit_id="A", policy_decision_id=did)
     assert v.status == VerificationStatus.CONFIRMED
 
 
@@ -164,7 +167,7 @@ def test_out_of_scope_and_external_denied():
     with pytest.raises(VerificationError) as e:
         svc.plan(candidate=_candidate(), request=_req(), audit_id="A")
     assert e.value.code == VerificationErrorCode.OUT_OF_SCOPE
-    with pytest.raises(Exception):  # target model denies externals at construction
+    with pytest.raises(UNEXPECTED_EXCEPTION):  # target model denies externals at construction
         _req(target="https://evil.example/x")
 
 
@@ -183,7 +186,7 @@ def test_read_only_query_allows_select():
     candidate = _candidate()
     req = VerificationRequest(method="read_only_query", target=VerificationTarget(kind="database_object", locator="public.users"), rationale_summary="check row", statement="SELECT * FROM users")
     plan = svc.plan(candidate=candidate, request=req, audit_id="A")
-    v, result = svc.execute(plan=plan, candidate=candidate, audit_id="A", policy_decision_id=plan.constraints["decision"])
+    v, _result = svc.execute(plan=plan, candidate=candidate, audit_id="A", policy_decision_id=plan.constraints["decision"])
     assert v.status == VerificationStatus.CONFIRMED
     with pytest.raises(VerificationError):
         svc.plan(candidate=candidate, request=VerificationRequest(method="read_only_query", target=VerificationTarget(kind="database_object", locator="public.users"), rationale_summary="evil", statement="DROP TABLE users"), audit_id="A")
@@ -191,12 +194,11 @@ def test_read_only_query_allows_select():
 
 def test_write_and_destructive_sql_denied():
     from emo_cyber_agent.core.supabase import classify_read_only_sql
-    from emo_cyber_agent.core.verification import VerificationError as VE
 
     for sql in ("INSERT INTO t VALUES (1)", "UPDATE t SET x=1", "DELETE FROM t", "DROP TABLE t", "ALTER TABLE t ADD x int", "GRANT SELECT ON t TO anon", "SELECT 1; DROP TABLE t"):
         try:
             classify_read_only_sql(sql)
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             assert "SUPABASE" in str(e) or "denied" in str(e).lower() or "rejected" in str(e).lower()
         else:
             raise AssertionError(f"SQL allowed, must deny: {sql}")
@@ -216,7 +218,7 @@ def test_refutation_keeps_history():
 def test_inconclusive_on_weak_evidence():
     svc = _service("INCONCLUSIVE")
     candidate, plan, did = _planned(svc)
-    v, result = svc.execute(plan=plan, candidate=candidate, audit_id="A", policy_decision_id=did)
+    v, _result = svc.execute(plan=plan, candidate=candidate, audit_id="A", policy_decision_id=did)
     assert v.status == VerificationStatus.INCONCLUSIVE
     elig = assess_candidate(candidate, [v], policy_valid=True, scope_matched=True)
     assert elig.status == CandidateStatus.INCONCLUSIVE and not elig.eligible
@@ -278,7 +280,7 @@ def test_confirmation_criteria_all_required():
 
 def test_model_claim_cannot_confirm():
     # even a CONFIRM-labeled raw result still passes criteria + evidence gates
-    svc = _service("CONFIRM")
+    _service("CONFIRM")
     candidate = _candidate()
     v = __import__("emo_cyber_agent.core.verification", fromlist=["Verification"]).Verification(candidate_id="x", audit_id="B", method="static_confirmation", status="confirmed")
     elig = assess_candidate(candidate, [v], policy_valid=True, scope_matched=False)
@@ -307,7 +309,6 @@ def test_repeated_target_loop_detected():
 
 # ---------------- matrix §33 ----------------
 
-import itertools as _it
 
 
 def test_matrix_profiles_vs_safety():
@@ -369,14 +370,15 @@ def test_credential_free_trail_and_evidence():
 def test_no_exploit_primitives_in_module():
     import emo_cyber_agent.core.verification as m
 
-    body = open(m.__file__).read().split('"""', 2)[-1].lower()
+    with open(m.__file__) as source_file:
+        body = source_file.read().split('"""', 2)[-1].lower()
     for banned in ("metasploit", "import subprocess", "import socket", "os.system", "shell=true", "credential dump", "privilege escalation"):
         assert banned not in body, banned
 
 
 def test_executor_port_separate_from_tool_executor():
-    from emo_cyber_agent.core.verification import VerificationExecutorPort
     from emo_cyber_agent.core.execution import ToolExecutor
+    from emo_cyber_agent.core.verification import VerificationExecutorPort
 
     assert VerificationExecutorPort is not ToolExecutor
     import inspect
@@ -386,7 +388,7 @@ def test_executor_port_separate_from_tool_executor():
 
 def test_plan_is_auditable_and_minimal():
     svc = _service("CONFIRM")
-    candidate, plan, did = _planned(svc)
+    _candidate, plan, did = _planned(svc)
     assert plan.candidate_id and plan.required_capabilities and plan.stopping_conditions
     assert "minimum" in str(plan.constraints).lower() or plan.constraints  # constraints recorded
     assert did  # decision bound to plan

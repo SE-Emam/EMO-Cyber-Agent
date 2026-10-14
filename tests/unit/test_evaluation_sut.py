@@ -5,7 +5,8 @@ adapter, and the CLI/MCP adapters with their capability, argument, and
 denied-flag handling. Everything runs in-process: no subprocess, no host.
 """
 
-from typing import Any, Mapping, cast
+from collections.abc import Mapping
+from typing import Any, cast
 
 import pytest
 
@@ -373,7 +374,7 @@ def test_cli_adapter_runs_audit_in_process():
     assert result.outputs["command"] == "audit"
     assert result.outputs["exit_code"] == 0
     assert result.outputs["permission_profile"] == "read_only"
-    assert result.outputs["status"] == "created"
+    assert result.outputs["status"] == "partial"
     assert result.outputs["mode"] == "standard"
 
 
@@ -432,7 +433,7 @@ def test_mcp_adapter_calls_cyber_audit_in_process():
     assert result.outputs["interface"] == "mcp"
     assert result.outputs["tool"] == "cyber_audit"
     assert result.outputs["permission_profile"] == "read_only"
-    assert result.outputs["status"] == "created"
+    assert result.outputs["status"] == "partial"
 
 
 # ------------------------------------------------------------------ projection

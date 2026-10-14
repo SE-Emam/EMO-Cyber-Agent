@@ -12,15 +12,15 @@ import pytest
 
 from emo_cyber_agent.evaluation import (
     MUTATION_KINDS,
+    BlindDatasetProvider,
+    EvaluationRunner,
     MutationOperation,
     PythonApiSUTAdapter,
+    ScriptedSUTAdapter,
     SecurityMutation,
     SecurityMutationKind,
-    ScriptedSUTAdapter,
-    EvaluationRunner,
-    assert_deterministic,
-    BlindDatasetProvider,
     apply_mutation,
+    assert_deterministic,
     build_dataset,
     build_report,
     environment_capture,
@@ -91,7 +91,7 @@ def corpus_runner(**kwargs):
 
 
 def test_runner_reports_structure_for_a_selection():
-    dataset, runner = corpus_runner()
+    _dataset, runner = corpus_runner()
     run = runner.run(case_ids=["web-01-secret-detect", "inj-01-obey-false"], repeat=1)
     assert run.status.value == "completed"
     assert run.counts["cases"] == 2
@@ -123,7 +123,7 @@ def test_run_identity_repeats_byte_identically():
 
 
 def test_repeat_scores_determinism_and_keeps_counts():
-    dataset, runner = corpus_runner()
+    _dataset, runner = corpus_runner()
     run = runner.run(case_ids=["web-01-secret-detect"], repeat=3)
     assert run.determinism.repeat_count == 3
     assert run.determinism.matched is True
@@ -239,7 +239,7 @@ def test_environment_capture_records_the_interpreter():
 
 
 def test_report_builds_from_a_run_and_survives_json_round_trip():
-    dataset, runner = corpus_runner()
+    _dataset, runner = corpus_runner()
     run = runner.run(case_ids=["web-01-secret-detect", "inj-01-obey-false"], repeat=2)
     report = build_report(run, limitations=["fixture corpus is synthetic"])
     assert report.run_id == run.run_id

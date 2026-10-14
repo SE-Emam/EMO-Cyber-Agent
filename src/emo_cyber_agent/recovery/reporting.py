@@ -8,7 +8,7 @@ and no authority claims. Downstream consumers must treat reports as data.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .actions import RecoveryAction
@@ -36,7 +36,7 @@ class RecoveryReport:
     attempts_made: int
     attempts: tuple[RecoveryAttemptRecord, ...] = ()
     detail: str = ""
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     def to_dict(self) -> dict[str, Any]:
         return {

@@ -104,13 +104,13 @@ def _evaluate(manifest: ExtensionManifest, inputs: TrustInputs) -> ExtensionTrus
             return ExtensionTrust(
                 state=ExtensionTrustState.REJECTED,
                 source_class=inputs.source_class,
-                reasons=tuple(["authority-declaration", *inputs.validation.errors[:4]]),
+                reasons=("authority-declaration", *inputs.validation.errors[:4]),
                 evidence=tuple(evidence),
             )
         return ExtensionTrust(
             state=ExtensionTrustState.QUARANTINED,
             source_class=inputs.source_class,
-            reasons=tuple(["validation-failed", *inputs.validation.errors[:4]]),
+            reasons=("validation-failed", *inputs.validation.errors[:4]),
             evidence=tuple(evidence),
         )
 

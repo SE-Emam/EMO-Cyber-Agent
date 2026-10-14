@@ -3,7 +3,7 @@ def require_auth(fn):
 
 
 def login(username, password, next_url=None):
-    user = find_user(username)
+    user = find_user(username)  # noqa: F821  (host-provided collaborator)
     if user and user.check_password(password):
-        return redirect(next_url or dashboard(user))
+        return redirect(next_url or dashboard(user))  # noqa: F821  (host-provided collaborators)
     return None

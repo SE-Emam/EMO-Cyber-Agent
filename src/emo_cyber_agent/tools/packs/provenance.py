@@ -8,7 +8,7 @@ output. Tool output strings are DATA and never enter provenance.
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -46,7 +46,7 @@ def build_tool_provenance(
         "snapshot_id": snapshot_id,
         "argv_digest": argv_digest,
         "raw_digest": raw_digest,
-        "observed_at": datetime.now(timezone.utc).isoformat(),
+        "observed_at": datetime.now(UTC).isoformat(),
         "policy_version": policy_version,
         "network": network,
         "coverage": coverage,

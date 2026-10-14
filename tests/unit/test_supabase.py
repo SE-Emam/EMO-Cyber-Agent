@@ -128,7 +128,7 @@ def test_multiple_policies_and_overpermissive_grant_are_facts():
 
 def test_view_inspected_separately():
     svc = _service(port=InMemorySupabaseProvider(IDENT, scenario="VIEW_RLS_RISK"))
-    views, _, prov = svc.list_views(IDENT, audit_id=AUDIT, policy_decision_id=PID)
+    views, _, _prov = svc.list_views(IDENT, audit_id=AUDIT, policy_decision_id=PID)
     assert len(views) == 1
     assert views[0].definition_untrusted["classification"] == "untrusted"
     assert "security_invoker" in views[0].security_metadata
@@ -303,6 +303,7 @@ def test_no_findings_issued_by_collection():
     # ECA-T006 collects facts; nothing here computes severity/CWE/OWASP.
     import emo_cyber_agent.core.supabase as m
 
-    src = open(m.__file__).read()
+    with open(m.__file__) as source_file:
+        src = source_file.read()
     body = src.split('"""', 2)[-1]  # exclude module docstring (which documents the no-findings rule)
     assert "Finding(" not in body and "severity=" not in body and "CWE" not in body and "OWASP" not in body

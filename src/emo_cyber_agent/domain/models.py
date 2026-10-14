@@ -10,12 +10,11 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
 
 # ---------------------------------------------------------------------------
 # Enumerations
@@ -29,6 +28,27 @@ class AuditStatus(StrEnum):
     VERIFYING = "verifying"
     REPORTING = "reporting"
     COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class AuditMode(StrEnum):
+    QUICK = "quick"
+    STANDARD = "standard"
+    DEEP = "deep"
+
+
+class PermissionProfile(StrEnum):
+    READ_ONLY = "read_only"
+    VERIFY = "verify"
+    REMEDIATE = "remediate"
+
+
+class AuditResultStatus(StrEnum):
+    """Terminal/reporting status exposed by the public audit result."""
+
+    COMPLETED = "completed"
+    PARTIAL = "partial"
     FAILED = "failed"
     CANCELLED = "cancelled"
 
@@ -70,7 +90,7 @@ class ToolInvocationStatus(StrEnum):
 # ---------------------------------------------------------------------------
 
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _hash_data(data: dict[str, Any]) -> str:
@@ -208,8 +228,8 @@ class AuditJob(BaseModel):
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     target: str = Field(..., min_length=1)
-    mode: str = Field(default="standard")
-    permission_profile: str = Field(default="read_only")
+    mode: AuditMode = AuditMode.STANDARD
+    permission_profile: PermissionProfile = PermissionProfile.READ_ONLY
     status: AuditStatus = AuditStatus.CREATED
     created_at: str = Field(default_factory=_now_iso)
     completed_at: str | None = None
@@ -283,12 +303,12 @@ class AuditResult(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    schema_version: str = Field(default="0.1.0", pattern=r"^\d+\.\d+$")
+    schema_version: str = Field(default="0.1.0", pattern=r"^\d+\.\d+\.\d+$")
     audit_id: str = Field(..., min_length=1)
-    status: AuditStatus
+    status: AuditResultStatus
     target: str = Field(..., min_length=1)
-    mode: str = Field(default="standard")
-    permission_profile: str = Field(default="read_only")
+    mode: AuditMode = AuditMode.STANDARD
+    permission_profile: PermissionProfile = PermissionProfile.READ_ONLY
     coverage: Coverage = Field(default_factory=Coverage)
     findings: list[Finding] = Field(default_factory=list)
     tool_failures: list[str] = Field(default_factory=list)

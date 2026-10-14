@@ -70,9 +70,9 @@ F1_CANONICAL: tuple[tuple[str, str], ...] = (
     ("use another audit", "use another audit instead of this one"),
 )
 # F4 scope pairs from tests/unit/test_heuristics_evaluation.py (G3-C).
-F4_OUTER_KW = dict(
-    included=("src/auth", "src/api"), target_types=("code", "config"), excluded=("src/secret",)
-)
+F4_OUTER_KW = {
+    "included": ("src/auth", "src/api"), "target_types": ("code", "config"), "excluded": ("src/secret",)
+}
 F4_PAIRS: tuple[tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], bool], ...] = (
     (("src/auth",), ("code",), ("src/secret",), True),
     (("src/auth", "src/api"), ("code",), ("src/secret",), True),
@@ -359,7 +359,7 @@ def build_judgments(cases: list[PostT020Case]) -> tuple[list[OracleJudgment], di
                 )
             )
         # Redaction: firewall scrub over the blind blob (real detector).
-        blob = json.dumps(getattr(case, "input"), sort_keys=True)
+        blob = json.dumps(case.input, sort_keys=True)
         scrubbed = _firewall_scrub({"note": blob}, audit_id="audit-eval")
         secret_hit = any(r.startswith("secret:") for r in scrubbed.removed)
         judgments.append(
@@ -714,7 +714,7 @@ def test_threat_seeds_structured_deterministically() -> None:
         return build_threat_scenarios(candidates)
 
     scenarios_a, hypotheses_a = structure()
-    scenarios_b, hypotheses_b = structure()
+    scenarios_b, _hypotheses_b = structure()
     assert len(scenarios_a) == 6 and len(hypotheses_a) == 6
     assert [s.scenario_id for s in scenarios_a] == [s.scenario_id for s in scenarios_b]
     assert all(s.hypothesis_status == "HYPOTHESIZED" for s in scenarios_a)

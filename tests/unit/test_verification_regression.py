@@ -5,6 +5,9 @@ historical-vs-current labelling, evidence redaction, and stable
 plan/evidence digests across reloads. Historical verification never
 becomes current evidence by reuse.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import json
 from pathlib import Path
@@ -245,7 +248,7 @@ def test_unknown_regression_target_is_rejected():
     data = _fixture()
     from emo_cyber_agent.verification import StrategyTarget as _Target
 
-    with pytest.raises(Exception) as exc:
+    with pytest.raises(UNEXPECTED_EXCEPTION) as exc:
         _Target(
             kind="SNAPSHOT",
             object_identity="*",

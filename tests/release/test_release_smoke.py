@@ -13,7 +13,6 @@ import json
 import os
 import subprocess
 
-
 from conftest import ROOT, VERSION, run_console_script, run_installed
 
 SMOKE_API = r"""
@@ -27,7 +26,10 @@ async def main():
     assert issubclass(FoundationSecurityAuditor, SecurityAuditor)
     auditor = FoundationSecurityAuditor()
     result = await auditor.audit(target='PROBE_TARGET', mode='quick', permission_profile='read_only')
-    assert result.status in ('completed', 'pending', 'planned', 'stub', 'created'), result.status
+    assert result.status == 'partial', result.status
+    assert result.completed_at is None
+    assert result.coverage.controls_evaluated == 0
+    assert result.limitations
     doctor = await auditor.doctor()
     assert isinstance(doctor, dict) and doctor, 'doctor must return a mapping'
     from emo_cyber_agent.skills.builtin import load_builtin_registry
@@ -108,6 +110,7 @@ def test_import_safety_no_side_effects():
     env["PYTHONPATH"] = str(ROOT / "src") + (_os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
     proc = _sp.run(
         [_sys.executable, "-c", code],
+        check=False,
         capture_output=True,
         text=True,
         timeout=60,
@@ -172,6 +175,7 @@ def _mcp_session(executable: list[str], payloads: list[str], timeout: int = 120)
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     proc = subprocess.run(
         executable,
+        check=False,
         input="\n".join(payloads) + "\n",
         capture_output=True,
         text=True,

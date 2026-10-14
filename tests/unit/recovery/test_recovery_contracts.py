@@ -32,7 +32,6 @@ from emo_cyber_agent.recovery.errors import (
 )
 from emo_cyber_agent.recovery.reporting import RecoveryAttemptRecord
 
-
 EXPECTED_MAPPING = {
     FailureClassification.TRANSIENT: (RecoveryAction.RETRY, 3, True),
     FailureClassification.STALE_CONTEXT: (RecoveryAction.REFRESH_SNAPSHOT, 1, True),

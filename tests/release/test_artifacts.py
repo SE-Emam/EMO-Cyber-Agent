@@ -18,8 +18,7 @@ import tarfile
 import zipfile
 from pathlib import Path
 
-
-from conftest import ROOT, SDIST, VERSION, WHEEL
+from conftest import ROOT, SDIST, WHEEL
 
 FORBIDDEN_NAMES = (
     ".env",
@@ -87,7 +86,8 @@ def test_wheel_contains_all_schemas_policies_and_official_catalog():
     assert len(schemas) == 36, f"wheel ships {len(schemas)} schemas, expected 36"
     assert sorted(Path(n).name for n in schemas) == source_schemas
     policies = [n for n in names if n.startswith("emo_cyber_agent/data/policies/")]
-    assert len(policies) == 2, policies
+    source_policies = sorted(p.name for p in (ROOT / "docs" / "policies").iterdir() if p.is_file())
+    assert sorted(Path(n).name for n in policies) == source_policies
     official = [n for n in names if n.startswith("emo_cyber_agent/data/official/")]
     assert len(official) >= 90, f"official catalog incomplete: {len(official)} files"
     # every official domain the loaders resolve is packaged

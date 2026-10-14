@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -30,7 +30,7 @@ def _parse_event_type(value: Any) -> ProgressEventType:
 
 def _parse_timestamp(value: Any) -> datetime:
     if value is None:
-        return datetime.now()
+        return datetime.now(UTC)
     if isinstance(value, datetime):
         return value
     if isinstance(value, str):
@@ -68,7 +68,7 @@ class ProgressEvent:
         if not isinstance(phase_count, int) or isinstance(phase_count, bool) or phase_count <= 0:
             raise ValueError("phase_count must be a positive integer")
         if not isinstance(phase_index, int) or isinstance(phase_index, bool):
-            raise ValueError("phase_index must be an integer")
+            raise TypeError("phase_index must be an integer")
         if phase_index < 0 or phase_index >= phase_count:
             raise ValueError("phase_index must satisfy 0 <= phase_index < phase_count")
         if not isinstance(total, int) or isinstance(total, bool) or total < 0:
@@ -118,7 +118,7 @@ class ProgressEvent:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ProgressEvent":
+    def from_dict(cls, data: dict[str, Any]) -> ProgressEvent:
         try:
             return cls(
                 run_id=data["run_id"],
@@ -137,7 +137,7 @@ class ProgressEvent:
         except KeyError as exc:
             raise ValueError(f"Missing required progress event field: {exc}") from exc
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, ProgressEvent):
             return NotImplemented
         return (

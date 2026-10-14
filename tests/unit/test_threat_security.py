@@ -127,7 +127,6 @@ def test_prompt_injection_in_source_and_commit_text():
 
 
 def test_model_suggestion_to_skip_verification_ignored():
-    service = ThreatModelingService()
     model, _ = _model()
     assert all(h.safety_level == "passive" for h in model.handoffs)
     assert all(h.verification_method for h in model.handoffs)
@@ -214,8 +213,6 @@ def test_scenario_cannot_grant_capability():
 
 
 def test_model_cannot_execute_tools():
-    import ast as _ast
-
     tree = _ast.parse("\n".join((Path("src/emo_cyber_agent/threat_modeling") / f).read_text() for f in ["spec.py", "system_model.py", "attack_surface.py", "methods.py", "stride.py", "threats.py", "paths.py", "controls.py", "delta.py", "queries.py", "service.py", "errors.py", "provenance.py"]))
     imports: set[str] = set()
     calls: set[str] = set()
@@ -224,7 +221,7 @@ def test_model_cannot_execute_tools():
             imports.update(a.name.split(".")[0] for a in node.names)
         elif isinstance(node, _ast.ImportFrom) and node.module:
             imports.add(node.module.split(".")[0])
-        elif isinstance(node, _ast.Call) and isinstance(node.func, _ast.Name):  # noqa: SLF
+        elif isinstance(node, _ast.Call) and isinstance(node.func, _ast.Name):
             calls.add(node.func.id)
     assert not (imports & {"subprocess", "os", "sys", "shutil", "openai", "anthropic"})
     assert not (calls & {"eval", "exec", "__import__", "compile", "system", "popen"})
@@ -382,7 +379,5 @@ def test_zero_automatic_findings():
     model, _ = _model()
     blob = json.dumps(model.model_dump(mode="json"))
     assert "finding_id" not in blob
-    import ast as _ast
-
     text = "\n".join((Path("src/emo_cyber_agent/threat_modeling") / f).read_text() for f in ["spec.py", "service.py", "threats.py", "paths.py"])
     assert "SecurityFinding" not in text

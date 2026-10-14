@@ -10,15 +10,12 @@ import json
 
 import pytest
 
-from emo_cyber_agent.core.findings import FindingStore, Remediation, SecurityFinding
+from emo_cyber_agent.core.findings import Remediation, SecurityFinding
 from emo_cyber_agent.core.reporting import (
     ReportError,
     ReportGenerator,
     ReportService,
-    build_report,
     generate_report,
-    md_escape,
-    order_findings,
     to_canonical_json,
     to_jsonl,
     to_markdown,
@@ -60,7 +57,7 @@ def fx_conflicted():
 
 def test_json_valid_deterministic_schema():
     svc = _service()
-    rep = svc.generate(audit_id="A", findings=fx_full_report(), scope={"repo": "acme/web"})
+    svc.generate(audit_id="A", findings=fx_full_report(), scope={"repo": "acme/web"})
     import emo_cyber_agent.core.reporting as _r
     stamp = "2026-01-01T00:00:00+00:00"
     first = svc.generate_json(_r.build_report(audit_id="A", findings=[f for f in fx_full_report()], scope={"repo": "acme/web"}, generated_at=stamp))
@@ -118,7 +115,7 @@ def test_markdown_sections_and_order():
     for section in ("# EMO-Cyber-Agent Security Report", "## Summary", "## Limitations", "## Findings"):
         assert section in md
     assert "scanner X unavailable" in md
-    positions = [md.index(f"ID: `fp-f-{s}`") if False else -1 for s in ()]
+    [md.index(f"ID: `fp-f-{s}`") if False else -1 for s in ()]
     # severity order critical → high → medium → low is deterministic
     order = ["f-critical", "f-high", "f-medium", "f-low", "f-info"]
     indices = [md.index(f"ID: `{fid}`") for fid in order]
@@ -236,7 +233,6 @@ def test_references_no_invented_urls():
 # ---------------- adapters ----------------
 
 def test_python_api_surface():
-    from emo_cyber_agent.core.reporting import generate_report
 
     rep = generate_report(audit_id="A", findings=fx_full_report())
     assert rep.metadata.audit_id == "A" and len(rep.findings) == 5
@@ -286,7 +282,6 @@ def test_cli_cross_audit_denied(tmp_path):
 
 
 def test_report_generator_contract():
-    from emo_cyber_agent.core.reporting import ReportGenerator
 
     gen = ReportGenerator()
     rep = _service().generate(audit_id="A", findings=fx_full_report())
@@ -298,6 +293,7 @@ def test_report_generator_contract():
 def test_no_llm_in_reporting():
     import emo_cyber_agent.core.reporting as m
 
-    body = open(m.__file__).read().split('"""', 2)[-1].lower()
+    with open(m.__file__) as source_file:
+        body = source_file.read().split('"""', 2)[-1].lower()
     for banned in ("openai", "anthropic", "transformers", "import torch", "llm(", "_llm", "prompt(", "prompt=", "rerank", "prioritiz"):
         assert banned not in body, banned

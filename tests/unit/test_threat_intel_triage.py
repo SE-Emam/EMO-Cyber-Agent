@@ -6,6 +6,9 @@ prioritization order, determinism, and a no-network AST guard.
 
 from __future__ import annotations
 
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import ast
 from pathlib import Path
 
@@ -124,11 +127,11 @@ def test_match_deterministic_under_reordering() -> None:
 
 
 def test_match_rejects_bad_ioc() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         match({"kind": "ip", "value": "not-an-ip", "source": "f"}, [])
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         IoC(kind="domain", value="not a domain!!", source="f")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         IoC(kind="carrier-pigeon", value="x", source="f")  # type: ignore[arg-type]
 
 

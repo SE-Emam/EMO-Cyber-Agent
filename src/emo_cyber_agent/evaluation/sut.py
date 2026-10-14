@@ -20,19 +20,23 @@ exception escaping to the runner.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from emo_cyber_agent.evaluation.cases import BlindEvaluationCase
-from emo_cyber_agent.evaluation.errors import EvaluationError, EvaluationErrorCode
 from emo_cyber_agent.core.verification import (
     VerificationExecutorPort,
     VerificationPlan,
     VerificationRawResult,
 )
+from emo_cyber_agent.evaluation.cases import BlindEvaluationCase
+from emo_cyber_agent.evaluation.errors import EvaluationError, EvaluationErrorCode
 from emo_cyber_agent.evaluation.spec import (
     AuthoritySnapshot,
     EvaluationObservation,
@@ -42,15 +46,15 @@ from emo_cyber_agent.evaluation.spec import (
 )
 
 __all__ = [
-    "SUTResult",
-    "SUTAdapter",
-    "PythonApiSUTAdapter",
-    "CliSUTAdapter",
-    "McpSUTAdapter",
-    "ScriptedSUTAdapter",
     "CLI_COMMANDS",
     "MCP_TOOLS",
     "SCRIPTED_OPERATIONS",
+    "CliSUTAdapter",
+    "McpSUTAdapter",
+    "PythonApiSUTAdapter",
+    "SUTAdapter",
+    "SUTResult",
+    "ScriptedSUTAdapter",
     "audit_projection",
 ]
 
@@ -273,7 +277,7 @@ class PythonApiSUTAdapter(SUTAdapter):
             outputs = operation(case)
         except EvaluationError as exc:
             return self._fail(case, exc.code, exc.message)
-        except Exception as exc:  # noqa: BLE001 - adapter boundary
+        except UNEXPECTED_EXCEPTION as exc:
             from emo_cyber_agent.core.repository import redact_credentials
 
             return self._fail(
@@ -351,7 +355,7 @@ class CliSUTAdapter(SUTAdapter):
             exit_code, stdout = self._runner(argv)
         except EvaluationError as exc:
             return self._fail(case, exc.code, exc.message)
-        except Exception as exc:  # noqa: BLE001 - adapter boundary
+        except UNEXPECTED_EXCEPTION as exc:
             from emo_cyber_agent.core.repository import redact_credentials
 
             return self._fail(
@@ -489,7 +493,7 @@ class McpSUTAdapter(SUTAdapter):
             response = self._dispatch(tool, arguments)
         except EvaluationError as exc:
             return self._fail(case, exc.code, exc.message)
-        except Exception as exc:  # noqa: BLE001 - adapter boundary
+        except UNEXPECTED_EXCEPTION as exc:
             from emo_cyber_agent.core.repository import redact_credentials
 
             return self._fail(
@@ -607,7 +611,7 @@ class ScriptedSUTAdapter(SUTAdapter):
             outputs = getattr(self, f"_op_{kind}")(case.scenario.payload)
         except EvaluationError as exc:
             return self._fail(case, exc.code, exc.message)
-        except Exception as exc:  # noqa: BLE001 - adapter boundary
+        except UNEXPECTED_EXCEPTION as exc:
             from emo_cyber_agent.core.repository import redact_credentials
 
             return self._fail(
@@ -822,7 +826,7 @@ class ScriptedSUTAdapter(SUTAdapter):
                     continue
                 try:
                     findings.append(SecurityFinding(**dict(entry)))
-                except Exception:  # noqa: BLE001 - malformed fixture entry
+                except UNEXPECTED_EXCEPTION:
                     rejected += 1
         service = ReportService()
         report = service.generate(
@@ -927,9 +931,12 @@ class ScriptedSUTAdapter(SUTAdapter):
         from emo_cyber_agent.core.policy import StrictPolicyEngine
         from emo_cyber_agent.core.tool_registry import ToolRegistry
         from emo_cyber_agent.core.verification import (
+            TargetKind,
             VerificationError,
+            VerificationMethod,
             VerificationRequest,
             VerificationService,
+            VerificationTarget,
             get_verification_tool_specs,
         )
 
@@ -956,8 +963,11 @@ class ScriptedSUTAdapter(SUTAdapter):
         )
         try:
             request = VerificationRequest(
-                method=str(payload.get("method", "static_confirmation")),
-                target={"kind": str(payload.get("kind", "repository")), "locator": locator},
+                method=VerificationMethod(str(payload.get("method", "static_confirmation"))),
+                target=VerificationTarget(
+                    kind=TargetKind(str(payload.get("kind", "repository"))),
+                    locator=locator,
+                ),
                 rationale_summary=str(payload.get("rationale", "evaluation verification")),
                 statement=str(payload.get("statement", "")),
             )

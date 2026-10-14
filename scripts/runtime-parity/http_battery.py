@@ -8,6 +8,9 @@ oversized/session-mismatch. Always terminates the server. Stdlib only.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import argparse
 import json
 import os
@@ -51,7 +54,7 @@ def _post(url: str, payload: object, headers: dict | None = None, raw: bytes | N
     except urllib.error.HTTPError as e:
         try:
             data = e.read()
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             data = b""
         return e.code, data, dict((e.headers or {}).items())
 
@@ -94,21 +97,21 @@ def main() -> int:
         try:
             data = json.loads(body)
             record("http.initialize", st == 200 and data["result"]["serverInfo"]["name"] == "emo-cyber-agent", f"http={st}")
-        except Exception as exc:
+        except UNEXPECTED_EXCEPTION as exc:
             record("http.initialize", False, f"http={st} err={exc}")
 
         st, body, _ = _post(url, _rpc("tools/list", {}))
         try:
             data = json.loads(body)
             record("http.discover.7tools", st == 200 and len(data["result"]["tools"]) == 7, f"http={st}")
-        except Exception as exc:
+        except UNEXPECTED_EXCEPTION as exc:
             record("http.discover.7tools", False, f"http={st} err={exc}")
 
         st, body, _ = _post(url, _rpc("tools/call", {"name": "cyber_status", "arguments": {}}))
         try:
             data = json.loads(body)
             record("http.call.status", st == 200 and ("result" in data or "error" in data), f"http={st}")
-        except Exception as exc:
+        except (OSError, ValueError, TypeError, KeyError) as exc:
             record("http.call.status", False, f"http={st} err={exc}")
 
         st, body, hdrs = _post(url, _rpc("tools/call", {"name": "cyber_status", "arguments": {}}),
@@ -147,7 +150,7 @@ def main() -> int:
         record("http.session.mismatch", st in (400, 404, 440), f"http={st}")
 
         record("http.localhost.only", "127.0.0.1" in base and "0.0.0.0" not in base, base)
-    except Exception as exc:
+    except (OSError, ValueError, TypeError, KeyError) as exc:
         record("http.harness", False, f"{type(exc).__name__}: {exc}")
     finally:
         if srv is not None and srv.poll() is None:
@@ -160,7 +163,7 @@ def main() -> int:
         try:
             import shutil as _sh
             _sh.rmtree(work, ignore_errors=True)
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             pass
 
     ok = all(c["ok"] for c in checks) and bool(checks)

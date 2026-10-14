@@ -25,7 +25,7 @@ def _assessment(audit="A", project="P", snapshot="s1", **over):
     service = AgentSecurityService()
     architecture = _config()
     architecture["sessions"] = [{**s, "audit_id": audit} for s in architecture.get("sessions", [])]
-    kwargs = dict(audit_id=audit, project_id=project, snapshot_id=snapshot, architecture=architecture, task_scope=("read-only",))
+    kwargs = {"audit_id": audit, "project_id": project, "snapshot_id": snapshot, "architecture": architecture, "task_scope": ("read-only",)}
     kwargs.update(over)
     return service.analyze(**kwargs)
 
@@ -105,8 +105,6 @@ def test_no_finding_created_anywhere():
         "observations": [o.model_dump(mode="json") for o in assessment.observations],
     })
     assert "finding_id" not in blob and "Finding" not in blob
-    import ast as _ast
-
     text = "\n".join((Path("src/emo_cyber_agent/agent_security") / f).read_text() for f in ["service.py", "threat_rules.py", "verification.py", "queries.py", "delta.py"])
     assert "SecurityFinding" not in text
 

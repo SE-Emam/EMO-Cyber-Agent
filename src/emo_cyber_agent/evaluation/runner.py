@@ -14,8 +14,12 @@ DETERMINISM metric reports anything.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Iterable, Mapping, Sequence
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
+from collections.abc import Iterable, Mapping, Sequence
+from datetime import UTC, datetime
+from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -50,13 +54,13 @@ from emo_cyber_agent.evaluation.spec import (
 )
 from emo_cyber_agent.evaluation.sut import SUTAdapter, SUTResult
 
-__all__ = ["EvaluationRun", "EvaluationRunner", "DEFAULT_METRIC_SELECTION"]
+__all__ = ["DEFAULT_METRIC_SELECTION", "EvaluationRun", "EvaluationRunner"]
 
 DEFAULT_METRIC_SELECTION: tuple[str, ...] = ALL_METRIC_NAMES
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 class EvaluationRun(BaseModel):
@@ -165,7 +169,7 @@ class EvaluationRunner:
         if not items:
             return default_oracles()
         if isinstance(items[0], Oracle):
-            return tuple(items)  # type: ignore[return-value]
+            return tuple(cast(Iterable[Oracle], items))
         return select_oracles(str(name) for name in items)
 
     def run(
@@ -354,7 +358,7 @@ class EvaluationRunner:
                 error_code=exc.code.value,
                 error_message=exc.message,
             )
-        except Exception as exc:  # noqa: BLE001 - runner boundary
+        except UNEXPECTED_EXCEPTION as exc:
             from emo_cyber_agent.core.repository import redact_credentials
 
             result = SUTResult(

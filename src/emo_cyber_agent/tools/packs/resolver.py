@@ -7,13 +7,23 @@ optional unavailable tools degrade explicitly, never silently.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import re
 import shutil
 from typing import Any
 
 from emo_cyber_agent.tools.packs.errors import ToolPackError, ToolPackErrorCode
 from emo_cyber_agent.tools.packs.registry import ToolPackRegistry
-from emo_cyber_agent.tools.packs.spec import NetworkRequirement, ResolvedTool, ToolDefinition, ToolHealth, ToolHealthReport, ToolPack
+from emo_cyber_agent.tools.packs.spec import (
+    NetworkRequirement,
+    ResolvedTool,
+    ToolDefinition,
+    ToolHealth,
+    ToolHealthReport,
+    ToolPack,
+)
 
 
 def _parse_version(version: str) -> tuple[int, ...]:
@@ -75,9 +85,15 @@ def check_tool_health(
     shutil.which performs PATH lookup only (never executes). Platform is
     caller-supplied; empty means the gate is skipped, never assumed.
     """
-    if supported_platforms and platform:
-        if not any(platform == supported or platform.startswith(supported) for supported in supported_platforms):
-            return ToolHealthReport(tool_id=tool_id, status=ToolHealth.UNSUPPORTED, installed_version=installed_version, reason=f"platform {platform} not in {sorted(supported_platforms)}")
+    if supported_platforms and platform and not any(
+        platform == supported or platform.startswith(supported) for supported in supported_platforms
+    ):
+        return ToolHealthReport(
+            tool_id=tool_id,
+            status=ToolHealth.UNSUPPORTED,
+            installed_version=installed_version,
+            reason=f"platform {platform} not in {sorted(supported_platforms)}",
+        )
     if shutil.which(binary) is None:
         return ToolHealthReport(tool_id=tool_id, status=ToolHealth.MISSING, reason=f"executable not found: {binary}")
     if installed_version and not satisfies_range(installed_version, version_range):
@@ -163,5 +179,5 @@ class ToolPackResolver:
             return ""
         try:
             return str(self._tools.get(tool_id).version or "")
-        except Exception:
+        except UNEXPECTED_EXCEPTION:
             return ""

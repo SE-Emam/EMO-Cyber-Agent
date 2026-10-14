@@ -22,11 +22,17 @@ from emo_cyber_agent.cli.main import (
     EXIT_DOMAIN_FAILURE,
     EXIT_INVALID_INPUT,
     EXIT_POLICY_DENIED,
+    _CliFailure,
     app,
     load_config,
 )
 
 runner = CliRunner()
+
+
+@pytest.fixture(autouse=True)
+def _keep_cli_tests_offline_and_fast(monkeypatch):
+    monkeypatch.setattr("emo_cyber_agent.core.service.shutil.which", lambda _name: None)
 
 
 def _finding_dict(fid="f1", audit="A"):
@@ -76,9 +82,68 @@ def test_audit_json_and_human():
     assert out.exit_code == 0
     body = json.loads(out.output)
     assert body["status"] == "ok" and body["result"]["target"] == "."
+    assert body["result"]["status"] == "partial"
+    assert body["result"]["coverage"]["controls_total"] == 0
+    assert "partial-evidence-collection-only" in body["result"]["coverage"]["notes"]
+    assert body["result"]["metadata"]["scanner_runs"]
+    assert body["result"]["completed_at"] is None
+    _validate_audit_result_schema(body["result"])
     assert out.stderr == ""
     human = runner.invoke(app, ["audit", "."])
     assert human.exit_code == 0 and "audit_id" in human.output
+
+
+def test_published_audit_and_finding_schemas_match_domain_models():
+    import jsonschema
+
+    from emo_cyber_agent.domain.models import AuditResult, AuditResultStatus, Finding
+
+    finding = Finding(
+        title="Fixture finding",
+        severity="high",
+        confidence=0.9,
+        description="A deterministic schema fixture.",
+        impact="Test coverage only.",
+        evidence_ids=["evidence-1"],
+        remediation="Remove the test fixture finding.",
+    )
+    report = AuditResult(
+        audit_id="schema-test",
+        status=AuditResultStatus.PARTIAL,
+        target="fixture",
+        findings=[finding],
+    )
+    _validate_audit_result_schema(report.model_dump(mode="json"))
+    without_evidence = finding.model_dump(mode="json")
+    without_evidence.pop("evidence_ids")
+    finding_schema = json.loads(
+        (_REPO_ROOT / "docs" / "schemas" / "finding.schema.json").read_text(encoding="utf-8")
+    )
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(without_evidence, finding_schema)
+
+
+@pytest.mark.parametrize("field,value", [("mode", "unsupported"), ("permission_profile", "admin")])
+def test_audit_domain_rejects_values_outside_published_contract(field, value):
+    from emo_cyber_agent.domain.models import AuditJob
+
+    with pytest.raises(ValueError):
+        AuditJob(target="fixture", **{field: value})
+
+
+def _validate_audit_result_schema(result):
+    import jsonschema
+    from referencing import Registry, Resource
+
+    schema_path = _REPO_ROOT / "docs" / "schemas" / "audit-result.schema.json"
+    finding_path = _REPO_ROOT / "docs" / "schemas" / "finding.schema.json"
+    audit_schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    finding_schema = json.loads(finding_path.read_text(encoding="utf-8"))
+    registry = Registry().with_resource(
+        "https://example.invalid/emo-cyber-agent/schemas/finding.schema.json",
+        Resource.from_contents(finding_schema),
+    )
+    jsonschema.Draft202012Validator(audit_schema, registry=registry).validate(result)
 
 
 def test_audit_invalid_inputs():
@@ -198,7 +263,7 @@ def test_concurrent_audits_isolated():
 def test_no_direct_adapter_or_business_logic_in_cli():
     import emo_cyber_agent.cli.main as cli
 
-    body = open(cli.__file__).read().split('"""', 2)[-1]
+    body = Path(cli.__file__).read_text(encoding="utf-8").split('"""', 2)[-1]
     for banned in ("GitHubAdapter", "SupabaseAdapter", "SemgrepAdapter", "TrivyAdapter", "GitleaksAdapter", "subprocess", "os.system", "shell=True", "Severity(", "classify_", "evaluate_policy("):
         assert banned not in body, banned
 
@@ -235,7 +300,7 @@ def test_config_precedence_and_policy_rejection(monkeypatch, tmp_path):
     monkeypatch.delenv("EMO_MODEL")
     assert load_config()["model"] == "file-model"
     (cfgdir / "config.json").write_text(json.dumps({"policy": "allow-all"}))
-    with pytest.raises(Exception):
+    with pytest.raises(_CliFailure):
         load_config()
 
 

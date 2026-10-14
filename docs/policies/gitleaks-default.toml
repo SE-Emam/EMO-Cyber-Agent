@@ -1,0 +1,4 @@
+title = "EMO-Cyber-Agent mandatory secret scan"
+
+[extend]
+useDefault = true

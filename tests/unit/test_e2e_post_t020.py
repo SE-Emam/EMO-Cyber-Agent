@@ -22,6 +22,10 @@ honest ``pytest.skip`` with a reason — counted separately, never PASS.
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
+import itertools
 import json
 import os
 import urllib.error
@@ -48,11 +52,15 @@ from emo_cyber_agent.subagent.envelope import (
 )
 from emo_cyber_agent.subagent.session import SubagentLifecycle, SubagentSession
 from emo_cyber_agent.subagent.session_map import McpSessionMap, SessionMapCode, SessionMapError
-from emo_cyber_agent.subagent.trust import HostIntegrationError, SecurityDecision, scan_secret_markers
+from emo_cyber_agent.subagent.trust import (
+    HostIntegrationError,
+    SecurityDecision,
+    scan_secret_markers,
+)
 
 try:  # HTTP transport is optional surface; absence => honest skip, never PASS.
     from emo_cyber_agent.mcp import http_server as _http
-except Exception:
+except UNEXPECTED_EXCEPTION:
     _http = None  # type: ignore[assignment]
 
 AUDIT = "audit-t020-e2e"
@@ -92,46 +100,46 @@ class AllowAllPolicy(PolicyEngine):
 
 
 def _envelope(**overrides: Any) -> TaskEnvelope:
-    base: dict[str, Any] = dict(
-        task_id="task-t020-alpha",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        requested_task="review-auth-scope",
-        scope=DelegatedScope(included=("src/auth",), target_types=("code",)),
-        assets=("asset-t020-1",),
-        requested_output=("report",),
-        capabilities=("repo.read",),
-    )
+    base: dict[str, Any] = {
+        "task_id": "task-t020-alpha",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "requested_task": "review-auth-scope",
+        "scope": DelegatedScope(included=("src/auth",), target_types=("code",)),
+        "assets": ("asset-t020-1",),
+        "requested_output": ("report",),
+        "capabilities": ("repo.read",),
+    }
     base.update(overrides)
     return TaskEnvelope(**base)
 
 
 def _context(**overrides: Any) -> DelegationContext:
-    base: dict[str, Any] = dict(
-        issuer="core-policy",
-        subject="delegator-t020-1",
-        audience=HOST,
-        valid_from=100,
-        valid_until=200,
-        scope_ref="scope-t020-1",
-        authorization_ref="authz-t0200001",
-    )
+    base: dict[str, Any] = {
+        "issuer": "core-policy",
+        "subject": "delegator-t020-1",
+        "audience": HOST,
+        "valid_from": 100,
+        "valid_until": 200,
+        "scope_ref": "scope-t020-1",
+        "authorization_ref": "authz-t0200001",
+    }
     base.update(overrides)
     return DelegationContext.issue(**base, server=True)
 
 
 def _session(**overrides: Any) -> SubagentSession:
-    base: dict[str, Any] = dict(
-        session_id="sess-t020-01",
-        host_id=HOST,
-        audit_id=AUDIT,
-        project_id=PROJECT,
-        snapshot_id=SNAPSHOT,
-        created=100,
-        expires=9999,
-    )
+    base: dict[str, Any] = {
+        "session_id": "sess-t020-01",
+        "host_id": HOST,
+        "audit_id": AUDIT,
+        "project_id": PROJECT,
+        "snapshot_id": SNAPSHOT,
+        "created": 100,
+        "expires": 9999,
+    }
     base.update(overrides)
     return SubagentSession(**base)
 
@@ -512,7 +520,7 @@ def test_s12_progress_events_ordered_and_advisory():
     phases = [n["params"]["phase"] for n in notes]
     assert phases == ["STARTED", "RUNNING", "FINALIZING", "COMPLETED"]
     percents = [float(n["params"]["percent"]) for n in notes]
-    assert all(b >= a for a, b in zip(percents, percents[1:]))
+    assert all(b >= a for a, b in itertools.pairwise(percents))
     assert percents[-1] == 100.0
     for note in notes:
         assert note["params"]["progressToken"] == "t020-prog-1"

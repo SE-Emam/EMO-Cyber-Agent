@@ -8,8 +8,11 @@ always DATA (never authority).
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -96,7 +99,7 @@ def detect_language(path: str) -> str:
     base = lowered.rsplit("/", 1)[-1]
     if base in _FILENAME_LANGUAGE:
         return _FILENAME_LANGUAGE[base]
-    if base.endswith(".tf") or base.endswith(".tofu"):
+    if base.endswith((".tf", ".tofu")):
         return "terraform"
     if "k8s" in base or "kubernetes" in base or base.endswith(("-deployment.yaml", "-service.yaml", "-manifest.yaml", "-manifest.yml")):
         return "kubernetes"
@@ -115,8 +118,11 @@ def normalize_code_path(path: str) -> str:
 
     try:
         return normalize_path(path)
-    except Exception as e:
-        from emo_cyber_agent.code_intelligence.errors import CodeIntelligenceError, CodeIntelligenceErrorCode
+    except UNEXPECTED_EXCEPTION as e:
+        from emo_cyber_agent.code_intelligence.errors import (
+            CodeIntelligenceError,
+            CodeIntelligenceErrorCode,
+        )
 
         raise CodeIntelligenceError(CodeIntelligenceErrorCode.QUERY_REJECTED, f"path rejected: {e}") from e
 
@@ -155,7 +161,7 @@ class CodeSnapshot(BaseModel):
     provider_version: str = Field(..., min_length=1, max_length=40)
     revision: str | None = Field(default=None, max_length=120)
     source_digest: str = Field(default="", max_length=128)
-    captured_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    captured_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     limitation: str = Field(default="")
 
     @model_validator(mode="after")
@@ -357,5 +363,5 @@ class QueryProvenance(BaseModel):
     provider: str = Field(..., min_length=1, max_length=80)
     provider_version: str = Field(default="", max_length=40)
     snapshot_digest: str = Field(default="", max_length=128)
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     result_digest: str = Field(default="", max_length=128)

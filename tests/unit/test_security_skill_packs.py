@@ -5,6 +5,9 @@ task→skill→pack→codeintel→evidence→verification-handoff, report
 projection, negative/security battery, isolation, determinism.
 No execution, no network, no LLM, no model.
 """
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 
 import ast
 import json
@@ -50,13 +53,13 @@ def _env():
 
 
 def _check(check_id="demo-check", **over):
-    base = dict(check_id=check_id, title="Demo check", methodology=["list candidates"], evidence_required=["file-evidence"], evidence_sufficient=[], evidence_missing=[], verification_required=["static_confirmation"], verification_safety="passive", high_risk=True, entry_level="HYPOTHESIS", codeintel_needs=["symbols"], source_kinds=[], sink_kinds=[], hypothesis_template="Item at {source} needs review.")
+    base = {"check_id": check_id, "title": "Demo check", "methodology": ["list candidates"], "evidence_required": ["file-evidence"], "evidence_sufficient": [], "evidence_missing": [], "verification_required": ["static_confirmation"], "verification_safety": "passive", "high_risk": True, "entry_level": "HYPOTHESIS", "codeintel_needs": ["symbols"], "source_kinds": [], "sink_kinds": [], "hypothesis_template": "Item at {source} needs review."}
     base.update(over)
     return SecurityCheck(**base)
 
 
 def _pack(pack_id="demo-pack", **over):
-    base = dict(pack_id=pack_id, name="Demo", version="1.0.0", purpose="answer a scoped security question with read-only methods", skills=["injection"], required_code_intelligence=["symbols"], required_evidence=["file-evidence"], required_verification=["static_confirmation"], applicable_assets=["repo"], security_domains=["injection"], methodology=["inventory candidates"], checks=[_check()], stop_conditions=["scope-exhausted"], limitations=[], required_capabilities=["repository.read"], denied_capabilities=["repository.write", "database.write", "destructive"], allowed_tools=["repository.read"], dependencies=[], provenance={"source": "external"})
+    base = {"pack_id": pack_id, "name": "Demo", "version": "1.0.0", "purpose": "answer a scoped security question with read-only methods", "skills": ["injection"], "required_code_intelligence": ["symbols"], "required_evidence": ["file-evidence"], "required_verification": ["static_confirmation"], "applicable_assets": ["repo"], "security_domains": ["injection"], "methodology": ["inventory candidates"], "checks": [_check()], "stop_conditions": ["scope-exhausted"], "limitations": [], "required_capabilities": ["repository.read"], "denied_capabilities": ["repository.write", "database.write", "destructive"], "allowed_tools": ["repository.read"], "dependencies": [], "provenance": {"source": "external"}}
     base.update(over)
     return SecuritySkillPack(**base)  # type: ignore[arg-type]
 
@@ -69,15 +72,15 @@ def _validator(env):
 
 def test_spec_ids_versions_levels():
     assert _pack().pack_id == "demo-pack"
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _pack(pack_id="Bad_ID")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _pack(pack_id="other-ok", version="1.0")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _check(check_id="Bad_Check")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _check(check_id="verified-check", entry_level="VERIFIED")
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _check(check_id="other-check", entry_level="CONFIRMED")
 
 

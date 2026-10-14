@@ -8,6 +8,9 @@ extension is refused before anything is registered as loadable.
 
 from __future__ import annotations
 
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 from pathlib import Path
 
 import pytest
@@ -101,7 +104,7 @@ def test_host_profile_is_supplied_not_self_declared():
     assert profile.emo_api_version == "1.0"
     assert profile.schema_version == SCHEMA_VERSION
     assert profile.contract_version == CONTRACT_VERSION
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         profile.emo_api_version = "9.9"  # frozen: type: ignore[misc]
 
 

@@ -23,16 +23,22 @@ Rules:
 
 from __future__ import annotations
 
+# Preserve fail-closed handling for unexpected provider/runtime failures.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import re
 from abc import ABC, abstractmethod
-from datetime import datetime
+from collections.abc import Callable
+from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, ParamSpec, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from emo_cyber_agent.core.repository import (  # single source for shared guards
     content_digest,
+)
+from emo_cyber_agent.core.repository import (
     redact_credentials as _redact_repo,
 )
 from emo_cyber_agent.core.tool_registry import ToolInvocation, ToolRegistry, ToolSpec
@@ -40,6 +46,9 @@ from emo_cyber_agent.core.tool_registry import ToolInvocation, ToolRegistry, Too
 POLICY_VERSION = "eca-t006-v1"
 SCHEMA_VERSION = "0.1.0"
 SOURCE_PROVIDER = "supabase"
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 SUPABASE_CAPABILITIES: tuple[str, ...] = (
     "supabase.project.read",
@@ -380,18 +389,18 @@ class SupabasePort(ABC):
 
 
 def get_supabase_tool_specs() -> list[ToolSpec]:
-    base = dict(
-        version="1.0.0",
-        description="Read-only Supabase operation",
-        category="database",
-        risk_level="low",
-        supports_read_only=True,
-        supports_verification=False,
-        supports_remediation=False,
-        target_types=("supabase-project",),
-        evidence_behavior="summarize",
-        timeout_ms=30000,
-    )
+    base = {
+        "version": "1.0.0",
+        "description": "Read-only Supabase operation",
+        "category": "database",
+        "risk_level": "low",
+        "supports_read_only": True,
+        "supports_verification": False,
+        "supports_remediation": False,
+        "target_types": ("supabase-project",),
+        "evidence_behavior": "summarize",
+        "timeout_ms": 30000,
+    }
     return [
         ToolSpec(tool_id="supabase.project.read", name="Supabase Project Read", capabilities_required=("supabase.project.read",), **base),  # type: ignore[arg-type]
         ToolSpec(tool_id="supabase.schema.read", name="Supabase Schema Read", capabilities_required=("supabase.schema.read",), **base),  # type: ignore[arg-type]
@@ -413,7 +422,6 @@ def build_supabase_provenance(
     content: str | None = None,
     snapshot: SnapshotContext | None = None,
 ) -> dict[str, Any]:
-    from datetime import timezone as _tz
 
     prov: dict[str, Any] = {
         "source_provider": SOURCE_PROVIDER,
@@ -423,7 +431,7 @@ def build_supabase_provenance(
         "invocation_id": invocation_id,
         "tool_id": tool_id,
         "tool_version": tool_version,
-        "collected_at": datetime.now(_tz.utc).isoformat(),
+        "collected_at": datetime.now(UTC).isoformat(),
         "policy_version": POLICY_VERSION,
         "schema_version": SCHEMA_VERSION,
     }
@@ -447,8 +455,6 @@ class SupabaseService:
         self._profile = profile
 
     def _require(self, *, capability: str, tool_id: str, identity: SupabaseProjectIdentity, audit_id: str, policy_decision_id: str | None) -> str:
-        from emo_cyber_agent.core.repository import content_digest as _cd  # noqa: F401 (kept local to avoid cycles at import time)
-
         assert_supabase_in_scope(self._scope, identity, audit_id=audit_id)
         try:
             spec = self._registry.get(tool_id)
@@ -491,23 +497,38 @@ class SupabaseService:
 
         return inv.update_output(_rc(summary))
 
-    def _call(self, fn, *args, **kwargs):
+    def _call(
+        self, fn: Callable[_P, _R], *args: _P.args, **kwargs: _P.kwargs
+    ) -> _R:
         try:
             return fn(*args, **kwargs)
         except SupabaseError:
             raise
-        except Exception as e:
+        except UNEXPECTED_EXCEPTION as e:
             raise SupabaseError(SupabaseErrorCode.PROVIDER_ERROR, redact_supabase_secrets(str(e))) from e
 
     # ---- read operations ----
-    def get_project_identity(self, identity: SupabaseProjectIdentity, *, audit_id: str, policy_decision_id: str | None):
+    def get_project_identity(
+        self,
+        identity: SupabaseProjectIdentity,
+        *,
+        audit_id: str,
+        policy_decision_id: str | None,
+    ) -> tuple[SupabaseProject, ToolInvocation, dict[str, Any]]:
         pid = self._require(capability="supabase.project.read", tool_id="supabase.project.read", identity=identity, audit_id=audit_id, policy_decision_id=policy_decision_id)
         inv = self._invocation(audit_id=audit_id, tool_id="supabase.project.read", identity=identity, capability="supabase.project.read", policy_decision_id=pid)
         proj = self._call(self._port.get_project_identity, identity)
         prov = build_supabase_provenance(identity=identity, invocation_id=inv.invocation_id, tool_id="supabase.project.read", object_identity=f"project:{identity.project_ref}")
         return proj, self._complete(inv, summary=f"project {identity.project_ref}"), prov
 
-    def list_tables(self, identity: SupabaseProjectIdentity, schema: str = "public", *, audit_id: str, policy_decision_id: str | None):
+    def list_tables(
+        self,
+        identity: SupabaseProjectIdentity,
+        schema: str = "public",
+        *,
+        audit_id: str,
+        policy_decision_id: str | None,
+    ) -> tuple[list[DatabaseTable], ToolInvocation, dict[str, Any]]:
         pid = self._require(capability="supabase.table.read", tool_id="supabase.table.read", identity=identity, audit_id=audit_id, policy_decision_id=policy_decision_id)
         inv = self._invocation(audit_id=audit_id, tool_id="supabase.table.read", identity=identity, capability="supabase.table.read", policy_decision_id=pid)
         tables = self._call(self._port.list_tables, identity, schema)
@@ -515,7 +536,15 @@ class SupabaseService:
         prov["result_count"] = len(tables)
         return tables, self._complete(inv, summary=f"tables in {schema}: {len(tables)}"), prov
 
-    def list_rls_policies(self, identity: SupabaseProjectIdentity, schema: str, table: str, *, audit_id: str, policy_decision_id: str | None):
+    def list_rls_policies(
+        self,
+        identity: SupabaseProjectIdentity,
+        schema: str,
+        table: str,
+        *,
+        audit_id: str,
+        policy_decision_id: str | None,
+    ) -> tuple[list[RLSPolicy], ToolInvocation, dict[str, Any]]:
         pid = self._require(capability="supabase.policy.read", tool_id="supabase.policy.read", identity=identity, audit_id=audit_id, policy_decision_id=policy_decision_id)
         inv = self._invocation(audit_id=audit_id, tool_id="supabase.policy.read", identity=identity, capability="supabase.policy.read", policy_decision_id=pid)
         policies = self._call(self._port.list_rls_policies, identity, schema, table)
@@ -523,14 +552,28 @@ class SupabaseService:
         prov["result_count"] = len(policies)
         return policies, self._complete(inv, summary=f"policies on {schema}.{table}: {len(policies)}"), prov
 
-    def get_rls_status(self, identity: SupabaseProjectIdentity, schema: str, table: str, *, audit_id: str, policy_decision_id: str | None):
+    def get_rls_status(
+        self,
+        identity: SupabaseProjectIdentity,
+        schema: str,
+        table: str,
+        *,
+        audit_id: str,
+        policy_decision_id: str | None,
+    ) -> tuple[RLSStatus, ToolInvocation, dict[str, Any]]:
         pid = self._require(capability="supabase.policy.read", tool_id="supabase.policy.read", identity=identity, audit_id=audit_id, policy_decision_id=policy_decision_id)
         inv = self._invocation(audit_id=audit_id, tool_id="supabase.policy.read", identity=identity, capability="supabase.policy.read", policy_decision_id=pid)
         status = self._call(self._port.get_rls_status, identity, schema, table)
         prov = build_supabase_provenance(identity=identity, invocation_id=inv.invocation_id, tool_id="supabase.policy.read", object_identity=f"rls:{schema}.{table}")
         return status, self._complete(inv, summary=f"rls enabled={status.enabled}"), prov
 
-    def list_grants(self, identity: SupabaseProjectIdentity, *, audit_id: str, policy_decision_id: str | None):
+    def list_grants(
+        self,
+        identity: SupabaseProjectIdentity,
+        *,
+        audit_id: str,
+        policy_decision_id: str | None,
+    ) -> tuple[list[DatabaseGrant], ToolInvocation, dict[str, Any]]:
         pid = self._require(capability="supabase.grant.read", tool_id="supabase.grant.read", identity=identity, audit_id=audit_id, policy_decision_id=policy_decision_id)
         inv = self._invocation(audit_id=audit_id, tool_id="supabase.grant.read", identity=identity, capability="supabase.grant.read", policy_decision_id=pid)
         grants = self._call(self._port.list_grants, identity)
@@ -538,21 +581,42 @@ class SupabaseService:
         prov["result_count"] = len(grants)
         return grants, self._complete(inv, summary=f"grants: {len(grants)}"), prov
 
-    def list_views(self, identity: SupabaseProjectIdentity, schema: str = "public", *, audit_id: str, policy_decision_id: str | None):
+    def list_views(
+        self,
+        identity: SupabaseProjectIdentity,
+        schema: str = "public",
+        *,
+        audit_id: str,
+        policy_decision_id: str | None,
+    ) -> tuple[list[DatabaseView], ToolInvocation, dict[str, Any]]:
         pid = self._require(capability="supabase.view.read", tool_id="supabase.view.read", identity=identity, audit_id=audit_id, policy_decision_id=policy_decision_id)
         inv = self._invocation(audit_id=audit_id, tool_id="supabase.view.read", identity=identity, capability="supabase.view.read", policy_decision_id=pid)
         views = self._call(self._port.list_views, identity, schema)
         prov = build_supabase_provenance(identity=identity, invocation_id=inv.invocation_id, tool_id="supabase.view.read", object_identity=f"schema:{schema}")
         return views, self._complete(inv, summary=f"views in {schema}: {len(views)}"), prov
 
-    def list_functions(self, identity: SupabaseProjectIdentity, schema: str = "public", *, audit_id: str, policy_decision_id: str | None):
+    def list_functions(
+        self,
+        identity: SupabaseProjectIdentity,
+        schema: str = "public",
+        *,
+        audit_id: str,
+        policy_decision_id: str | None,
+    ) -> tuple[list[DatabaseFunction], ToolInvocation, dict[str, Any]]:
         pid = self._require(capability="supabase.function.read", tool_id="supabase.function.read", identity=identity, audit_id=audit_id, policy_decision_id=policy_decision_id)
         inv = self._invocation(audit_id=audit_id, tool_id="supabase.function.read", identity=identity, capability="supabase.function.read", policy_decision_id=pid)
         funcs = self._call(self._port.list_functions, identity, schema)
         prov = build_supabase_provenance(identity=identity, invocation_id=inv.invocation_id, tool_id="supabase.function.read", object_identity=f"schema:{schema}")
         return funcs, self._complete(inv, summary=f"functions in {schema}: {len(funcs)}"), prov
 
-    def execute_read_sql(self, identity: SupabaseProjectIdentity, sql: str, *, audit_id: str, policy_decision_id: str | None):
+    def execute_read_sql(
+        self,
+        identity: SupabaseProjectIdentity,
+        sql: str,
+        *,
+        audit_id: str,
+        policy_decision_id: str | None,
+    ) -> tuple[dict[str, Any], ToolInvocation, dict[str, Any]]:
         classify_read_only_sql(sql)  # DENY before any policy/invocation work
         pid = self._require(capability="supabase.schema.read", tool_id="supabase.schema.read", identity=identity, audit_id=audit_id, policy_decision_id=policy_decision_id)
         inv = self._invocation(audit_id=audit_id, tool_id="supabase.schema.read", identity=identity, capability="supabase.schema.read", policy_decision_id=pid)
@@ -565,15 +629,14 @@ class SupabaseService:
 
         Mixed collection times are recorded, never silently merged.
         """
-        from datetime import timezone as _tz
 
         stamps: dict[str, str] = {}
         tables, inv_t, _ = self.list_tables(identity, schema, audit_id=audit_id, policy_decision_id=policy_decision_id)
-        stamps["tables"] = datetime.now(_tz.utc).isoformat()
+        stamps["tables"] = datetime.now(UTC).isoformat()
         status, _, _ = self.get_rls_status(identity, schema, table, audit_id=audit_id, policy_decision_id=policy_decision_id)
-        stamps["rls"] = datetime.now(_tz.utc).isoformat()
+        stamps["rls"] = datetime.now(UTC).isoformat()
         grants, _, _ = self.list_grants(identity, audit_id=audit_id, policy_decision_id=policy_decision_id)
-        stamps["grants"] = datetime.now(_tz.utc).isoformat()
+        stamps["grants"] = datetime.now(UTC).isoformat()
         snapshot = SnapshotContext(identity=identity, collected_at=stamps, consistent=True, note="sections collected in one snapshot call; per-section times recorded")
         prov = build_supabase_provenance(identity=identity, invocation_id=inv_t.invocation_id, tool_id="supabase.table.read", snapshot=snapshot)
         return {"tables": tables, "rls": status, "grants": grants, "snapshot": snapshot}, inv_t, prov

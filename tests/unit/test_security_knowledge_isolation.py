@@ -8,6 +8,7 @@ workflow D (two audits, one project identity, zero cross-visibility).
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -78,6 +79,23 @@ def test_service_get_record_cross_snapshot_raises():
     with pytest.raises(KnowledgeError) as e:
         service.get_record(record.record_id, audit_id=AUDIT, project_id=PROJECT, snapshot_id="snap-b")
     assert e.value.code == KnowledgeErrorCode.CROSS_SNAPSHOT
+
+
+def test_service_rejects_non_model_record_from_custom_store():
+    class MalformedStore(InMemoryKnowledgeStore):
+        def get_record(self, record_id: str, *, audit_id: str, project_id: str, namespace: str = ""):
+            return SimpleNamespace(
+                record_id=record_id,
+                audit_id=audit_id,
+                project_id=project_id,
+                snapshot_id="snap-1",
+                digest="not-a-knowledge-model",
+            )
+
+    service = SecurityKnowledgeService(MalformedStore())
+    with pytest.raises(KnowledgeError) as error:
+        service.get_record("record-1", audit_id=AUDIT, project_id=PROJECT)
+    assert error.value.code == KnowledgeErrorCode.INCOMPATIBLE_RECORD
 
 
 # ---------------- query scope binding ----------------

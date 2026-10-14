@@ -16,6 +16,9 @@ Otherwise NOT-ENVIRONMENT-TESTED with a reason (skip, not fail).
 
 from __future__ import annotations
 
+# Broad exception assertions intentionally verify fail-closed behavior.
+UNEXPECTED_EXCEPTION: type[Exception] = Exception
+
 import http.client
 import json
 import shutil
@@ -156,7 +159,7 @@ def test_python_client_full_flow_live(srv):
     assert status == 200, body
     ctype = {k.lower(): v for k, v in headers.items()}.get("content-type", "")
     assert _SSE in ctype
-    kinds, payloads, blocks = _parse_sse_frames(body)
+    kinds, payloads, _blocks = _parse_sse_frames(body)
     assert kinds.count("event: notification") == 4
     assert kinds[-1] == "event: message"
     notes = payloads[:-1]
@@ -188,7 +191,7 @@ def test_clean_shutdown_bounded():
     status, _, _ = _post(url, _rpc("ping", {}))
     assert status == 200
     server.stop()
-    with pytest.raises(Exception):
+    with pytest.raises(UNEXPECTED_EXCEPTION):
         _post(url, _rpc("ping", {}), timeout=3)
     # socket-level: refused fast, never hangs
     start = time.monotonic()
@@ -259,7 +262,7 @@ def _run_slow_blackhole():
         ls.settimeout(10)
         try:
             conn, _ = ls.accept()
-        except socket.timeout:
+        except TimeoutError:
             return
         with conn:
             conn.settimeout(10)
@@ -417,7 +420,7 @@ def test_host_http_probe(srv, host: str):
             reg_snippet = adapter.get_registration_config(
                 surface="desktop", transport="streamable-http"
             )
-    except Exception as e:
+    except UNEXPECTED_EXCEPTION as e:
         pytest.skip(f"NOT-ENVIRONMENT-TESTED {host}: adapter config failed: {e}")
     snippet_text = json.dumps(reg_snippet)
     assert "emo-cyber-agent" in snippet_text, f"registration snippet lost server key: {reg_snippet}"

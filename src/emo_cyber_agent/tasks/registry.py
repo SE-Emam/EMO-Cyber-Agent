@@ -7,6 +7,8 @@ are rejected deterministically.
 
 from __future__ import annotations
 
+import builtins
+
 from emo_cyber_agent.tasks.spec import TaskError, TaskErrorCode, TaskSpec, TaskTrust
 
 
@@ -46,7 +48,7 @@ class TaskRegistry:
     def list(self) -> list[TaskSpec]:
         return [self._tasks[key] for key in sorted(self._tasks)]
 
-    def versions(self, task_id: str) -> list[str]:
+    def versions(self, task_id: str) -> builtins.list[str]:
         return sorted(ver for (tid, ver) in self._tasks if tid == task_id)
 
     def trust_of(self, task_id: str, version: str) -> TaskTrust:
@@ -55,11 +57,11 @@ class TaskRegistry:
         except KeyError:
             raise TaskError(TaskErrorCode.NOT_FOUND, f"task not registered: {task_id}@{version}") from None
 
-    def dependencies(self, task_id: str, version: str | None = None) -> list[str]:
+    def dependencies(self, task_id: str, version: str | None = None) -> builtins.list[str]:
         spec = self.get(task_id, version)
         return [spec.extends] if spec.extends else []
 
-    def compatible_tasks(self, task_id: str, version: str | None = None) -> list[TaskSpec]:
+    def compatible_tasks(self, task_id: str, version: str | None = None) -> builtins.list[TaskSpec]:
         base = self.get(task_id, version)
         out = []
         for spec in self.list():
@@ -69,7 +71,7 @@ class TaskRegistry:
                 out.append(spec)
         return out
 
-    def check_cycles(self) -> list[str]:
+    def check_cycles(self) -> builtins.list[str]:
         cycles: list[str] = []
         visited: dict[str, str] = {}
 

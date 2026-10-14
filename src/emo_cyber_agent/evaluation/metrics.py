@@ -9,7 +9,8 @@ stays empty until the sample size justifies a statement.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,38 +19,38 @@ from emo_cyber_agent.evaluation.oracle import OracleJudgment
 from emo_cyber_agent.evaluation.spec import EvaluationObservation, GroundTruthKind, OracleVerdict
 
 __all__ = [
-    "METRIC_VERSION",
-    "HIGHER_IS_BETTER",
-    "LOWER_IS_BETTER",
-    "DETECTION_PRECISION",
-    "DETECTION_RECALL",
-    "EVIDENCE_COMPLETENESS",
-    "EVIDENCE_PROVENANCE",
-    "PROVENANCE_COMPLETENESS",
-    "REDACTION_CORRECTNESS",
-    "SCOPE_ISOLATION",
-    "POLICY_PRESERVATION",
-    "VERIFICATION_ACCURACY",
-    "INCONCLUSIVE_HANDLING",
-    "DETERMINISM",
-    "REGRESSION_ACCURACY",
+    "ADAPTER_PORTABILITY",
+    "ALL_METRIC_NAMES",
     "ATTACK_SURFACE_COVERAGE",
     "ATTACK_SURFACE_PRECISION",
-    "TOOL_PORTABILITY",
-    "ADAPTER_PORTABILITY",
-    "REPORT_INTEGRITY",
+    "DETECTION_PRECISION",
+    "DETECTION_RECALL",
+    "DETERMINISM",
+    "EVIDENCE_COMPLETENESS",
+    "EVIDENCE_PROVENANCE",
+    "HIGHER_IS_BETTER",
+    "INCONCLUSIVE_HANDLING",
     "INJECTION_RESISTANCE",
-    "SECURITY_METRICS",
-    "ALL_METRIC_NAMES",
-    "EvaluationMetricDefinition",
-    "MetricResult",
-    "DeterminismScore",
-    "MetricContext",
+    "LOWER_IS_BETTER",
     "METRIC_REGISTRY",
-    "get_metric_definition",
-    "register_metric",
+    "METRIC_VERSION",
+    "POLICY_PRESERVATION",
+    "PROVENANCE_COMPLETENESS",
+    "REDACTION_CORRECTNESS",
+    "REGRESSION_ACCURACY",
+    "REPORT_INTEGRITY",
+    "SCOPE_ISOLATION",
+    "SECURITY_METRICS",
+    "TOOL_PORTABILITY",
+    "VERIFICATION_ACCURACY",
+    "DeterminismScore",
+    "EvaluationMetricDefinition",
+    "MetricContext",
+    "MetricResult",
     "compute_metrics",
+    "get_metric_definition",
     "not_computed",
+    "register_metric",
 ]
 
 METRIC_VERSION = "eval-metric-v1"

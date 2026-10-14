@@ -7,16 +7,31 @@ creation, no confirmation, no remediation.
 
 from emo_cyber_agent.agent_security.agent_model import build_agent_system
 from emo_cyber_agent.agent_security.attack_surface import build_agent_attack_surface
-from emo_cyber_agent.agent_security.credential_analysis import analyze_credential_flows, redact_summary
+from emo_cyber_agent.agent_security.credential_analysis import (
+    analyze_credential_flows,
+    redact_summary,
+)
 from emo_cyber_agent.agent_security.delegation import analyze_delegations
 from emo_cyber_agent.agent_security.delta import diff_agent_models
 from emo_cyber_agent.agent_security.errors import AgentSecurityError, AgentSecurityErrorCode
-from emo_cyber_agent.agent_security.identity import delegation_scope_covers, identity_chain, identity_kind, widened_scopes
+from emo_cyber_agent.agent_security.identity import (
+    delegation_scope_covers,
+    identity_chain,
+    identity_kind,
+    widened_scopes,
+)
 from emo_cyber_agent.agent_security.mcp_model import KNOWN_PROTOCOL_VERSIONS, build_mcp_topology
-from emo_cyber_agent.agent_security.memory_analysis import analyze_retrieval_trust, check_memory_isolation
+from emo_cyber_agent.agent_security.memory_analysis import (
+    analyze_retrieval_trust,
+    check_memory_isolation,
+)
 from emo_cyber_agent.agent_security.provenance import build_agent_provenance
 from emo_cyber_agent.agent_security.queries import ALLOWED_AGENT_QUERIES, AgentQueryPort
-from emo_cyber_agent.agent_security.scope_analysis import build_capability_graph, detect_excessive_agency, detect_scope_widening
+from emo_cyber_agent.agent_security.scope_analysis import (
+    build_capability_graph,
+    detect_excessive_agency,
+    detect_scope_widening,
+)
 from emo_cyber_agent.agent_security.service import AgentSecurityAssessment, AgentSecurityService
 from emo_cyber_agent.agent_security.spec import (
     AGENT_CONTROL_KINDS,
@@ -43,9 +58,9 @@ from emo_cyber_agent.agent_security.spec import (
     AgentSession,
     AgentSystem,
     AgentTemplateConfig,
+    AgentThreatDelta,
     AgentThreatScenario,
     AgentVerificationHandoff,
-    AgentThreatDelta,
     CapabilityBoundary,
     ContextSource,
     CredentialBoundary,
@@ -70,10 +85,22 @@ from emo_cyber_agent.agent_security.spec import (
     TrustBoundary,
     assert_no_authority_language,
 )
-from emo_cyber_agent.agent_security.taxonomy import FRAMEWORK_MAPPINGS, categories, framework_mapping
+from emo_cyber_agent.agent_security.taxonomy import (
+    FRAMEWORK_MAPPINGS,
+    categories,
+    framework_mapping,
+)
 from emo_cyber_agent.agent_security.threat_rules import ALL_RULES
-from emo_cyber_agent.agent_security.tool_poisoning import analyze_tool_misuse, analyze_tool_poisoning, analyze_tool_surface
-from emo_cyber_agent.agent_security.verification import build_handoff, check_handoff, handoffs_for_scenarios
+from emo_cyber_agent.agent_security.tool_poisoning import (
+    analyze_tool_misuse,
+    analyze_tool_poisoning,
+    analyze_tool_surface,
+)
+from emo_cyber_agent.agent_security.verification import (
+    build_handoff,
+    check_handoff,
+    handoffs_for_scenarios,
+)
 
 __all__ = [
     "AGENT_CONTROL_KINDS",
@@ -82,8 +109,8 @@ __all__ = [
     "AGENT_ROLES",
     "AGENT_SURFACE_CATEGORIES",
     "AGENT_THREAT_CATEGORIES",
-    "ALL_RULES",
     "ALLOWED_AGENT_QUERIES",
+    "ALL_RULES",
     "CAPABILITY_KINDS",
     "FRAMEWORK_MAPPINGS",
     "IDENTITY_KINDS",
@@ -134,10 +161,10 @@ __all__ = [
     "ToolBinding",
     "ToolResultParts",
     "TrustBoundary",
+    "analyze_credential_flows",
     "analyze_delegations",
     "analyze_retrieval_trust",
     "analyze_tool_misuse",
-    "analyze_credential_flows",
     "analyze_tool_poisoning",
     "analyze_tool_surface",
     "assert_no_authority_language",
