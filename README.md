@@ -3,18 +3,47 @@
 [![CI](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/ci.yml)
 [![Runtime Parity](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/runtime-parity.yml/badge.svg)](https://github.com/SE-Emam/EMO-Cyber-Agent/actions/workflows/runtime-parity.yml)
 [![PyPI](https://img.shields.io/pypi/v/emo-cyber.svg)](https://pypi.org/project/emo-cyber/)
+[![Python](https://img.shields.io/pypi/pyversions/emo-cyber.svg)](https://pypi.org/project/emo-cyber/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-# EMO-Cyber-Agent
+# EMO-Cyber-Agent — the security subagent your AI stack can actually trust
 
-**A portable, model-agnostic, governed cybersecurity subagent for code,
-applications, agents, prompts, MCP, and cloud security.**
+**Stop letting your coding agent guess about security. Give it a specialist:
+scoped read-only audits, evidence-backed findings, and verification plans —
+over CLI, MCP, or Python, with zero code changes and zero invented results.**
 
-Install it once as a Python package, then hand it security work from any
-agent host, CI pipeline, or terminal. It audits read-only, backs every
-material claim with evidence, and verifies before it confirms — it never
-edits your code, never invents findings, and never confuses a model's
-guess with a security verdict.
+| | |
+|---|---|
+| ✅ **2,738 tests green** | Full suite passing, 36/36 schemas valid |
+| 🔌 **7 MCP tools** | Works with OpenCode, Pi, Hermes, Jan, AnythingLLM |
+| 🖥️ **3 OSs proven** | Live runtime parity: Linux + Windows + macOS |
+| 🔒 **Read-only by design** | Default-deny policy engine; it cannot edit your code |
+
+## Get value in 60 seconds
+
+```bash
+pip install emo-cyber            # requires Python >= 3.11
+cyber-agent audit . --format json > result.json
+```
+
+That's it — a machine-checkable security audit of your project. No API keys,
+no provider lock-in, no code changes. Then wire it into your agent:
+
+```json
+{ "mcpServers": { "emo-cyber-agent": { "command": "cyber-agent", "args": ["mcp"] } } }
+```
+
+⭐ **If this saves you one bad merge, star the repo — it keeps the project alive.**
+
+## Who it's for
+
+- **AI agent builders** — your Codex/Cline/OpenCode agent writes fast and
+  breaks things fast. Delegate every security question to a governed
+  specialist instead of a confident guess.
+- **CI / platform teams** — gate merges on stable JSON contracts and
+  machine-readable exit codes, not on prose opinions.
+- **Security reviewers** — triage evidence-linked findings (with provenance
+  and verification plans) instead of chasing hallucinations.
 
 ## Why governed security for agents
 
@@ -45,6 +74,17 @@ findings your pipeline can actually act on.
 - Not a replacement for SAST, SCA, secret scanners, DAST, runtime
   security, or human security review.
 - No scores-as-verdicts: findings carry evidence and provenance, not ratings.
+
+## EMO-Cyber vs the alternatives
+
+| | Generic AI assistant | Traditional scanner | **EMO-Cyber-Agent** |
+|---|---|---|---|
+| Grounded in your repo | ❌ guesses | ✅ rules | ✅ **evidence-linked** |
+| Understands agent workflows | ❌ | ❌ | ✅ **MCP-native, 7 tools** |
+| Policy-enforced (not prompt-suggested) | ❌ | ✅ | ✅ **default-deny engine** |
+| Verification before confirmation | ❌ | ⚠️ partial | ✅ **plans + provenance** |
+| Model-agnostic, no lock-in | ❌ | ✅ | ✅ **bring any model** |
+| Read-only, cannot break prod | ❌ | ✅ | ✅ **by design** |
 
 ## Why it is different
 
@@ -229,6 +269,19 @@ verification precedes confirmation — see `docs/03-security-methodology.md`.
 
 Do not open a public issue for a suspected vulnerability. Report it
 privately as described in `SECURITY.md`.
+
+## Contribute — help secure the agent era
+
+Good first issues: host guides, benchmark cases, docs. PRs are reviewed
+against the same evidence bar the product enforces.
+
+```bash
+git clone https://github.com/SE-Emam/EMO-Cyber-Agent.git
+cd EMO-Cyber-Agent && make check
+```
+
+See `CONTRIBUTING.md`. If the project helps you, ⭐ star it —
+discoverability is our growth engine.
 
 ## License
 
